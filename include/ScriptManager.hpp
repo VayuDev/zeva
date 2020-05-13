@@ -6,9 +6,10 @@
 class Script;
 struct WrenVM;
 
-class ScriptManager {
+class ScriptManager final {
 public:
     ScriptManager();
+    ~ScriptManager();
     void setLastError(std::string pLastError);
     void compile(const std::string& pModule, const std::string& pCode);
 private:

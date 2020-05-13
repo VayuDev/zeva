@@ -44,6 +44,16 @@ ScriptManager::ScriptManager() {
     append("new", 0);
 }
 
+ScriptManager::~ScriptManager() {
+    for(auto& func: mFunctions) {
+        wrenReleaseHandle(mVM, func.second);
+    }
+    for(auto& script: mScripts) {
+        wrenReleaseHandle(mVM, script.second.mInstance);
+    }
+    wrenFreeVM(mVM);
+}
+
 void ScriptManager::setLastError(std::string pLastError) {
     mLastError = pLastError;
 }
@@ -62,7 +72,7 @@ void ScriptManager::compile(const std::string& pModule, const std::string& pCode
     wrenGetVariable(mVM, pModule.c_str(), "ScriptModule", 0);
     auto interpretRes = wrenCall(mVM, mFunctions["new"]);
     if(interpretRes != WrenInterpretResult::WREN_RESULT_SUCCESS) {
-        throw std::runtime_error("Instanciation failed: " + popLastError());
+        throw std::runtime_error("Instantiation failed: " + popLastError());
     }
     auto instance = wrenGetSlotHandle(mVM, 0);
     mScripts.emplace(std::make_pair(pModule, instance));

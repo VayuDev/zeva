@@ -8,7 +8,7 @@ int main() {
     manager.compile("main", 
     "class ScriptModule {\n"
     "  construct new() {"
-    "    System.print(5*444)"
+    "    System.print(5 + 3)"
     "  }"
     "}");
 }
