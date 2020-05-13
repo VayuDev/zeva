@@ -16,12 +16,22 @@ Logger& log() {
 }
 
 Logger& Logger::operator<<(std::string pStr) {
+    size_t index;
+    while((index = pStr.find("\n")) != std::string::npos) {
+        pStr.replace(index, 1, "");
+    } 
     std::cout << pStr;
     mLastMsg += pStr;
+    return *this;
 }
 
 Logger& Logger::error(std::string pStr) {
-    std::cerr << pStr << std::flush;
+    size_t index;
+    while((index = pStr.find("\n")) != std::string::npos) {
+        pStr.replace(index, 1, "");
+    } 
+    std::cerr << pStr;
     mLastMsg += pStr;
     gLog.mLastLogType = LogType::ERROR;
+    return *this;
 }

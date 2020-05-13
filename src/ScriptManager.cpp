@@ -2,6 +2,7 @@
 #include "wren.hpp"
 #include "Logger.hpp"
 #include <iostream>
+#include <cstring>
 
 static std::string toFunctionSignature(const std::string& pName, size_t pArity) {
     bool first = true;
@@ -28,7 +29,11 @@ ScriptManager::ScriptManager() {
         self->setLastError(std::move(msg));
     };
     config.writeFn = [] (WrenVM*, const char* text) {
-        log() << text;
+        std::string_view str{text};
+        if(str != "" && str != "\n") {
+            log() << text;
+        }
+        
     };
     mVM = wrenNewVM(&config);
     wrenSetUserData(mVM, this);
@@ -76,4 +81,32 @@ void ScriptManager::compile(const std::string& pModule, const std::string& pCode
     }
     auto instance = wrenGetSlotHandle(mVM, 0);
     mScripts.emplace(std::make_pair(pModule, instance));
+}
+
+ScriptValue ScriptManager::execute(const std::string& pModule, const std::string& pFunctionName, std::function<void(WrenVM*)> pParamSetter) {
+    auto& script = mScripts.at(pModule);
+    wrenSetSlotHandle(mVM, 0, script.mInstance);
+    pParamSetter(mVM);
+    auto interpretResult = wrenCall(mVM, mFunctions[pFunctionName]);
+    if(interpretResult != WrenInterpretResult::WREN_RESULT_SUCCESS) {
+        throw std::runtime_error("Running script failed: " + popLastError());
+    }
+    ScriptValue ret = {.type = wrenGetSlotType(mVM, 0) };
+    switch(ret.type) {
+    case WrenType::WREN_TYPE_BOOL:
+        ret.boolValue = wrenGetSlotBool(mVM, 0);
+        break;
+    case WrenType::WREN_TYPE_NUM:
+        ret.doubleValue = wrenGetSlotDouble(mVM, 0);
+        break;
+    case WrenType::WREN_TYPE_STRING: {
+        auto srcStr = wrenGetSlotString(mVM, 0);
+        ret.stringValue = (char*) malloc(strlen(srcStr) + 1);
+        strcpy(ret.stringValue, srcStr);
+        break;
+    }
+    default:
+        break;
+    }
+    return ret;
 }
