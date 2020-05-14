@@ -4,22 +4,31 @@
 #include "Script.hpp"
 #include "Logger.hpp"
 #include "ScriptManager.hpp"
+#include "zegdb.hpp"
+#include "common.hpp"
+#include <cstring>
+#include <cstdlib>
 
 int main() {
+    /*DatabaseNetworkConnection conn{"localhost", 5120};
+    conn.querySync("CREATE TABLE IF NOT EXISTS scripts (id INTEGER, name TEXT, code TEXT)");
+    conn.querySync("SELECT * FROM sample_min_csv");
+
+    using namespace std::chrono_literals;
+
+    std::this_thread::sleep_for(2s);
+
+    conn.querySync("SELECT * FROM sample_min_csv");*/
+
     ScriptManager manager;
-    manager.addScript("test", 
-    "class ScriptModule is Script {\n"
-    "  construct new() {\n"
-    "    _b = 0\n"
-    "    System.print(\"Constructed!\")\n"
-    "    System.print(\"_b is %(_b)\")\n"
-    "  }\n"
-    "  \n"
-    "  onRunOnce(a) {\n"
-    "    _b = _b + a\n"
-    "    return _b\n"
-    "  }\n"
-    "}\n");
+    
+
+    auto[data, len] = readWholeFile("../assets/samples/test.wren");
+    char cpy[len + 1];
+    memcpy(cpy, data, len);
+    cpy[len] = '\0';
+    free(data);
+    manager.addScript("test", cpy);
     manager.executeScript("test", "onRunOnce", [](WrenVM* vm) {
         wrenSetSlotDouble(vm, 1, 1.2);
     });
@@ -31,6 +40,11 @@ int main() {
     switch(sRet.type) {
     case WrenType::WREN_TYPE_NUM:
         log() << std::to_string(sRet.doubleValue);
+        break;
+    case WrenType::WREN_TYPE_STRING: 
+        log() << std::string{sRet.stringValue};
+        free(sRet.stringValue);
+        break;
     default:
         break;
     }

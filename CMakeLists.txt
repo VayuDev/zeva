@@ -30,6 +30,7 @@ file(GLOB_RECURSE WREN_SOURCES
 
 file(GLOB_RECURSE ZEGDB_SOURCES 
   "${PROJECT_SOURCE_DIR}/zegdb/src/*.cpp"
+  "${PROJECT_SOURCE_DIR}/zegdb/lib/*.cpp"
   "${PROJECT_SOURCE_DIR}/zegdb/*.c")
 
 file(GLOB_RECURSE ZEGDB_HEADERS 
