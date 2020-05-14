@@ -1,11 +1,8 @@
 #pragma once
 #include <map>
 #include <string>
-#include "Script.hpp"
 #include <functional>
 #include <wren.hpp>
-
-class Script;
 
 struct ScriptValue {
     WrenType type;
@@ -16,17 +13,18 @@ struct ScriptValue {
     };
 };
 
-class ScriptManager final {
+class Script final {
 public:
-    ScriptManager();
-    ~ScriptManager();
+    Script(const std::string& pModule, const std::string& pCode);
+    ~Script();
     void setLastError(std::string pLastError);
-    void compile(const std::string& pModule, const std::string& pCode);
-    ScriptValue execute(const std::string& pModule, const std::string& pFunctionName, std::function<void(WrenVM*)> pParamSetter);
+    ScriptValue execute(const std::string& pFunctionName, std::function<void(WrenVM*)> pParamSetter);
 private:
     std::string popLastError();
+    
+    std::string mModuleName;
     WrenVM *mVM;
+    WrenHandle *mInstance;
     std::string mLastError;
     std::map<std::string, WrenHandle*> mFunctions;
-    std::map<std::string, Script> mScripts;
 };

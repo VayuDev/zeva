@@ -5,8 +5,7 @@
 #include "Logger.hpp"
 
 int main() {
-    ScriptManager manager;
-    manager.compile("test", 
+    Script manager("test", 
     "class ScriptModule {\n"
     "  construct new() {\n"
     "    _b = 0\n"
@@ -19,10 +18,10 @@ int main() {
     "    return _b + a\n"
     "  }\n"
     "}\n");
-    manager.execute("test", "onRunOnce", [](WrenVM* vm) {
+    manager.execute("onRunOnce", [](WrenVM* vm) {
         wrenSetSlotDouble(vm, 1, 1.2);
     });
-    auto ret = manager.execute("test", "onRunOnce", [](WrenVM* vm) {
+    auto ret = manager.execute("onRunOnce", [](WrenVM* vm) {
         wrenSetSlotDouble(vm, 1, 1.2);
     });
     switch(ret.type) {
