@@ -1,3 +1,6 @@
 [submodule "wren"]
 	path = wren
 	url = https://github.com/wren-lang/wren.git
+[submodule "zegdb"]
+	path = zegdb
+	url = http://gitea:3000/vayudev/zegdb

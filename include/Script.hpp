@@ -7,6 +7,7 @@
 #include <future>
 #include <list>
 #include <queue>
+#include <filesystem>
 
 struct ScriptValue {
     WrenType type;
@@ -21,6 +22,7 @@ using ScriptReturn = std::variant<ScriptValue, std::string>;
 
 class Script final {
 public:
+    Script(const std::filesystem::path& pSourcePath);
     Script(const std::string& pModule, const std::string& pCode);
     Script(const Script&) = delete;
     Script(Script&&) = delete;
@@ -31,6 +33,8 @@ public:
     void setLastError(std::string pLastError);
     std::future<ScriptReturn> execute(const std::string& pFunctionName, std::function<void(WrenVM*)> pParamSetter);
 private:
+    void create(const std::string& pModule, const std::string& pCode);
+
     std::string popLastError();
     std::string mModuleName;
     WrenVM *mVM;

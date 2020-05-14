@@ -19,8 +19,12 @@ static std::string toFunctionSignature(const std::string& pName, size_t pArity) 
     return ret;
 }
 
-Script::Script(const std::string& pModule, const std::string& pCode)
-: mModuleName(pModule) {
+Script::Script(const std::filesystem::path& pSourcePath) {
+    
+}
+
+void Script::create(const std::string& pModule, const std::string& pCode) {
+    mModuleName = pModule;
     WrenConfiguration config; 
     wrenInitConfiguration(&config);
     config.errorFn = [] (WrenVM* pVM, WrenErrorType, const char* module, int line, const char* message) {
@@ -93,6 +97,9 @@ Script::Script(const std::string& pModule, const std::string& pCode)
             std::this_thread::sleep_for(1ms);
         }
     });
+}
+Script::Script(const std::string& pModule, const std::string& pCode) {
+    create(pModule, pCode);
 }
 
 Script::~Script() {

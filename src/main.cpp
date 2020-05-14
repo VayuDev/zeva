@@ -3,9 +3,11 @@
 #include <iostream>
 #include "Script.hpp"
 #include "Logger.hpp"
+#include "ScriptManager.hpp"
 
 int main() {
-    Script manager("test", 
+    ScriptManager manager;
+    manager.addScript("test", 
     "class ScriptModule is Script {\n"
     "  construct new() {\n"
     "    _b = 0\n"
@@ -14,14 +16,14 @@ int main() {
     "  }\n"
     "  \n"
     "  onRunOnce(a) {\n"
-    "    _b = _b + 3\n"
-    "    return _b + a\n"
+    "    _b = _b + a\n"
+    "    return _b\n"
     "  }\n"
     "}\n");
-    manager.execute("onFileChange", [](WrenVM* vm) {
+    manager.executeScript("test", "onRunOnce", [](WrenVM* vm) {
         wrenSetSlotDouble(vm, 1, 1.2);
     });
-    auto ret = manager.execute("onRunOnce", [](WrenVM* vm) {
+    auto ret = manager.executeScript("test", "onRunOnce", [](WrenVM* vm) {
         wrenSetSlotDouble(vm, 1, 1.2);
     }).get();
     

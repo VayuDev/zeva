@@ -6,12 +6,17 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
+include_directories("${PROJECT_SOURCE_DIR}/zegdb/include")
+include_directories("${PROJECT_SOURCE_DIR}/zegdb/c_include")
+include_directories("${PROJECT_SOURCE_DIR}/zegdb/lib/include")
+
 include_directories("${PROJECT_SOURCE_DIR}/wren/src/include")
 include_directories("${PROJECT_SOURCE_DIR}/wren/src/module")
 include_directories("${PROJECT_SOURCE_DIR}/wren/src/cli")
 include_directories("${PROJECT_SOURCE_DIR}/wren/src/optional")
 include_directories("${PROJECT_SOURCE_DIR}/wren/src/vm")
 include_directories("${PROJECT_SOURCE_DIR}/include")
+
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -fno-strict-aliasing")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -fno-strict-aliasing")
@@ -23,10 +28,19 @@ file(GLOB_RECURSE WREN_SOURCES
   "${PROJECT_SOURCE_DIR}/wren/src/vm/*.c"
   "${PROJECT_SOURCE_DIR}/wren/src/optional/*.c")
 
-#list(REMOVE_ITEM ADD_ON_SOURCES "${PROJECT_SOURCE_DIR}/angelscript/add_on/autowrapper/generator/generateheader.cpp")
+file(GLOB_RECURSE ZEGDB_SOURCES 
+  "${PROJECT_SOURCE_DIR}/zegdb/src/*.cpp"
+  "${PROJECT_SOURCE_DIR}/zegdb/*.c")
+
+file(GLOB_RECURSE ZEGDB_HEADERS 
+  "${PROJECT_SOURCE_DIR}/zegdb/*.hpp"
+  "${PROJECT_SOURCE_DIR}/zegdb/*.h")
+
+list(REMOVE_ITEM ZEGDB_SOURCES "${PROJECT_SOURCE_DIR}/zegdb/src/main.cpp")
+list(REMOVE_ITEM ZEGDB_SOURCES "${PROJECT_SOURCE_DIR}/zegdb/lib/lib_sample/main2.cpp")
 
 add_definitions(-D_LINUX_)
 
-add_executable(ZeVa2_0 ${SOURCES} ${HEADERS} ${WREN_SOURCES})
+add_executable(ZeVa2_0 ${SOURCES} ${HEADERS} ${WREN_SOURCES} ${ZEGDB_SOURCES} ${ZEGDB_HEADERS})
 
-target_link_libraries(ZeVa2_0 pthread)
+target_link_libraries(ZeVa2_0 pthread zstd)
