@@ -1,7 +1,7 @@
 #include "wren.hpp"
 #include <cassert>
 #include <iostream>
-#include "ScriptManager.hpp"
+#include "Script.hpp"
 #include "Logger.hpp"
 
 int main() {
@@ -23,10 +23,12 @@ int main() {
     });
     auto ret = manager.execute("onRunOnce", [](WrenVM* vm) {
         wrenSetSlotDouble(vm, 1, 1.2);
-    });
-    switch(ret.type) {
+    }).get();
+    
+    ScriptValue& sRet = std::get<ScriptValue>(ret);
+    switch(sRet.type) {
     case WrenType::WREN_TYPE_NUM:
-        log() << std::to_string(ret.doubleValue);
+        log() << std::to_string(sRet.doubleValue);
     default:
         break;
     }
