@@ -48,9 +48,26 @@ Script::Script(const std::string& pModule, const std::string& pCode)
     append("onRunOnce", 1);
     append("onAudio", 2);
     append("new", 0);
+    
+    //compile parent script
+    auto compileRes = wrenInterpret(mVM, pModule.c_str(), "class Script {\n"
+    "  construct new() {\n"
+    "  }\n"
+    "  \n"
+    "  onRunOnce(a) {\n"
+    "  }\n"
+    "  onFileChange(a, b) {\n"
+    "  }\n"
+    "  onAudio(a, b) {\n"
+    "  }\n"
+    "}\n");
 
-    //compile
-    auto compileRes = wrenInterpret(mVM, pModule.c_str(), pCode.c_str());
+    if(compileRes != WrenInterpretResult::WREN_RESULT_SUCCESS) {
+        throw std::runtime_error("Base Script compilation failed: " + popLastError());
+    }
+
+    //compile module
+    compileRes = wrenInterpret(mVM, pModule.c_str(), pCode.c_str());
     if(compileRes != WrenInterpretResult::WREN_RESULT_SUCCESS) {
         throw std::runtime_error("Compilation failed: " + popLastError());
     }
@@ -106,6 +123,7 @@ std::future<ScriptReturn> Script::execute(const std::string& pFunctionName, std:
     int this_id = mIdCounter++;
     std::unique_lock<std::mutex> lock{mQueueMutex};
     mWorkQueue.emplace(std::make_pair(this_id, [this, pFunctionName, pParamSetter] {
+        wrenEnsureSlots(mVM, 4);
         wrenSetSlotHandle(mVM, 0, mInstance);
         pParamSetter(mVM);
         auto interpretResult = wrenCall(mVM, mFunctions[pFunctionName]);

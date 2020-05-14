@@ -6,7 +6,7 @@
 
 int main() {
     Script manager("test", 
-    "class ScriptModule {\n"
+    "class ScriptModule is Script {\n"
     "  construct new() {\n"
     "    _b = 0\n"
     "    System.print(\"Constructed!\")\n"
@@ -18,7 +18,7 @@ int main() {
     "    return _b + a\n"
     "  }\n"
     "}\n");
-    manager.execute("onRunOnce", [](WrenVM* vm) {
+    manager.execute("onFileChange", [](WrenVM* vm) {
         wrenSetSlotDouble(vm, 1, 1.2);
     });
     auto ret = manager.execute("onRunOnce", [](WrenVM* vm) {
