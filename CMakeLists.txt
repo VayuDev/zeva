@@ -6,6 +6,9 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
+add_subdirectory("seasocks")
+include_directories("${PROJECT_SOURCE_DIR}/seasocks/src/main/c")
+
 include_directories("${PROJECT_SOURCE_DIR}/zegdb/include")
 include_directories("${PROJECT_SOURCE_DIR}/zegdb/c_include")
 include_directories("${PROJECT_SOURCE_DIR}/zegdb/lib/include")
@@ -44,4 +47,4 @@ add_definitions(-D_LINUX_)
 
 add_executable(ZeVa2_0 ${SOURCES} ${HEADERS} ${WREN_SOURCES} ${ZEGDB_SOURCES} ${ZEGDB_HEADERS})
 
-target_link_libraries(ZeVa2_0 pthread zstd)
+target_link_libraries(ZeVa2_0 pthread zstd seasocks)

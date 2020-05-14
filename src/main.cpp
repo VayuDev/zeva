@@ -8,6 +8,9 @@
 #include "common.hpp"
 #include <cstring>
 #include <cstdlib>
+#include <seasocks/Server.h>
+#include <seasocks/PrintfLogger.h>
+#include <seasocks/ServerImpl.h>
 
 int main() {
     /*DatabaseNetworkConnection conn{"localhost", 5120};
@@ -20,9 +23,12 @@ int main() {
 
     conn.querySync("SELECT * FROM sample_min_csv");*/
 
-    ScriptManager manager;
-    
+    /*using namespace seasocks;
+    auto logger = std::make_shared<PrintfLogger>();
+    Server server(logger);
+    server.serve("web", 9090);*/
 
+    ScriptManager manager;
     auto[data, len] = readWholeFile("../assets/samples/test.wren");
     char cpy[len + 1];
     memcpy(cpy, data, len);
