@@ -3,6 +3,7 @@
 #include "Logger.hpp"
 #include <iostream>
 #include <cstring>
+#include "ScriptLibs.hpp"
 
 static std::string toFunctionSignature(const std::string& pName, size_t pArity) {
     bool first = true;
@@ -40,6 +41,8 @@ void Script::create(const std::string& pModule, const std::string& pCode) {
         }
         
     };
+    config.bindForeignClassFn = bindForeignClass;
+    config.bindForeignMethodFn = bindForeignMethod;
     mVM = wrenNewVM(&config);
     wrenSetUserData(mVM, this);
 
@@ -54,7 +57,8 @@ void Script::create(const std::string& pModule, const std::string& pCode) {
     append("new", 0);
     
     //compile parent script
-    auto compileRes = wrenInterpret(mVM, pModule.c_str(), "class Script {\n"
+    auto compileRes = wrenInterpret(mVM, pModule.c_str(), 
+    "class Script {\n"
     "  construct new() {\n"
     "  }\n"
     "  \n"
@@ -68,6 +72,10 @@ void Script::create(const std::string& pModule, const std::string& pCode) {
 
     if(compileRes != WrenInterpretResult::WREN_RESULT_SUCCESS) {
         throw std::runtime_error("Base Script compilation failed: " + popLastError());
+    }
+    auto compileDbModuleRes = wrenInterpret(mVM, pModule.c_str(), foreignClassesString());
+    if(compileDbModuleRes != WrenInterpretResult::WREN_RESULT_SUCCESS) {
+        throw std::runtime_error("Db module compilation failed: " + popLastError());
     }
 
     //compile module

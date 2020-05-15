@@ -67,6 +67,9 @@
         "valarray": "cpp",
         "variant": "cpp",
         "csignal": "cpp",
-        "future": "cpp"
+        "future": "cpp",
+        "charconv": "cpp",
+        "regex": "cpp",
+        "shared_mutex": "cpp"
     }
 }

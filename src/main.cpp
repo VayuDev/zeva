@@ -35,9 +35,6 @@ int main() {
     cpy[len] = '\0';
     free(data);
     manager.addScript("test", cpy);
-    manager.executeScript("test", "onRunOnce", [](WrenVM* vm) {
-        wrenSetSlotDouble(vm, 1, 1.2);
-    });
     auto ret = manager.executeScript("test", "onRunOnce", [](WrenVM* vm) {
         wrenSetSlotDouble(vm, 1, 1.2);
     }).get();
