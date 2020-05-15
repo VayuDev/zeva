@@ -12,7 +12,9 @@
 #include <seasocks/Logger.h>
 #include <seasocks/PrintfLogger.h>
 #include <seasocks/ServerImpl.h>
-#include "WebHttpHandler.hpp"
+#include "WebHttpRouter.hpp"
+#include "ApiHandler.hpp"
+#include "HtmlHandler.hpp"
 
 int main() {
     /*DatabaseNetworkConnection conn{"localhost", 5120};
@@ -27,7 +29,11 @@ int main() {
 
     auto webLogger = std::make_shared<Logger>("Seasocks");
     seasocks::Server server(webLogger);
-    server.addPageHandler(std::make_shared<WebHttpHandler>());
+
+    auto router = std::make_shared<WebHttpRouter>();
+    router->addHandler(std::make_shared<ApiHandler>());
+    router->addHandler(std::make_shared<HtmlHandler>());
+    server.addPageHandler(router);
     server.startListening(9090);
     server.loop();
 
