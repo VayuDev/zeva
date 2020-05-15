@@ -12,6 +12,7 @@
 #include <seasocks/Logger.h>
 #include <seasocks/PrintfLogger.h>
 #include <seasocks/ServerImpl.h>
+#include "WebHttpHandler.hpp"
 
 int main() {
     /*DatabaseNetworkConnection conn{"localhost", 5120};
@@ -26,7 +27,9 @@ int main() {
 
     auto webLogger = std::make_shared<Logger>("Seasocks");
     seasocks::Server server(webLogger);
-    server.serve("web", 9090);
+    server.addPageHandler(std::make_shared<WebHttpHandler>());
+    server.startListening(9090);
+    server.loop();
 
     ScriptManager manager;
     auto[data, len] = readWholeFile("../assets/samples/test.wren");
