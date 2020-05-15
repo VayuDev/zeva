@@ -4,7 +4,12 @@ class ScriptModule is Script {
         System.print("Constructed!")
 
         var db = Database.new("localhost", 5120)
-        System.print(db.query("SELECT * FROM sample_min_csv"))
+        var ret = db.query("SELECT * FROM teams_csv JOIN sample_csv ON teams_csv.yearid = 1900 + sample_csv.id")
+        if(ret[0] == "Success!") {
+            for(row in ret[1]) {
+                System.print(row)
+            }
+        }
     }
 
     onRunOnce(b) {

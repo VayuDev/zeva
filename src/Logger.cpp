@@ -3,6 +3,14 @@
 
 bool first = true;
 
+static void sanitize(std::string& pStr) {
+    for(size_t i = 0;i < pStr.size(); ++i) {
+        if((pStr.at(i) < '0' || pStr.at(i) > 'z') && pStr.at(i) != ',' && pStr.at(i) != ' ' && pStr.at(i) != '!' && pStr.at(i) != '.') {
+            pStr.at(i) = '?';
+        }
+    }
+}
+
 Logger gLog;
 Logger& log() {
     if(first) {
@@ -16,6 +24,7 @@ Logger& log() {
 }
 
 Logger& Logger::operator<<(std::string pStr) {
+    sanitize(pStr);
     size_t index;
     while((index = pStr.find("\n")) != std::string::npos) {
         pStr.replace(index, 1, "");
@@ -26,6 +35,7 @@ Logger& Logger::operator<<(std::string pStr) {
 }
 
 Logger& Logger::error(std::string pStr) {
+    sanitize(pStr);
     size_t index;
     while((index = pStr.find("\n")) != std::string::npos) {
         pStr.replace(index, 1, "");
