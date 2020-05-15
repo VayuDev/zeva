@@ -9,10 +9,14 @@
 #include <filesystem>
 
 std::shared_ptr<seasocks::Response> WebHttpRouter::handle(const seasocks::Request &request) {
+
     seasocks::CrackedUri path{request.getRequestUri()};
+    if(path.path().empty()) {
+        return seasocks::ResponseBuilder(seasocks::ResponseCode::MovedPermanently).withLocation("/html/index.html").build();
+    }
     for(auto& h: mHandlers) {
         assert(h);
-        auto resp = h->handle(path);
+        auto resp = h->handle(path, request);
         if(resp) {
             return resp;
         }

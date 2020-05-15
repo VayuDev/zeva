@@ -29,14 +29,14 @@ static void databaseQuerySync(WrenVM *pVM) {
         const char *text = wrenGetSlotString(pVM, 1);
         wrenEnsureSlots(pVM, 2);
         try {
-            VMReturn ret = db->querySync(text);
-            if(ret.errorMsg) {
+            QueryResult ret = db->querySync(text);
+            if(ret.isError()) {
                 wrenSetSlotString(pVM, 1, "Error");
-                wrenSetSlotString(pVM, 2, ret.errorMsg);
+                wrenSetSlotString(pVM, 2, ret.getError()->c_str());
             } else {
                 //LOAD VALUES
                 wrenSetSlotString(pVM, 1, "Success!");
-                Value *v = ret.value;
+                const Value *v = ret.getValue();
                 wrenEnsureSlots(pVM, 4);
                 wrenSetSlotNewList(pVM, 2);
                 for(size_t r = 0; r < v->rows; ++r) {
@@ -72,7 +72,6 @@ static void databaseQuerySync(WrenVM *pVM) {
                     wrenInsertInList(pVM, 2, r, 3);
                 }
             }
-            vm_return_content_free(&ret);
         } catch (std::exception& e) {
             wrenSetSlotString(pVM, 1, "Error");
             wrenSetSlotString(pVM, 2, e.what());
