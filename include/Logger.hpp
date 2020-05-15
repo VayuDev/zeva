@@ -1,23 +1,16 @@
 #pragma once
 #include <list>
 #include <string>
+#include <seasocks/Logger.h>
 
-enum class LogType {
-    DEBUG,
-    INFO,
-    WARN,
-    ERROR,
-};
-
-class Logger {
+class Logger : public seasocks::Logger {
 public:
-    Logger& operator<<(std::string pStr);
-    Logger& error(std::string pStr);
+    explicit Logger(std::string pName);
+    virtual void log(Level level, const char* message) override;
 private:
     friend Logger& log();
-    std::string mLastMsg;
-    LogType mLastLogType = LogType::INFO;;
-    std::list<std::pair<LogType, std::string>> mLog;
+    std::list<std::pair<Level, std::string>> mLog;
+    std::string mName;
 };
 
 Logger& log();

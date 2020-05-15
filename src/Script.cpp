@@ -30,14 +30,14 @@ void Script::create(const std::string& pModule, const std::string& pCode) {
     wrenInitConfiguration(&config);
     config.errorFn = [] (WrenVM* pVM, WrenErrorType, const char* module, int line, const char* message) {
         std::string msg = (module ? module : "(null)") + std::string{" ("} + std::to_string(line) + "): " + message + "\n";
-        log().error(msg);
+        log().error(msg.c_str());
         Script *self = (Script*) wrenGetUserData(pVM);
         self->setLastError(std::move(msg));
     };
     config.writeFn = [] (WrenVM*, const char* text) {
-        std::string_view str{text};
+        std::string str{text};
         if(str != "" && str != "\n") {
-            log() << text;
+            log().info(str.c_str());
         }
         
     };

@@ -3,13 +3,15 @@ class ScriptModule is Script {
         _a = 3
         System.print("Constructed!")
 
-        var db = Database.new("localhost", 5120)
-        var ret = db.query("SELECT * FROM teams_csv JOIN sample_csv ON teams_csv.yearid = 1900 + sample_csv.id")
+        /*var db = Database.new("localhost", 5120)
+        var ret = db.query("SELECT * FROM scripts")
         if(ret[0] == "Success!") {
             for(row in ret[1]) {
                 System.print(row)
             }
-        }
+        } else {
+            System.print(ret)
+        }*/
     }
 
     onRunOnce(b) {
