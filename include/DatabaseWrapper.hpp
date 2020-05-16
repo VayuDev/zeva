@@ -5,6 +5,7 @@
 #include <vector>
 #include <variant>
 #include <memory>
+#include <ctime>
 
 enum class QueryValueType {
     INTEGER,
@@ -12,6 +13,7 @@ enum class QueryValueType {
     BOOL,
     STRING,
     TNULL,
+    TIME,
     UNKNOWN
 };
 
@@ -20,6 +22,7 @@ public:
     union {
         int64_t intValue;
         double doubleValue;
+        timeval timeValue;
     };
     std::string stringValue;
     QueryValueType type = QueryValueType::TNULL;

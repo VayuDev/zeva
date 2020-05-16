@@ -2,6 +2,24 @@
 #include <memory>
 #include <pqxx/pqxx>
 #include <cassert>
+#include <pqxx/util.hxx>
+#include <pqxx/strconv.hxx>
+
+namespace pqxx {
+    template<> struct PQXX_LIBEXPORT string_traits<std::optional<timeval>>
+    {
+        static constexpr const char *name() noexcept { return "std::optional<timeval>"; }
+        static constexpr bool has_null() noexcept { return false; }
+        static bool is_null(std::optional<timeval> t) { return  !t.has_value(); }
+        static std::optional<timeval> null() { return {}; }
+        static void from_string(const char Str[], std::optional<timeval> &Obj) {
+            struct tm tm;
+            strptime(Str, "%Y-%m-%d %H:%M:%S", &tm);
+            Obj = timeval{.tv_sec = mktime(&tm)};
+        }
+    };
+}
+
 
 std::unique_ptr<QueryResult> PostgreSQLDatabase::query(std::string pQuery, std::vector<QueryValue> pPlaceholders) {
 
@@ -46,7 +64,12 @@ std::unique_ptr<QueryResult> PostgreSQLDatabase::query(std::string pQuery, std::
                         value.type = QueryValueType::STRING;
                         value.stringValue = row[(int)c].as<std::string>();
                         break;
+                    case QueryValueType::TIME:
+                        value.type = QueryValueType::TIME;
+                        value.timeValue = *row[(int)c].as<std::optional<timeval>>();
+                        break;
                     default:
+                        log().error("Unknown type %i", (int)row[(int)c].type());
                         assert(false);
                 }
             }
@@ -105,6 +128,9 @@ PostgreSQLDatabase::PostgreSQLDatabase(std::string pDbName, std::string pUserNam
         }
         if(name.find("text") == 0) {
             type = QueryValueType::STRING;
+        }
+        if(name.find("timestamp") == 0) {
+            type = QueryValueType::TIME;
         }
         mTypes[oid] = type;
     }

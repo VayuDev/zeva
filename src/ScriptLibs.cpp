@@ -65,6 +65,9 @@ static void databaseQuerySync(WrenVM *pVM) {
                         case QueryValueType::TNULL:
                             wrenSetSlotNull(pVM, 4);
                             break;
+                        case QueryValueType::TIME:
+                            wrenSetSlotDouble(pVM, 4, sv.timeValue.tv_sec + sv.timeValue.tv_usec / 1'000'000.0);
+                            break;
                         default:
                             assert(false);
                     }
