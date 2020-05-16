@@ -12,7 +12,7 @@ std::shared_ptr<seasocks::Response> WebHttpRouter::handle(const seasocks::Reques
 
     seasocks::CrackedUri path{request.getRequestUri()};
     if(path.path().empty()) {
-        return seasocks::ResponseBuilder(seasocks::ResponseCode::MovedPermanently).withLocation("/html/index.html").build();
+        return seasocks::ResponseBuilder(seasocks::ResponseCode::MovedPermanently).withLocation("/html/hub/hub.html").build();
     }
     for(auto& h: mHandlers) {
         assert(h);
