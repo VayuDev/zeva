@@ -10,7 +10,7 @@ public:
     virtual size_t getRowCount() const override ;
     virtual size_t getColumnCount() const override ;
     virtual const QueryValue& getValue(size_t pRow, size_t pColumn) const override ;
-    virtual const std::vector<std::string>& getColumnNames() const override ;
+    virtual const std::vector<std::string>& getColumnNames() const override;
     virtual void log() const override;
 private:
     friend class PostgreSQLDatabase;

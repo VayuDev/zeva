@@ -1,8 +1,16 @@
 $(function() {
     $.getJSON("/api/scripts/all", "", function(data) {
-        let result = data["result"];
-        for(let i = 0; i < result.length; ++i) {
-            $("#scriptList").append(result[i] + "<br>");
+        for(let i = 0; i < data.length; ++i) {
+            let div = $("<div></div>");
+            div.append($("<span></span>").text(data[i]["name"]).addClass("list-element"));
+            let edit = $("<span></span>").addClass("list-element-button").text("Edit");
+            edit.click(function () {
+                window.location = "/scripts/edit.html?scriptid=" + data[i]["id"];
+            });
+            div.append(edit);
+            let run = $("<span></span>").text("Run");
+            div.append(run);
+            $(".elementList").append(div);
         }
     })
 })

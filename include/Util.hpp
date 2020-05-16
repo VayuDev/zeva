@@ -4,3 +4,5 @@
 
 
 nlohmann::json queryResultToJson(const QueryResult&);
+nlohmann::json queryResultToJsonArray(QueryResult&&);
+nlohmann::json queryResultToJsonMap(const QueryResult&);

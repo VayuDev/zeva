@@ -36,3 +36,56 @@ nlohmann::json queryResultToJson(const QueryResult& queryResult) {
     ret["result"] = std::move(result);
     return ret;
 }
+
+nlohmann::json queryResultToJsonArray(QueryResult &&pQueryResult) {
+    nlohmann::json ret;
+    ret["columnNames"] = std::move(pQueryResult.getColumnNames());
+    auto result = nlohmann::json::array();
+    for(size_t r = 0; r < pQueryResult.getRowCount(); ++r) {
+        auto row = nlohmann::json::array();
+        for(size_t c = 0; c < pQueryResult.getColumnCount(); ++c) {
+            const auto& sval = pQueryResult.getValue(r, c);
+            switch(sval.type) {
+                case QueryValueType::INTEGER:
+                    row.push_back(sval.intValue);
+                    break;
+                case QueryValueType::STRING:
+                    row.push_back(sval.stringValue);
+                    break;
+                case QueryValueType::TNULL:
+                    row.push_back(nullptr);
+                    break;
+                default:
+                    assert(false);
+            }
+        }
+        result.push_back(std::move(row));
+    }
+    ret["result"] = std::move(result);
+    return ret;
+}
+
+nlohmann::json queryResultToJsonMap(const QueryResult& pQueryResult) {
+    auto ret = nlohmann::json::array();
+    for(size_t r = 0; r < pQueryResult.getRowCount(); ++r) {
+        nlohmann::json row;
+        for(size_t c = 0; c < pQueryResult.getColumnCount(); ++c) {
+            const auto& sval = pQueryResult.getValue(r, c);
+            switch(sval.type) {
+                case QueryValueType::INTEGER:
+                    row[pQueryResult.getColumnNames().at(c)] = sval.intValue;
+                    break;
+                case QueryValueType::STRING:
+                    row[pQueryResult.getColumnNames().at(c)] = sval.stringValue;
+                    break;
+                case QueryValueType::TNULL:
+                    row[pQueryResult.getColumnNames().at(c)] = nullptr;
+                    break;
+                default:
+                    assert(false);
+            }
+        }
+        ret.push_back(std::move(row));
+    }
+    return ret;
+}

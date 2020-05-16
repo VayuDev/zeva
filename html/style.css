@@ -6,8 +6,13 @@ body {
 
 .main-grid {
     display: grid;
-    grid-template-rows: 50px calc(100% - 50px);
+    grid-template-rows: 70px calc(100% - 70px);
 
+}
+#header {
+    max-width: 100vw;
+    width: 100vw;
+    overflow-x: hidden;
 }
 
 .main-grid nav {
@@ -20,10 +25,6 @@ body {
     flex-direction: row;
     justify-content: space-between;
     margin: 5px;
-
-    max-width: 100vw;
-    width: 100vw;
-    overflow-x: hidden;
 }
 .main-grid nav .item {
     display: inline-block;
@@ -41,4 +42,39 @@ body {
     font-weight: bold;
     padding-right: 50px;
     padding-left: 50px;
+}
+
+.elementList {
+    margin-left: 30vw;
+    margin-right: 30vw;
+    padding: 10px;
+    border-left: 5px solid rgb(48, 48, 48);
+    border-right: 5px solid rgb(48, 48, 48);
+
+    display: grid;
+    grid-gap: 10px;
+}
+.elementList * {
+    background-color: #ffa500;
+    border-radius: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    color: white;
+    width: calc(100% - 20px);
+
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.elementList * *:first-child {
+    width: 100%;
+}
+
+.elementList * *:not(:first-child) {
+    width: min-content;
+    background-color: #89C35C;
+    border: 2px solid #6c9549;
+    margin-left: 5px;
+    cursor: pointer;
 }
