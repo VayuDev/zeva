@@ -2,5 +2,5 @@
 #include "WebHandler.hpp"
 
 class HtmlHandler : public WebHandler {
-    virtual sp<seasocks::Response> handle(const seasocks::CrackedUri& pUrl, const seasocks::Request &pRequest) override;
+    virtual std::shared_ptr<seasocks::Response> handle(const seasocks::CrackedUri& pUrl, const seasocks::Request &pRequest) override;
 };

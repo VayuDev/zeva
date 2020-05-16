@@ -1,5 +1,4 @@
 #include "wren.hpp"
-#include "zegdb.hpp"
 
 
 const char *foreignClassesString();

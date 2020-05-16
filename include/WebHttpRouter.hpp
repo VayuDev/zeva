@@ -5,8 +5,8 @@
 
 class WebHttpRouter : public seasocks::PageHandler {
 public:
-    void addHandler(sp<WebHandler> pHandler);
+    void addHandler(std::shared_ptr<WebHandler> pHandler);
     virtual std::shared_ptr<seasocks::Response> handle(const seasocks::Request& request);
 private:
-    std::list<sp<WebHandler>> mHandlers;
+    std::list<std::shared_ptr<WebHandler>> mHandlers;
 };

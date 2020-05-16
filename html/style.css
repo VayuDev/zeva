@@ -7,6 +7,7 @@ body {
 .main-grid {
     display: grid;
     grid-template-rows: 50px calc(100% - 50px);
+
 }
 
 .main-grid nav {
@@ -19,6 +20,10 @@ body {
     flex-direction: row;
     justify-content: space-between;
     margin: 5px;
+
+    max-width: 100vw;
+    width: 100vw;
+    overflow-x: hidden;
 }
 .main-grid nav .item {
     display: inline-block;

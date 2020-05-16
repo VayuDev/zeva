@@ -3,7 +3,7 @@ class ScriptModule is Script {
         _a = 3
         System.print("Constructed!")
 
-        /*var db = Database.new("localhost", 5120)
+        /*var db = Database.new("localhost")
         var ret = db.query("SELECT * FROM scripts")
         if(ret[0] == "Success!") {
             for(row in ret[1]) {

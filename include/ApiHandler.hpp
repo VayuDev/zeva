@@ -1,10 +1,11 @@
 #pragma once
 #include "WebHandler.hpp"
+#include "DatabaseWrapper.hpp"
 
 class ApiHandler : public WebHandler {
 public:
-    explicit ApiHandler(sp<class DatabaseNetworkConnection> pDb);
-    virtual sp<seasocks::Response> handle(const seasocks::CrackedUri& pUrl, const seasocks::Request &pRequest) override;
+    explicit ApiHandler(std::shared_ptr<class DatabaseWrapper> pDb);
+    virtual std::shared_ptr<seasocks::Response> handle(const seasocks::CrackedUri& pUrl, const seasocks::Request &pRequest) override;
 private:
-    sp<class DatabaseNetworkConnection> mDb;
+    std::shared_ptr<class DatabaseWrapper>  mDb;
 };
