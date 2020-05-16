@@ -32,6 +32,18 @@ public:
         ret.intValue = pInt;
         return ret;
     }
+    static inline QueryValue makeString(std::string&& pStr) {
+        QueryValue ret;
+        ret.type = QueryValueType::STRING;
+        ret.stringValue = std::move(pStr);
+        return ret;
+    }
+    static inline QueryValue makeString(const std::string& pStr) {
+        QueryValue ret;
+        ret.type = QueryValueType::STRING;
+        ret.stringValue = pStr;
+        return ret;
+    }
 };
 
 class QueryResult {

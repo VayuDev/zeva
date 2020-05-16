@@ -35,6 +35,9 @@ std::unique_ptr<QueryResult> PostgreSQLDatabase::query(std::string pQuery, std::
                 case QueryValueType::INTEGER:
                     inv(param.intValue);
                     break;
+                case QueryValueType::STRING:
+                    inv(param.stringValue);
+                    break;
                 default:
                     assert(false);
             }

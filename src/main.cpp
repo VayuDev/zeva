@@ -23,31 +23,10 @@ int main() {
 
 
 
-    ScriptManager manager;
-    std::ifstream t("assets/samples/test.wren");
-    std::string str((std::istreambuf_iterator<char>(t)),
-                    std::istreambuf_iterator<char>());
-    manager.addScript("test", str);
-    auto ret = manager.executeScript("test", "onRunOnce", [](WrenVM* vm) {
-        wrenSetSlotDouble(vm, 1, 1.2);
-    }).get();
-    
-    auto& sRet = std::get<ScriptValue>(ret);
-    switch(sRet.type) {
-    case WrenType::WREN_TYPE_NUM:
-        log().info("%f", sRet.doubleValue);
-        break;
-    case WrenType::WREN_TYPE_STRING: 
-        log().info("%s", sRet.stringValue);
-        free(sRet.stringValue);
-        break;
-    default:
-        break;
-    }
-
+    auto manager = std::make_shared<ScriptManager>();
 
     auto router = std::make_shared<WebHttpRouter>();
-    router->addHandler(std::make_shared<ApiHandler>(conn));
+    router->addHandler(std::make_shared<ApiHandler>(conn, manager));
     router->addHandler(std::make_shared<HtmlHandler>());
     server.addPageHandler(router);
     server.startListening(9090);
