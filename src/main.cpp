@@ -24,7 +24,7 @@ int main() {
 
 
     ScriptManager manager;
-    std::ifstream t("../assets/samples/test.wren");
+    std::ifstream t("assets/samples/test.wren");
     std::string str((std::istreambuf_iterator<char>(t)),
                     std::istreambuf_iterator<char>());
     manager.addScript("test", str);

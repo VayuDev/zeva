@@ -9,9 +9,22 @@ WrenForeignClassMethods bindForeignClass(WrenVM*, const char* module, const char
     if(strcmp(classname, "Database") == 0) {
         WrenForeignClassMethods methods = {
             .allocate = [] (WrenVM* pVM) {
+                if(wrenGetSlotType(pVM, 1) != WREN_TYPE_STRING) {
+                    wrenSetSlotNull(pVM, 0);
+                    return;
+                }
                 void *data = wrenSetSlotNewForeign(pVM, 0, 0, sizeof(PostgreSQLDatabase));
                 const char *dbname = wrenGetSlotString(pVM, 1);
-                new(data)PostgreSQLDatabase(dbname);
+                if(wrenGetSlotType(pVM, 2) == WREN_TYPE_STRING) {
+                    new(data)PostgreSQLDatabase(dbname,
+                            wrenGetSlotString(pVM, 2),
+                            wrenGetSlotString(pVM, 3),
+                            wrenGetSlotString(pVM, 4),
+                            wrenGetSlotDouble(pVM, 5));
+                } else {
+                    new(data)PostgreSQLDatabase(dbname);
+                }
+
             },
             .finalize = [] (void *data) {
                 auto* db = (PostgreSQLDatabase*)data;
@@ -42,6 +55,15 @@ static void databaseQuerySync(WrenVM *pVM) {
                     switch (sv.type) {
                         case QueryValueType::INTEGER:
                             wrenSetSlotDouble(pVM, 4, sv.intValue);
+                            break;
+                        case QueryValueType::STRING:
+                            wrenSetSlotString(pVM, 4, sv.stringValue.c_str());
+                            break;
+                        case QueryValueType::DOUBLE:
+                            wrenSetSlotDouble(pVM, 4, sv.doubleValue);
+                            break;
+                        case QueryValueType::TNULL:
+                            wrenSetSlotNull(pVM, 4);
                             break;
                         default:
                             assert(false);
@@ -82,6 +104,8 @@ const char *foreignClassesString() {
     return R"--(
 foreign class Database {
     construct new(dbname) {}
+    construct new(dbname, username, password, hostname, port) {}
     foreign query(request)
-})--";
+}
+)--";
 }
