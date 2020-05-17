@@ -2,6 +2,7 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/json" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/seasocks" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/wren" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/zegdb" vcs="Git" />

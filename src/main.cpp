@@ -17,7 +17,7 @@
 #include <fstream>
 int main() {
     auto conn = std::make_shared<PostgreSQLDatabase>("testdb");
-    conn->query("CREATE TABLE IF NOT EXISTS scripts (id SERIAL, name TEXT, code TEXT)");
+    conn->query("CREATE TABLE IF NOT EXISTS scripts (id SERIAL, name TEXT UNIQUE, code TEXT)");
     auto webLogger = std::make_shared<Logger>("Seasocks");
     seasocks::Server server(webLogger);
 

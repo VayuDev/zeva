@@ -1,20 +1,21 @@
 let lowestBoxHeight = 200;
 let lowestBoxId = -1;
 let boxIdCounter = 0;
-let boxCount = 0;
 
 function notifyError(msg) {
     notify(msg, "notify-error");
 }
 
 function notify(msg, classname = "notify-info") {
+    if(msg == null) {
+        msg = "(null)";
+    }
     let msgBox = $("<div></div>").text(msg).addClass(classname).addClass("notify")
     $("body").append(msgBox);
-    let boxHeight = lowestBoxHeight;
+    let boxHeight = Math.min(lowestBoxHeight, window.outerHeight - 200);
     msgBox.css("top", boxHeight + "px");
     let id = ++boxIdCounter;
     lowestBoxId = id;
-    ++boxCount;
 
     let animationCounter = 0;
     let intervalID = setInterval(function() {
@@ -33,8 +34,7 @@ function notify(msg, classname = "notify-info") {
         if(animationCounter >= 150) {
             clearInterval(intervalID);
             msgBox.detach();
-            --boxCount;
-            if(boxCount === 0) {
+            if(lowestBoxId === id) {
                 lowestBoxHeight = 200;
             }
         }

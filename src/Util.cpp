@@ -2,6 +2,7 @@
 #include "nlohmann/json.hpp"
 #include "Logger.hpp"
 #include "DatabaseWrapper.hpp"
+#include "Script.hpp"
 
 nlohmann::json queryResultToJson(const QueryResult& queryResult) {
     nlohmann::json ret;
@@ -88,4 +89,19 @@ nlohmann::json queryResultToJsonMap(const QueryResult& pQueryResult) {
         ret.push_back(std::move(row));
     }
     return ret;
+}
+
+nlohmann::json scriptValueToJson(ScriptValue && pVal) {
+    switch(pVal.type) {
+        case WREN_TYPE_STRING:
+            return std::move(pVal.stringValue);
+        case WREN_TYPE_NUM:
+            return pVal.doubleValue;
+        case WREN_TYPE_NULL:
+            return nullptr;
+        case WREN_TYPE_BOOL:
+            return pVal.boolValue;
+        default:
+            assert(false);
+    }
 }

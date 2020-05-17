@@ -12,10 +12,10 @@
 struct ScriptValue {
     WrenType type;
     union {
-        char *stringValue;
         double doubleValue;
         bool boolValue;
     };
+    std::string stringValue;
 };
 
 using ScriptReturn = std::variant<ScriptValue, std::string>;

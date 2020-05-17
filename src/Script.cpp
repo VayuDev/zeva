@@ -96,7 +96,12 @@ void Script::create(const std::string& pModule, const std::string& pCode) {
             std::unique_lock<std::mutex> lock(mQueueMutex);
             if(!mWorkQueue.empty()) {
                 auto& work = mWorkQueue.front();
-                auto ret = work.second();
+                std::variant<ScriptValue, std::basic_string<char>> ret;
+                try {
+                    ret = work.second();
+                } catch(std::exception& e) {
+                    ret = std::string{e.what()};
+                }
                 mResultList.emplace_front(std::make_pair(work.first, ret));
                 mWorkQueue.pop();
             }
@@ -125,7 +130,7 @@ Script::~Script() {
 }
 
 void Script::setLastError(std::string pLastError) {
-    mLastError = pLastError;
+    mLastError += pLastError;
 }
 
 std::string Script::popLastError() {
@@ -153,12 +158,9 @@ std::future<ScriptReturn> Script::execute(const std::string& pFunctionName, std:
         case WrenType::WREN_TYPE_NUM:
             ret.doubleValue = wrenGetSlotDouble(mVM, 0);
             break;
-        case WrenType::WREN_TYPE_STRING: {
-            auto srcStr = wrenGetSlotString(mVM, 0);
-            ret.stringValue = (char*) malloc(strlen(srcStr) + 1);
-            strcpy(ret.stringValue, srcStr);
+        case WrenType::WREN_TYPE_STRING:
+            ret.stringValue = wrenGetSlotString(mVM, 0);;
             break;
-        }
         default:
             break;
         }

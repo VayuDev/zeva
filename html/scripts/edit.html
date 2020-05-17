@@ -9,17 +9,41 @@
     <script src="js/edit.js"></script>
     <style>
         #editor {
-            height: 500px;
             border: 3px solid black;
-            margin: 10px;
             border-radius: 10px;
+        }
+        #buttonList {
+            margin-bottom: 10px;
+        }
+        #content-grid {
+            margin: 10px;
+            display: grid;
+            grid-template-rows: min-content auto 200px;
+            height: calc(100vh - 90px);
+        }
+        #output {
+            border: 3px solid black;
+            border-radius: 10px;
+            white-space: pre;
+            overflow-y: scroll;
+            font-size: 19px;
+            padding: 5px;
         }
     </style>
 </head>
 <body>
 <div class="main-grid">
     <div id="header"></div>
-    <div id="editor">dad</div>
+    <div id="content-grid">
+        <div id="buttonList">
+            <button onclick="saveScript()">Save</button>
+            <button onclick="runScript()">Run</button>
+            <button onclick="clearLog()">Clear log</button>
+        </div>
+        <div id="editor"></div>
+        <div id="output"></div>
+    </div>
+
 </div>
 </body>
 </html>
