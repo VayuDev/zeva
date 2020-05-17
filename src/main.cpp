@@ -21,13 +21,19 @@ int main() {
     auto webLogger = std::make_shared<Logger>("Seasocks");
     seasocks::Server server(webLogger);
 
-
-
     auto manager = std::make_shared<ScriptManager>();
+    //load scripts
+    auto scripts = conn->query("SELECT name,code FROM scripts");
+    for(size_t i = 0; i < scripts->getRowCount(); ++i) {
+        auto name = scripts->getValue(i, 0).stringValue;
+        auto code = scripts->getValue(i, 1).stringValue;
+        manager->addScript(name, code);
+    }
 
     auto router = std::make_shared<WebHttpRouter>();
     router->addHandler(std::make_shared<ApiHandler>(conn, manager));
     router->addHandler(std::make_shared<HtmlHandler>());
+
     server.addPageHandler(router);
     server.startListening(9090);
     server.loop();

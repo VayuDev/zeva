@@ -101,7 +101,10 @@ nlohmann::json scriptValueToJson(ScriptValue && pVal) {
             return nullptr;
         case WREN_TYPE_BOOL:
             return pVal.boolValue;
+        case WREN_TYPE_UNKNOWN:
+            return "(unknown)";
         default:
+            log().error("Unknown type %i", (int)pVal.type);
             assert(false);
     }
 }
