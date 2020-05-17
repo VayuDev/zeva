@@ -15,12 +15,20 @@
 #include "HtmlHandler.hpp"
 #include "PostgreSQLDatabase.hpp"
 #include <fstream>
+#include <signal.h>
+
+std::unique_ptr<seasocks::Server> gServer;
+
+void sighandler(int) {
+    if(gServer) {
+        gServer->terminate();
+    }
+}
 
 int main() {
     auto conn = std::make_shared<PostgreSQLDatabase>("testdb");
     conn->query("CREATE TABLE IF NOT EXISTS scripts (id SERIAL, name TEXT UNIQUE, code TEXT)");
-    auto webLogger = std::make_shared<Logger>("Seasocks");
-    seasocks::Server server(webLogger);
+
 
     auto manager = std::make_shared<ScriptManager>();
     //load scripts
@@ -35,8 +43,12 @@ int main() {
     router->addHandler(std::make_shared<ApiHandler>(conn, manager));
     router->addHandler(std::make_shared<HtmlHandler>());
 
+    auto webLogger = std::make_shared<Logger>("Seasocks");
+    gServer = std::make_unique<seasocks::Server>(webLogger);
+    gServer->addPageHandler(router);
+    gServer->startListening(9090);
 
-    server.addPageHandler(router);
-    server.startListening(9090);
-    server.loop();
+    signal(SIGTERM, sighandler);
+    signal(SIGINT, sighandler);
+    gServer->loop();
 }
