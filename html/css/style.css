@@ -84,6 +84,11 @@ input, button {
     cursor: pointer;
 }
 
+.elementList * .deleteButton {
+    background-color: #c21e29;
+    border: 2px solid red;
+}
+
 .notify {
     position: absolute;
     background-color: white;

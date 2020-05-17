@@ -9,13 +9,32 @@
 #include <queue>
 #include <filesystem>
 
-struct ScriptValue {
-    WrenType type;
+class ScriptValue {
+public:
+    WrenType type = WREN_TYPE_NULL;
     union {
         double doubleValue;
         bool boolValue;
     };
     std::string stringValue;
+    static ScriptValue makeString(const std::string& pStr) {
+        ScriptValue ret;
+        ret.type = WREN_TYPE_STRING;
+        ret.stringValue = pStr;
+        return ret;
+    }
+    static ScriptValue makeInt(int64_t pInt) {
+        ScriptValue ret;
+        ret.type = WREN_TYPE_NUM;
+        ret.doubleValue = pInt;
+        return ret;
+    }
+    static ScriptValue makeDouble(double pDouble) {
+        ScriptValue ret;
+        ret.type = WREN_TYPE_NUM;
+        ret.doubleValue = pDouble;
+        return ret;
+    }
 };
 
 using ScriptReturn = std::variant<ScriptValue, std::string>;
@@ -31,7 +50,7 @@ public:
     ~Script();
     
     void setLastError(std::string pLastError);
-    std::future<ScriptReturn> execute(const std::string& pFunctionName, std::function<void(WrenVM*)> pParamSetter);
+    std::future<ScriptReturn> execute(const std::string& pFunctionName, const std::vector<ScriptValue>& );
 private:
     void create(const std::string& pModule, const std::string& pCode);
 

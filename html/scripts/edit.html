@@ -38,8 +38,9 @@
     <div id="content-grid">
         <div id="buttonList">
             <button onclick="saveScript()">Save</button>
-            <button onclick="runScript(SCRIPTID)">Run</button>
+            <button onclick="runScript(SCRIPTID, $('#parameter').val())">Run</button>
             <button onclick="clearLog()">Clear log</button>
+            <input type="text" placeholder="Parameter" id="parameter">
         </div>
         <div id="editor"></div>
         <div id="output"></div>

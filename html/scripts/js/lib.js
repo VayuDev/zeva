@@ -12,12 +12,13 @@ function logToOutputAndMsg(msg, isError) {
     }
 }
 
-function runScript(scriptid) {
+function runScript(scriptid, param = null) {
     $.ajax({
         type: "POST",
         url: "/api/scripts/run",
         data: {
             "scriptid": scriptid,
+            "param": param
         },
         error: function(err, textStatus, errorThrown) {
             logToOutputAndMsg(err.responseText, true);

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cstring>
 #include "ScriptLibs.hpp"
+#include <cassert>
 
 static std::string toFunctionSignature(const std::string& pName, size_t pArity) {
     bool first = true;
@@ -139,13 +140,27 @@ std::string Script::popLastError() {
     return ret;
 }
 
-std::future<ScriptReturn> Script::execute(const std::string& pFunctionName, std::function<void(WrenVM*)> pParamSetter) {
+std::future<ScriptReturn> Script::execute(const std::string& pFunctionName, const std::vector<ScriptValue>& pParamSetter) {
     int this_id = mIdCounter++;
     std::unique_lock<std::mutex> lock{mQueueMutex};
     mWorkQueue.emplace(std::make_pair(this_id, [this, pFunctionName, pParamSetter] {
         wrenEnsureSlots(mVM, 4);
         wrenSetSlotHandle(mVM, 0, mInstance);
-        pParamSetter(mVM);
+        for(size_t i = 0; i < pParamSetter.size(); ++i) {
+            switch(pParamSetter.at(i).type) {
+                case WREN_TYPE_STRING:
+                    wrenSetSlotString(mVM, i + 1, pParamSetter.at(i).stringValue.c_str());
+                    break;
+                case WREN_TYPE_NUM:
+                    wrenSetSlotDouble(mVM, i + 1, pParamSetter.at(i).doubleValue);
+                    break;
+                case WREN_TYPE_BOOL:
+                    wrenSetSlotBool(mVM, i + 1, pParamSetter.at(i).boolValue);
+                    break;
+                default:
+                    assert(false);
+            }
+        }
         auto interpretResult = wrenCall(mVM, mFunctions[pFunctionName]);
         if(interpretResult != WrenInterpretResult::WREN_RESULT_SUCCESS) {
             throw std::runtime_error("Running script failed: " + popLastError());

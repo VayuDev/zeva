@@ -39,10 +39,27 @@ std::shared_ptr<seasocks::Response> ApiHandler::handle(const seasocks::CrackedUr
                         auto scriptName = mDb->query("SELECT name FROM scripts WHERE id=$1", {QueryValue::makeInt(id)});
                         mScriptManager->addScript(scriptName->getValue(0, 0).stringValue, code);
                     } else if(pUrl.path().at(2) == "run" && body.hasParam("scriptid")) {
-                        auto idStr = body.queryParam("scriptid");
-                        auto id = std::stoll(idStr);
+                        auto id = std::stoll(body.queryParam("scriptid"));
                         auto scriptName = mDb->query("SELECT name FROM scripts WHERE id=$1", {QueryValue::makeInt(id)});
-                        auto scriptReturn = mScriptManager->executeScript(scriptName->getValue(0, 0).stringValue, "onRunOnce", [](WrenVM*){}).get();
+
+                        std::vector<ScriptValue> params;
+                        if(body.hasParam("param")) {
+                            auto paramString = body.queryParam("param");
+                            bool number = true;
+                            for(char c: paramString) {
+                                if(!isdigit(c) && c != '.') {
+                                    number = false;
+                                    break;
+                                }
+                            }
+                            if(number) {
+                                params.push_back(ScriptValue::makeDouble(std::stod(body.queryParam("param"))));
+                            } else {
+                                params.push_back(ScriptValue::makeString(body.queryParam("param")));
+                            }
+                        }
+
+                        auto scriptReturn = mScriptManager->executeScript(scriptName->getValue(0, 0).stringValue, "onRunOnce", params).get();
                         auto scriptValue = std::get_if<ScriptValue>(&scriptReturn);
 
                         nlohmann::json resp;
@@ -63,6 +80,15 @@ std::shared_ptr<seasocks::Response> ApiHandler::handle(const seasocks::CrackedUr
                         nlohmann::json resp;
                         resp["name"] = name;
                         resp["id"] = res->getValue(0, 0).intValue;
+                        responseJson = std::move(resp);
+                    } else if(pUrl.path().at(2) == "delete" && body.hasParam("scriptid")) {
+                        auto id = std::stoll(body.queryParam("scriptid"));
+                        auto scriptName =
+                                mDb->query("SELECT name FROM scripts WHERE id=$1", {QueryValue::makeInt(id)})->getValue(0, 0).stringValue;
+                        mDb->query("DELETE FROM scripts WHERE id=$1", {QueryValue::makeInt(id)});
+                        mScriptManager->deleteScript(scriptName);
+                        nlohmann::json resp;
+                        resp = "ok";
                         responseJson = std::move(resp);
                     }
 
