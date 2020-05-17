@@ -4,6 +4,7 @@
 #include "Logger.hpp"
 #include "PostgreSQLDatabase.hpp"
 #include <cassert>
+#include <TcpClient.hpp>
 
 WrenForeignClassMethods bindForeignClass(WrenVM*, const char* module, const char* classname) {
     if(strcmp(classname, "Database") == 0) {
@@ -32,6 +33,28 @@ WrenForeignClassMethods bindForeignClass(WrenVM*, const char* module, const char
             },
         };
         return methods;
+    } else if(strcmp(classname, "TcpClient") == 0) {
+        WrenForeignClassMethods methods = {
+                .allocate = [] (WrenVM* pVM) {
+                    if(wrenGetSlotType(pVM, 1) != WREN_TYPE_STRING && wrenGetSlotType(pVM, 2) != WREN_TYPE_NUM) {
+                        wrenSetSlotNull(pVM, 0);
+                        return;
+                    }
+                    auto hostname = wrenGetSlotString(pVM, 1);
+                    auto port = wrenGetSlotDouble(pVM, 2);
+                    void *data = wrenSetSlotNewForeign(pVM, 0, 0, sizeof(TcpClient));
+                    if(port <= 0 || port > std::numeric_limits<uint16_t>::max()) {
+                        wrenSetSlotNull(pVM, 0);
+                        return;
+                    }
+                    new(data)TcpClient(hostname, port);
+                },
+                .finalize = [] (void *data) {
+                    auto* socket = (TcpClient*)data;
+                    socket->~TcpClient();
+                },
+        };
+        return methods;
     }
     WrenForeignClassMethods methods = {.allocate = nullptr, .finalize = nullptr};
     return methods;
@@ -39,7 +62,7 @@ WrenForeignClassMethods bindForeignClass(WrenVM*, const char* module, const char
 
 static void databaseQuerySync(WrenVM *pVM) {
     if(wrenGetSlotType(pVM, 1) == WREN_TYPE_STRING) {
-        PostgreSQLDatabase* db = (PostgreSQLDatabase*) wrenGetSlotForeign(pVM, 0);
+        auto* db = (PostgreSQLDatabase*) wrenGetSlotForeign(pVM, 0);
         const char *text = wrenGetSlotString(pVM, 1);
         wrenEnsureSlots(pVM, 2);
         try {
@@ -88,6 +111,45 @@ static void databaseQuerySync(WrenVM *pVM) {
     }
 }
 
+static void tcpClientIsConnected(WrenVM* pVM) {
+    auto* socket = (TcpClient*) wrenGetSlotForeign(pVM, 0);
+    wrenSetSlotBool(pVM, 0, socket->isConnected());
+}
+
+static void tcpClientSendByte(WrenVM* pVM) {
+    auto* socket = (TcpClient*) wrenGetSlotForeign(pVM, 0);
+    if(wrenGetSlotType(pVM, 1) != WREN_TYPE_STRING) {
+        wrenSetSlotString(pVM, 0, "Error: Pass a string");
+        return;
+    }
+    int length;
+    const auto* bytesPointer = (const uint8_t*) wrenGetSlotBytes(pVM, 1, &length);
+    if(length != 1) {
+        wrenSetSlotString(pVM, 0, "Error: Pass only one character");
+        return;
+    }
+    uint8_t byte = *bytesPointer;
+    try {
+        socket->sendByte(byte);
+        wrenSetSlotNull(pVM, 0);
+    } catch(std::exception& e) {
+        std::string err = std::string{"Error: "} + e.what();
+        wrenSetSlotString(pVM, 0, err.c_str());
+    }
+
+}
+
+static void tcpClientRecvByte(WrenVM* pVM) {
+    auto* socket = (TcpClient*) wrenGetSlotForeign(pVM, 0);
+    try {
+        auto byte = socket->recvByte();
+        wrenSetSlotBytes(pVM, 0, (char*) &byte, 1);
+    } catch(std::exception& e) {
+        std::string err = std::string{"Error: "} + e.what();
+        wrenSetSlotString(pVM, 0, err.c_str());
+    }
+}
+
 WrenForeignMethodFn bindForeignMethod( 
     WrenVM* vm, 
     const char* module, 
@@ -99,6 +161,15 @@ WrenForeignMethodFn bindForeignMethod(
         if(!isStatic && strcmp(signature, "query(_)") == 0) {
             return databaseQuerySync;
         }
+    } else if(strcmp(className, "TcpClient") == 0 && !isStatic) {
+        if(strcmp("isConnected()", signature) == 0) {
+            return tcpClientIsConnected;
+        } else if(strcmp("sendByte(_)", signature) == 0) {
+            return tcpClientSendByte;
+        } else if(strcmp("recvByte()", signature) == 0) {
+            return tcpClientRecvByte;
+        }
+
     }
     assert(false);
 }
@@ -110,5 +181,17 @@ foreign class Database {
     construct new(dbname, username, password, hostname, port) {}
     foreign query(request)
 }
+
+foreign class TcpClient {
+    construct new(ip, port) {}
+    foreign isConnected()
+    foreign sendByte(byte)
+    foreign recvByte()
+}
 )--";
 }
+/*
+
+    foreign sendString(str)
+    foreign recvString()
+    */

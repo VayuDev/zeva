@@ -98,6 +98,7 @@ nlohmann::json scriptValueToJson(ScriptValue && pVal) {
             return std::move(pVal.stringValue);
         case WREN_TYPE_NUM:
             return pVal.doubleValue;
+        case WREN_TYPE_FOREIGN:
         case WREN_TYPE_NULL:
             return nullptr;
         case WREN_TYPE_BOOL:
@@ -136,6 +137,7 @@ ScriptValue wrenValueToScriptValue(struct WrenVM *pVM, int pSlot) {
         case WrenType::WREN_TYPE_STRING:
             ret.stringValue = wrenGetSlotString(pVM, pSlot);
             break;
+        case WrenType::WREN_TYPE_FOREIGN:
         case WrenType::WREN_TYPE_NULL:
             break;
         case WrenType::WREN_TYPE_LIST: {

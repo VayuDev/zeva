@@ -36,7 +36,12 @@ int main() {
     for(size_t i = 0; i < scripts->getRowCount(); ++i) {
         auto name = scripts->getValue(i, 0).stringValue;
         auto code = scripts->getValue(i, 1).stringValue;
-        manager->addScript(name, code);
+        try {
+            manager->addScript(name, code);
+        } catch(std::exception& e){
+            log().error("Failed to handle script exception: %s", e.what());
+        }
+
     }
 
     auto router = std::make_shared<WebHttpRouter>();
