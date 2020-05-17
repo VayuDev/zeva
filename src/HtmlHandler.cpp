@@ -2,6 +2,7 @@
 #include <fstream>
 #include <filesystem>
 #include <seasocks/ResponseBuilder.h>
+#include <Util.hpp>
 
 std::shared_ptr<seasocks::Response> HtmlHandler::handle(const seasocks::CrackedUri &pUrl, const seasocks::Request &pRequest) {
     if(pUrl.path().at(0) == "html") {
@@ -11,9 +12,7 @@ std::shared_ptr<seasocks::Response> HtmlHandler::handle(const seasocks::CrackedU
         }
         filename = filename.substr(0, filename.length() - 1);
         if (std::filesystem::exists(filename)) {
-            std::ifstream t(filename);
-            std::string str((std::istreambuf_iterator<char>(t)),
-                            std::istreambuf_iterator<char>());
+            auto str = readWholeFile(filename);
             std::filesystem::path filepath{filename};
             seasocks::ResponseBuilder responseBuilder;
             if (filepath.extension() == ".css") {

@@ -54,6 +54,16 @@ std::shared_ptr<seasocks::Response> ApiHandler::handle(const seasocks::CrackedUr
                             responseCode = seasocks::ResponseCode::InternalServerError;
                         }
                         responseJson = std::move(resp);
+                    } else if(pUrl.path().at(2) == "create" && body.hasParam("scriptname")) {
+                        auto name = body.queryParam("scriptname");
+                        auto code = readWholeFile("assets/template.wren");
+                        auto res = mDb->query("INSERT INTO scripts (name, code) VALUES ($1, $2) RETURNING id",
+                                {QueryValue::makeString(name), QueryValue::makeString(code)});
+                        mScriptManager->addScript(name, code);
+                        nlohmann::json resp;
+                        resp["name"] = name;
+                        resp["id"] = res->getValue(0, 0).intValue;
+                        responseJson = std::move(resp);
                     }
 
                 }

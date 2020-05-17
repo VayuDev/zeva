@@ -1,3 +1,4 @@
+#include <fstream>
 #include "Util.hpp"
 #include "nlohmann/json.hpp"
 #include "Logger.hpp"
@@ -107,4 +108,11 @@ nlohmann::json scriptValueToJson(ScriptValue && pVal) {
             log().error("Unknown type %i", (int)pVal.type);
             assert(false);
     }
+}
+
+std::string readWholeFile(const std::filesystem::path& pPath) {
+    std::ifstream t(pPath);
+    std::string str((std::istreambuf_iterator<char>(t)),
+                    std::istreambuf_iterator<char>());
+    return str;
 }

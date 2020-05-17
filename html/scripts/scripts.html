@@ -7,12 +7,27 @@
         <script src="../js/index.js"></script>
         <script src="js/lib.js"></script>
         <script src="js/scripts.js"></script>
+        <style>
+            #createControls {
+                display: flex;
+                justify-content: space-between;
+                align-items: stretch;
+                margin-top: 10px;
+            }
+            #newScriptNameInput {
+                flex-grow: 100;
+            }
+        </style>
     </head>
     <body>
         <div class="main-grid">
             <div id="header"></div>
-            <div class="elementList">
-
+            <div class="spaceCenter">
+                <div class="elementList"></div>
+                <div id="createControls">
+                    <input type="text" id="newScriptNameInput">
+                    <button id="newScriptCreate" onclick="createNewScript()">Add</button>
+                </div>
             </div>
         </div>
     </body>
