@@ -16,6 +16,7 @@ public:
         double doubleValue;
         bool boolValue;
     };
+    std::vector<ScriptValue> listValue;
     std::string stringValue;
     static ScriptValue makeString(const std::string& pStr) {
         ScriptValue ret;

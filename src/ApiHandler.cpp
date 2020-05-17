@@ -52,7 +52,7 @@ std::shared_ptr<seasocks::Response> ApiHandler::handle(const seasocks::CrackedUr
                                     break;
                                 }
                             }
-                            if(number) {
+                            if(number && !paramString.empty()) {
                                 params.push_back(ScriptValue::makeDouble(std::stod(body.queryParam("param"))));
                             } else {
                                 params.push_back(ScriptValue::makeString(body.queryParam("param")));
@@ -62,15 +62,14 @@ std::shared_ptr<seasocks::Response> ApiHandler::handle(const seasocks::CrackedUr
                         auto scriptReturn = mScriptManager->executeScript(scriptName->getValue(0, 0).stringValue, "onRunOnce", params).get();
                         auto scriptValue = std::get_if<ScriptValue>(&scriptReturn);
 
-                        nlohmann::json resp;
-                        if(scriptValue) {
-                            resp["return"] = scriptValueToJson(std::move(*scriptValue));
-                        } else {
-                            log().error("Script failed: %s", std::get<std::string>(scriptReturn).c_str());
-                            resp["return"] = std::get<std::string>(scriptReturn);
-                            responseCode = seasocks::ResponseCode::InternalServerError;
+                        if(!scriptValue) {
+                            return seasocks::Response::error(seasocks::ResponseCode::InternalServerError, std::get<std::string>(scriptReturn));
                         }
+
+                        nlohmann::json resp;
+                        resp["return"] = scriptValueToJson(std::move(*scriptValue));
                         responseJson = std::move(resp);
+
                     } else if(pUrl.path().at(2) == "create" && body.hasParam("scriptname")) {
                         auto name = body.queryParam("scriptname");
                         auto code = readWholeFile("assets/template.wren");

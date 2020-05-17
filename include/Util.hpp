@@ -10,3 +10,4 @@ nlohmann::json queryResultToJsonMap(const QueryResult&);
 nlohmann::json scriptValueToJson(class ScriptValue&&);
 
 std::string readWholeFile(const std::filesystem::path& pPath);
+ScriptValue wrenValueToScriptValue(struct WrenVM* pVM, int pSlot);

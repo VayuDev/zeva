@@ -5,6 +5,7 @@
 #include <cstring>
 #include "ScriptLibs.hpp"
 #include <cassert>
+#include <Util.hpp>
 
 static std::string toFunctionSignature(const std::string& pName, size_t pArity) {
     bool first = true;
@@ -165,21 +166,7 @@ std::future<ScriptReturn> Script::execute(const std::string& pFunctionName, cons
         if(interpretResult != WrenInterpretResult::WREN_RESULT_SUCCESS) {
             throw std::runtime_error("Running script failed: " + popLastError());
         }
-        ScriptValue ret = {.type = wrenGetSlotType(mVM, 0) };
-        switch(ret.type) {
-        case WrenType::WREN_TYPE_BOOL:
-            ret.boolValue = wrenGetSlotBool(mVM, 0);
-            break;
-        case WrenType::WREN_TYPE_NUM:
-            ret.doubleValue = wrenGetSlotDouble(mVM, 0);
-            break;
-        case WrenType::WREN_TYPE_STRING:
-            ret.stringValue = wrenGetSlotString(mVM, 0);;
-            break;
-        default:
-            break;
-        }
-        return ret;
+        return wrenValueToScriptValue(mVM, 0);
     }));
     return std::async(std::launch::deferred, [this, this_id] {
         while(mShouldRun) {

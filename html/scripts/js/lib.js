@@ -1,5 +1,4 @@
-function logToOutputAndMsg(msg, isError) {
-    let result = JSON.parse(msg)["return"];
+function logToOutputAndMsg(result, isError) {
     let output = $("#output");
     if(output.length) {
         output.append(result + "\n");
@@ -24,7 +23,7 @@ function runScript(scriptid, param = null) {
             logToOutputAndMsg(err.responseText, true);
         },
         success: function(data, status, jqXHR) {
-            logToOutputAndMsg(jqXHR.responseText, false);
+            logToOutputAndMsg(JSON.parse(jqXHR.responseText)["return"], false);
         }
     })
 }

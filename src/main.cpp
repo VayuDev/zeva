@@ -15,6 +15,7 @@
 #include "HtmlHandler.hpp"
 #include "PostgreSQLDatabase.hpp"
 #include <fstream>
+
 int main() {
     auto conn = std::make_shared<PostgreSQLDatabase>("testdb");
     conn->query("CREATE TABLE IF NOT EXISTS scripts (id SERIAL, name TEXT UNIQUE, code TEXT)");
@@ -33,6 +34,7 @@ int main() {
     auto router = std::make_shared<WebHttpRouter>();
     router->addHandler(std::make_shared<ApiHandler>(conn, manager));
     router->addHandler(std::make_shared<HtmlHandler>());
+
 
     server.addPageHandler(router);
     server.startListening(9090);

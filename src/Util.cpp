@@ -102,6 +102,13 @@ nlohmann::json scriptValueToJson(ScriptValue && pVal) {
             return nullptr;
         case WREN_TYPE_BOOL:
             return pVal.boolValue;
+        case WREN_TYPE_LIST: {
+            auto list = nlohmann::json::array();
+            for(auto & i : pVal.listValue) {
+                list.push_back(scriptValueToJson(std::move(i)));
+            }
+            return list;
+        }
         case WREN_TYPE_UNKNOWN:
             return "(unknown)";
         default:
@@ -115,4 +122,34 @@ std::string readWholeFile(const std::filesystem::path& pPath) {
     std::string str((std::istreambuf_iterator<char>(t)),
                     std::istreambuf_iterator<char>());
     return str;
+}
+
+ScriptValue wrenValueToScriptValue(struct WrenVM *pVM, int pSlot) {
+    ScriptValue ret = {.type = wrenGetSlotType(pVM, pSlot) };
+    switch(ret.type) {
+        case WrenType::WREN_TYPE_BOOL:
+            ret.boolValue = wrenGetSlotBool(pVM, pSlot);
+            break;
+        case WrenType::WREN_TYPE_NUM:
+            ret.doubleValue = wrenGetSlotDouble(pVM, pSlot);
+            break;
+        case WrenType::WREN_TYPE_STRING:
+            ret.stringValue = wrenGetSlotString(pVM, pSlot);
+            break;
+        case WrenType::WREN_TYPE_NULL:
+            break;
+        case WrenType::WREN_TYPE_LIST: {
+            const size_t count = wrenGetListCount(pVM, pSlot);
+            wrenEnsureSlots(pVM, pSlot + 2);
+            for(size_t i = 0; i < count; ++i) {
+                wrenGetListElement(pVM, pSlot, i, pSlot + 1);
+                ret.listValue.push_back(wrenValueToScriptValue(pVM, pSlot + 1));
+            }
+            break;
+        }
+        default:
+            assert(false);
+            break;
+    }
+    return ret;
 }
