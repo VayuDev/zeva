@@ -6,6 +6,7 @@
     <link rel="stylesheet" type="text/css" href="../css/style.css">
     <script src="../js/index.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.11/ace.js"></script>
+    <script src="js/lib.js"></script>
     <script src="js/edit.js"></script>
     <style>
         #editor {
@@ -37,7 +38,7 @@
     <div id="content-grid">
         <div id="buttonList">
             <button onclick="saveScript()">Save</button>
-            <button onclick="runScript()">Run</button>
+            <button onclick="runScript(SCRIPTID)">Run</button>
             <button onclick="clearLog()">Clear log</button>
         </div>
         <div id="editor"></div>

@@ -18,32 +18,12 @@ function saveScript() {
         }
     })
 }
-function runScript() {
-    $.ajax({
-        type: "POST",
-        url: "/api/scripts/run",
-        data: {
-            "scriptid": SCRIPTID
-        },
-        error: function(err, textStatus, errorThrown) {
-            let result = JSON.parse(err.responseText)["return"]
-            $("#output").append(result);
-            let scroll=$('#output');
-            scroll.animate({scrollTop: scroll.prop("scrollHeight")});
-            notifyError(result);
-        },
-        success: function(data, status, jqXHR) {
-            let result = JSON.parse(jqXHR.responseText)["return"]
-            $("#output").append(result + "\n");
-            let scroll=$('#output');
-            scroll.animate({scrollTop: scroll.prop("scrollHeight")});
-            notify(result);
-        }
-    })
+
+function clearLog() {
+    $("#output").text("");
 }
 
 $(function() {
-
     $.getJSON("/api/scripts/get", "scriptid=" + SCRIPTID, function(json) {
         let row = json[0];
         $("#editor").text(row["code"])

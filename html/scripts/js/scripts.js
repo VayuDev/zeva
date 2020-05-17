@@ -9,6 +9,9 @@ $(function() {
             });
             div.append(edit);
             let run = $("<span></span>").text("Run");
+            run.click(function() {
+                runScript(data[i]["id"]);
+            });
             div.append(run);
             $(".elementList").append(div);
         }
