@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <stdexcept>
+#include <Logger.hpp>
 
 static void error(std::string pMsg) {
     char error[512];
@@ -25,8 +26,8 @@ TcpClient::TcpClient(const std::string& pHostname, uint16_t pPort) {
     if (mSockFd < 0)
         error("Failed to create socket");
     struct hostent *server = gethostbyname(pHostname.c_str());
-    if (server == NULL) {
-        throw std::runtime_error("ERROR, no such host\n");
+    if (server == nullptr) {
+        error("No such host: " + pHostname);
     }
     struct sockaddr_in serv_addr;
     bzero((char *) &serv_addr, sizeof(serv_addr));
@@ -43,6 +44,7 @@ TcpClient::TcpClient(const std::string& pHostname, uint16_t pPort) {
     //keepalive
     int val = 1;
     setsockopt(mSockFd, SOL_SOCKET, SO_KEEPALIVE, &val, sizeof(val));
+    log().warning("TcpClient constructed");
 }
 
 void TcpClient::sendByte(uint8_t pByte) {
@@ -90,6 +92,7 @@ bool TcpClient::isConnected() const {
 TcpClient::~TcpClient() {
     close(mSockFd);
     connected = false;
+    log().warning("TcpClient destructed");
 }
 
 void TcpClient::sendString(const char *pStr) {

@@ -36,6 +36,7 @@ WrenForeignClassMethods bindForeignClass(WrenVM*, const char* module, const char
     } else if(strcmp(classname, "TcpClient") == 0) {
         WrenForeignClassMethods methods = {
                 .allocate = [] (WrenVM* pVM) {
+                    wrenEnsureSlots(pVM, 3);
                     if(wrenGetSlotType(pVM, 1) != WREN_TYPE_STRING && wrenGetSlotType(pVM, 2) != WREN_TYPE_NUM) {
                         wrenSetSlotNull(pVM, 0);
                         return;
@@ -47,7 +48,12 @@ WrenForeignClassMethods bindForeignClass(WrenVM*, const char* module, const char
                         wrenSetSlotNull(pVM, 0);
                         return;
                     }
-                    new(data)TcpClient(hostname, port);
+                    try {
+                        new(data)TcpClient(hostname, port);
+                    } catch(std::exception& e) {
+                        log().error("Failed to construct a TcpClient: %s", e.what());
+                        wrenSetSlotNull(pVM, 0);
+                    }
                 },
                 .finalize = [] (void *data) {
                     auto* socket = (TcpClient*)data;
@@ -111,6 +117,15 @@ static void databaseQuerySync(WrenVM *pVM) {
     }
 }
 
+static void passToVM(WrenVM* pVM, int pSlot, const char* pType, const char *pMsg) {
+    wrenEnsureSlots(pVM, pSlot + 3);
+    wrenSetSlotNewList(pVM, 0);
+    wrenSetSlotString(pVM, 1, pType);
+    wrenSetSlotString(pVM, 2, pMsg);
+    wrenInsertInList(pVM, 0, 0, 1);
+    wrenInsertInList(pVM, 0, 1, 2);
+}
+
 static void tcpClientIsConnected(WrenVM* pVM) {
     auto* socket = (TcpClient*) wrenGetSlotForeign(pVM, 0);
     wrenSetSlotBool(pVM, 0, socket->isConnected());
@@ -119,34 +134,62 @@ static void tcpClientIsConnected(WrenVM* pVM) {
 static void tcpClientSendByte(WrenVM* pVM) {
     auto* socket = (TcpClient*) wrenGetSlotForeign(pVM, 0);
     if(wrenGetSlotType(pVM, 1) != WREN_TYPE_STRING) {
-        wrenSetSlotString(pVM, 0, "Error: Pass a string");
+        passToVM(pVM, 0, "error", "Pass a string");
         return;
     }
     int length;
     const auto* bytesPointer = (const uint8_t*) wrenGetSlotBytes(pVM, 1, &length);
     if(length != 1) {
-        wrenSetSlotString(pVM, 0, "Error: Pass only one character");
+        passToVM(pVM, 0, "error", "Pass only one character");
         return;
     }
     uint8_t byte = *bytesPointer;
     try {
         socket->sendByte(byte);
-        wrenSetSlotNull(pVM, 0);
+        wrenSetSlotString(pVM, 0, "ok");
     } catch(std::exception& e) {
-        std::string err = std::string{"Error: "} + e.what();
-        wrenSetSlotString(pVM, 0, err.c_str());
+        passToVM(pVM, 0, "error", e.what());
     }
-
 }
 
 static void tcpClientRecvByte(WrenVM* pVM) {
     auto* socket = (TcpClient*) wrenGetSlotForeign(pVM, 0);
     try {
         auto byte = socket->recvByte();
-        wrenSetSlotBytes(pVM, 0, (char*) &byte, 1);
+        std::string byteString{(char*) byte, 1};
+        passToVM(pVM, 0, "ok", byteString.c_str());
     } catch(std::exception& e) {
-        std::string err = std::string{"Error: "} + e.what();
-        wrenSetSlotString(pVM, 0, err.c_str());
+        passToVM(pVM, 0, "error", e.what());
+    }
+}
+
+static void tcpClientSendString(WrenVM* pVM) {
+    auto* socket = (TcpClient*) wrenGetSlotForeign(pVM, 0);
+    if(wrenGetSlotType(pVM, 1) != WREN_TYPE_STRING) {
+        passToVM(pVM, 0, "error", "Pass a string");
+        return;
+    }
+
+    const char* str = wrenGetSlotString(pVM, 1);
+    if(strlen(str) <= 0) {
+        passToVM(pVM, 0, "error", "Pass at least character");
+        return;
+    }
+    try {
+        socket->sendString(str);
+        wrenSetSlotString(pVM, 0, "ok");
+    } catch(std::exception& e) {
+        passToVM(pVM, 0, "error", e.what());
+    }
+}
+
+static void tcpClientRecvString(WrenVM* pVM) {
+    auto* socket = (TcpClient*) wrenGetSlotForeign(pVM, 0);
+    try {
+        auto bytes = socket->recvString();
+        passToVM(pVM, 0, "ok", bytes.c_str());
+    } catch(std::exception& e) {
+        passToVM(pVM, 0, "error", e.what());
     }
 }
 
@@ -168,6 +211,10 @@ WrenForeignMethodFn bindForeignMethod(
             return tcpClientSendByte;
         } else if(strcmp("recvByte()", signature) == 0) {
             return tcpClientRecvByte;
+        } else if(strcmp("sendString(_)", signature) == 0) {
+            return tcpClientSendString;
+        } else if(strcmp("recvString()", signature) == 0) {
+            return tcpClientRecvString;
         }
 
     }
@@ -187,11 +234,8 @@ foreign class TcpClient {
     foreign isConnected()
     foreign sendByte(byte)
     foreign recvByte()
+    foreign sendString(str)
+    foreign recvString()
 }
 )--";
 }
-/*
-
-    foreign sendString(str)
-    foreign recvString()
-    */
