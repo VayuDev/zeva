@@ -74,7 +74,7 @@ static void databaseQuerySync(WrenVM *pVM) {
         try {
             auto ret = db->query(text);
             //LOAD VALUES
-            wrenSetSlotString(pVM, 1, "Success!");
+            wrenSetSlotString(pVM, 1, "ok");
             wrenEnsureSlots(pVM, 4);
             wrenSetSlotNewList(pVM, 2);
             for(size_t r = 0; r < ret->getRowCount(); ++r) {
@@ -106,7 +106,7 @@ static void databaseQuerySync(WrenVM *pVM) {
 
             }
         } catch (std::exception& e) {
-            wrenSetSlotString(pVM, 1, "Error");
+            wrenSetSlotString(pVM, 1, "error");
             wrenSetSlotString(pVM, 2, e.what());
         }
         wrenSetSlotNewList(pVM, 0);

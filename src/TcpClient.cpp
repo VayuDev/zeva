@@ -44,7 +44,6 @@ TcpClient::TcpClient(const std::string& pHostname, uint16_t pPort) {
     //keepalive
     int val = 1;
     setsockopt(mSockFd, SOL_SOCKET, SO_KEEPALIVE, &val, sizeof(val));
-    log().warning("TcpClient constructed");
 }
 
 void TcpClient::sendByte(uint8_t pByte) {
@@ -92,7 +91,6 @@ bool TcpClient::isConnected() const {
 TcpClient::~TcpClient() {
     close(mSockFd);
     connected = false;
-    log().warning("TcpClient destructed");
 }
 
 void TcpClient::sendString(const char *pStr) {
