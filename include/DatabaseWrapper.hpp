@@ -23,6 +23,7 @@ public:
         int64_t intValue;
         double doubleValue;
         timeval timeValue;
+        bool boolValue;
     };
     std::string stringValue;
     QueryValueType type = QueryValueType::TNULL;

@@ -71,6 +71,10 @@ std::unique_ptr<QueryResult> PostgreSQLDatabase::query(std::string pQuery, std::
                         value.type = QueryValueType::TIME;
                         value.timeValue = *row[(int)c].as<std::optional<timeval>>();
                         break;
+                    case QueryValueType::BOOL:
+                        value.type = QueryValueType::BOOL;
+                        value.boolValue = row[(int)c].as<bool>();
+                        break;
                     default:
                         log().error("Unknown type %i", (int)row[(int)c].type());
                         assert(false);
@@ -132,8 +136,14 @@ PostgreSQLDatabase::PostgreSQLDatabase(std::string pDbName, std::string pUserNam
         if(name.find("text") == 0) {
             type = QueryValueType::STRING;
         }
+        if(name == "name") {
+            type = QueryValueType::STRING;
+        }
         if(name.find("timestamp") == 0) {
             type = QueryValueType::TIME;
+        }
+        if(name == "bool") {
+            type = QueryValueType::BOOL;
         }
         mTypes[oid] = type;
     }

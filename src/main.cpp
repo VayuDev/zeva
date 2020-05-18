@@ -19,7 +19,7 @@
 
 std::unique_ptr<seasocks::Server> gServer;
 
-void sighandler(int) {
+static void sighandler(int) {
     if(gServer) {
         gServer->terminate();
     }
@@ -28,6 +28,13 @@ void sighandler(int) {
 int main() {
     auto conn = std::make_shared<PostgreSQLDatabase>("testdb");
     conn->query("CREATE TABLE IF NOT EXISTS scripts (id SERIAL, name TEXT UNIQUE, code TEXT)");
+    try {
+        conn->query("CREATE TABLE protected (id SERIAL, name TEXT)");
+        conn->query("INSERT INTO protected (name) VALUES ('scripts'), ('protected')");
+    } catch(...) {
+
+    }
+
 
 
     auto manager = std::make_shared<ScriptManager>();

@@ -83,6 +83,9 @@ nlohmann::json queryResultToJsonMap(const QueryResult& pQueryResult) {
                 case QueryValueType::TNULL:
                     row[pQueryResult.getColumnNames().at(c)] = nullptr;
                     break;
+                case QueryValueType::BOOL:
+                    row[pQueryResult.getColumnNames().at(c)] = sval.boolValue;
+                    break;
                 default:
                     assert(false);
             }
