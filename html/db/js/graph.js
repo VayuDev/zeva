@@ -4,7 +4,7 @@ $(function() {
     let g = new Dygraph(
         // containing div
         document.getElementById("graphdiv"),
-        "/api/db/csv/" + TABLENAME,
+        "/api/db/csv/" + TABLENAME + "?truncateTimestamps=true",
         {
             rollPeriod: 1,
             showRoller: true

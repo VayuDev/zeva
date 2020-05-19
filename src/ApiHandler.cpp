@@ -40,7 +40,28 @@ WHERE table_schema = 'public')--");
                         auto tablename = pUrl.path().at(3);
                         auto pdb = std::dynamic_pointer_cast<PostgreSQLDatabase>(mDb);
                         assert(pdb);
-                        auto ret = pdb->performCopyToStdout("COPY (SELECT * FROM " + tablename + " ORDER BY id ASC)\n"
+                        std::string selection = "*";
+                        if(pUrl.hasParam("truncateTimestamps") && pUrl.queryParam("truncateTimestamps") == "true") {
+                            auto res = pdb->query(
+                                    "SELECT column_name,data_type FROM information_schema.columns WHERE table_name=$1 ORDER BY information_schema.columns.ordinal_position",
+                                    {QueryValue::makeString(tablename)});
+                            selection = "";
+                            for(size_t r = 0; r < res->getRowCount(); ++r) {
+                                const std::string& datatype = res->getValue(r, 1).stringValue;
+                                const std::string& columnName = res->getValue(r, 0).stringValue;
+                                if(datatype == "timestamp without time zone"
+                                    || datatype == "timestamp with time zone") {
+                                    selection += "date_trunc('second', " + columnName + ") AS " + columnName;
+                                } else {
+                                    selection += columnName;
+                                }
+                                if(r != res->getRowCount() - 1) {
+                                    selection += ",";
+                                }
+                            }
+                            log().warning("Selection: %s", selection.c_str());
+                        }
+                        auto ret = pdb->performCopyToStdout("COPY (SELECT " + selection + " FROM " + tablename + " ORDER BY id ASC)\n"
                                    " TO STDOUT WITH (DELIMITER ',', FORMAT CSV, HEADER);");
                         return seasocks::Response::textResponse(ret);
                     }

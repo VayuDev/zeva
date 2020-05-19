@@ -140,10 +140,7 @@ PostgreSQLDatabase::PostgreSQLDatabase(std::string pDbName, std::string pUserNam
         if(name.find("int") == 0) {
             type = QueryValueType::INTEGER;
         }
-        if(name.find("text") == 0) {
-            type = QueryValueType::STRING;
-        }
-        if(name == "name") {
+        if(name == "name" || name == "varchar" || name == "text") {
             type = QueryValueType::STRING;
         }
         if(name.find("timestamp") == 0) {
@@ -186,8 +183,6 @@ std::string PostgreSQLDatabase::performCopyToStdout(const std::string& pQuery) {
     }
     PQclear(res);
     PQfinish(conn);
-
-    log().info(output.c_str());
 
     return output;
 }
