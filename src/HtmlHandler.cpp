@@ -5,6 +5,7 @@
 #include <Util.hpp>
 
 std::shared_ptr<seasocks::Response> HtmlHandler::handle(const seasocks::CrackedUri &pUrl, const seasocks::Request &pRequest) {
+    (void) pRequest;
     if(pUrl.path().at(0) == "html") {
         std::string filename;
         for (const auto &e: pUrl.path()) {

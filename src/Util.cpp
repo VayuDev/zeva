@@ -129,7 +129,10 @@ std::string readWholeFile(const std::filesystem::path& pPath) {
 }
 
 ScriptValue wrenValueToScriptValue(struct WrenVM *pVM, int pSlot) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
     ScriptValue ret = {.type = wrenGetSlotType(pVM, pSlot) };
+#pragma GCC diagnostic pop
     switch(ret.type) {
         case WrenType::WREN_TYPE_BOOL:
             ret.boolValue = wrenGetSlotBool(pVM, pSlot);

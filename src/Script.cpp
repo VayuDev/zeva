@@ -22,10 +22,6 @@ static std::string toFunctionSignature(const std::string& pName, size_t pArity) 
     return ret;
 }
 
-Script::Script(const std::filesystem::path& pSourcePath) {
-    
-}
-
 void Script::create(const std::string& pModule, const std::string& pCode) {
     mModuleName = pModule;
     WrenConfiguration config; 

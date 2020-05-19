@@ -45,7 +45,6 @@ using ScriptReturn = std::variant<ScriptValue, std::string>;
 
 class Script final {
 public:
-    Script(const std::filesystem::path& pSourcePath);
     Script(const std::string& pModule, const std::string& pCode);
     Script(const Script&) = delete;
     Script(Script&&) = delete;

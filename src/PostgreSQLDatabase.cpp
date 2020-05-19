@@ -17,7 +17,7 @@ namespace pqxx {
         static void from_string(const char Str[], std::optional<timeval> &Obj) {
             struct tm tm;
             strptime(Str, "%Y-%m-%d %H:%M:%S", &tm);
-            Obj = timeval{.tv_sec = mktime(&tm)};
+            Obj = timeval{.tv_sec = mktime(&tm), .tv_usec = 0};
         }
     };
 }
@@ -31,7 +31,10 @@ std::unique_ptr<QueryResult> PostgreSQLDatabase::query(std::string pQuery, std::
     if(pPlaceholders.empty()) {
         r = w.exec(pQuery);
     } else {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
         auto inv = w.prepared(pQuery);
+#pragma GCC diagnostic pop
         for(const auto& param: pPlaceholders) {
             switch(param.type) {
                 case QueryValueType::INTEGER:

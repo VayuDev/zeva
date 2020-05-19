@@ -7,6 +7,7 @@
 #include <TcpClient.hpp>
 
 WrenForeignClassMethods bindForeignClass(WrenVM*, const char* module, const char* classname) {
+    (void) module;
     if(strcmp(classname, "Database") == 0) {
         WrenForeignClassMethods methods = {
             .allocate = [] (WrenVM* pVM) {
@@ -156,7 +157,7 @@ static void tcpClientRecvByte(WrenVM* pVM) {
     auto* socket = (TcpClient*) wrenGetSlotForeign(pVM, 0);
     try {
         auto byte = socket->recvByte();
-        std::string byteString{(char*) byte, 1};
+        std::string byteString{static_cast<char>(byte), 1};
         passToVM(pVM, 0, "ok", byteString.c_str());
     } catch(std::exception& e) {
         passToVM(pVM, 0, "error", e.what());
@@ -200,6 +201,8 @@ WrenForeignMethodFn bindForeignMethod(
     bool isStatic, 
     const char* signature) 
 {
+    (void)vm;
+    (void)module;
     if(strcmp(className, "Database") == 0) {
         if(!isStatic && strcmp(signature, "query(_)") == 0) {
             return databaseQuerySync;
