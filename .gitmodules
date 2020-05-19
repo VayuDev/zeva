@@ -7,3 +7,6 @@
 [submodule "json"]
 	path = json
 	url = https://github.com/nlohmann/json.git
+[submodule "html/csv-to-html-table"]
+	path = html/csv-to-html-table
+	url = https://github.com/derekeder/csv-to-html-table.git

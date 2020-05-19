@@ -63,6 +63,9 @@ WHERE table_schema = 'public')--");
                                     selection += ",";
                                 }
                             }
+                        } else if(pUrl.path().at(2) == "json") {
+                            auto jsonStr = mDb->query("SELECT array_to_json(array_agg(row_to_json(r))) FROM scripts AS r")->getValue(0, 0).stringValue;
+                            return seasocks::Response::jsonResponse(jsonStr);
                         }
                         auto ret = pdb->performCopyToStdout("COPY (SELECT " + selection + " FROM " + tablename + " ORDER BY " + firstColumnName + " ASC)\n"
                                    " TO STDOUT WITH (DELIMITER ',', FORMAT CSV, HEADER);");
