@@ -23,8 +23,10 @@ public:
     PostgreSQLDatabase(std::string pDbName, std::string pUserName = "postgres", std::string pPassword = "postgres", std::string pHost = "127.0.0.1", uint16_t pPort = 5432);
     ~PostgreSQLDatabase();
     virtual std::unique_ptr<QueryResult> query(std::string pQuery, std::vector<QueryValue> pPlaceholders = {}) override;
+    std::string performCopyToStdout(const std::string& pQuery);
 
 private:
     std::unique_ptr<pqxx::connection> mConnection;
     std::map<pqxx::oid, QueryValueType> mTypes;
+    std::string mConnectString;
 };

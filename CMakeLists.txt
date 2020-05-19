@@ -40,8 +40,8 @@ file(GLOB_RECURSE WREN_SOURCES
 add_definitions(-D_LINUX_)
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(pqxx REQUIRED)
+pkg_check_modules(pqxx libpq REQUIRED)
 
 add_executable(ZeVa2_0 ${SOURCES} ${HEADERS} ${WREN_SOURCES})
 
-target_link_libraries(ZeVa2_0 pthread zstd seasocks nlohmann_json::nlohmann_json pqxx)
+target_link_libraries(ZeVa2_0 pthread zstd seasocks nlohmann_json::nlohmann_json pqxx pq)

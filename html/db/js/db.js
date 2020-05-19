@@ -2,12 +2,12 @@ function addTable(name, is_protected, prepend) {
     let div = $("<div></div>");
     div.append($("<span></span>").text(name).addClass("list-element"));
 
-    let table = $("<span></span>").addClass("list-element-button").text("Table");
+    let table = $("<span></span>").addClass("list-element-button").text("Graph");
     table.click(function () {
         window.location = "/html/db/graph.html?tablename=" + name;
     });
     div.append(table);
-    let graph = $("<span></span>").text("Graph");
+    let graph = $("<span></span>").text("Table");
     graph.click(function() {
         window.location = "/html/db/table.html?tablename=" + name;
     });

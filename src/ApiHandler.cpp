@@ -6,6 +6,8 @@
 #include "nlohmann/json.hpp"
 #include "Logger.hpp"
 #include "ScriptManager.hpp"
+#include "PostgreSQLDatabase.hpp"
+#include <sstream>
 
 std::shared_ptr<seasocks::Response> ApiHandler::handle(const seasocks::CrackedUri &pUrl, const seasocks::Request &pRequest) {
 
@@ -30,7 +32,17 @@ std::shared_ptr<seasocks::Response> ApiHandler::handle(const seasocks::CrackedUr
                     if(pUrl.path().at(2) == "all") {
                         responseData = mDb->query(
                                 R"--(
-SELECT table_name AS name,(table_name IN (SELECT name FROM protected)) AS is_protected FROM information_schema.tables WHERE table_schema = 'public')--");
+SELECT table_name AS name,(table_name IN (SELECT name FROM protected)) AS is_protected
+FROM information_schema.tables
+WHERE table_schema = 'public')--");
+                    } else if(pUrl.path().at(2) == "csv" && pUrl.path().size() == 4) {
+                        //TODO sanitize tablename
+                        auto tablename = pUrl.path().at(3);
+                        auto pdb = std::dynamic_pointer_cast<PostgreSQLDatabase>(mDb);
+                        assert(pdb);
+                        auto ret = pdb->performCopyToStdout("COPY (SELECT * FROM " + tablename + " ORDER BY id ASC)\n"
+                                   " TO STDOUT WITH (DELIMITER ',', FORMAT CSV, HEADER);");
+                        return seasocks::Response::textResponse(ret);
                     }
                 }
                 break;
@@ -39,8 +51,6 @@ SELECT table_name AS name,(table_name IN (SELECT name FROM protected)) AS is_pro
                 seasocks::CrackedUri body("/test?" + s);
                 //POST SCRIPTS
                 if (pUrl.path().at(1) == "scripts") {
-
-
                     if (pUrl.path().at(2) == "update" && body.hasParam("scriptid") && body.hasParam("code")) {
                         log().info("Posting new script!");
                         auto idStr = body.queryParam("scriptid");

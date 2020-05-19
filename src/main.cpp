@@ -34,7 +34,7 @@ int main() {
     } catch(...) {
 
     }
-
+    conn->performCopyToStdout("COPY (SELECT * FROM scripts ORDER BY id ASC) TO STDOUT WITH (DELIMITER ',', FORMAT CSV, HEADER);");
 
 
     auto manager = std::make_shared<ScriptManager>();

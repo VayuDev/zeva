@@ -3,7 +3,9 @@
 #include <pqxx/pqxx>
 #include <cassert>
 #include <pqxx/util.hxx>
+#include <pqxx/tablereader.hxx>
 #include <pqxx/strconv.hxx>
+#include "libpq-fe.h"
 
 namespace pqxx {
     template<> struct PQXX_LIBEXPORT string_traits<std::optional<timeval>>
@@ -49,7 +51,12 @@ std::unique_ptr<QueryResult> PostgreSQLDatabase::query(std::string pQuery, std::
 
     auto res = std::make_unique<PostgreSQLQueryResult>();
     for(size_t i = 0; i < r.columns(); ++i) {
-        res->mColumns.emplace_back(r.column_name(i));
+        try {
+            res->mColumns.emplace_back(r.column_name(i));
+        } catch(...) {
+            res->mColumns.emplace_back("");
+        }
+
     }
     for (pqxx::result::const_iterator row = r.begin(); row != r.end(); ++row) {
         res->mData.emplace_back();
@@ -117,12 +124,12 @@ void PostgreSQLQueryResult::log() const {
 
 PostgreSQLDatabase::PostgreSQLDatabase(std::string pDbName, std::string pUserName, std::string pPassword,
                                        std::string pHost, uint16_t pPort) {
-    mConnection = std::make_unique<pqxx::connection>(
-                "dbname = " + pDbName +
-                " user = " + pUserName +
-                " password = " + pPassword +
-                " hostaddr = " + pHost +
-                " port = " + std::to_string(pPort));
+    mConnectString = "dbname = " + pDbName +
+                     " user = " + pUserName +
+                     " password = " + pPassword +
+                     " hostaddr = " + pHost +
+                     " port = " + std::to_string(pPort);
+    mConnection = std::make_unique<pqxx::connection>(mConnectString);
     pqxx::nontransaction n{*mConnection};
     pqxx::result r{n.exec("select typname, oid from pg_type;")};
 
@@ -151,6 +158,38 @@ PostgreSQLDatabase::PostgreSQLDatabase(std::string pDbName, std::string pUserNam
 
 PostgreSQLDatabase::~PostgreSQLDatabase() {
     mConnection->disconnect();
+}
+
+std::string PostgreSQLDatabase::performCopyToStdout(const std::string& pQuery) {
+    auto conn = PQconnectdb(mConnectString.c_str());
+    auto res = PQexec(conn, pQuery.c_str());
+    char *buff;
+    std::string output;
+    int ret;
+    while(true) {
+        ret = PQgetCopyData(conn, &buff, 0);
+        if(ret <  0){
+            break;
+        }
+        if(buff) {
+            output.append(buff, ret);
+            PQfreemem(buff);
+        }
+    }
+    if(ret == -2) {
+        throw std::runtime_error(std::string{"COPY data transfer failed "} + PQerrorMessage(conn));
+    }
+    PQclear(res);
+    res = PQgetResult(conn);
+    if(PQresultStatus(res) != PGRES_COMMAND_OK) {
+        throw std::runtime_error("PostgreSQL returned not ok!");
+    }
+    PQclear(res);
+    PQfinish(conn);
+
+    log().info(output.c_str());
+
+    return output;
 }
 
 size_t PostgreSQLQueryResult::getRowCount() const {
