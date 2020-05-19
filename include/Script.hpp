@@ -36,6 +36,9 @@ public:
         ret.doubleValue = pDouble;
         return ret;
     }
+    static ScriptValue makeNull() {
+        return ScriptValue{};
+    }
 };
 
 using ScriptReturn = std::variant<ScriptValue, std::string>;

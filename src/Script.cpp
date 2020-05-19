@@ -158,6 +158,9 @@ std::future<ScriptReturn> Script::execute(const std::string& pFunctionName, cons
                 case WREN_TYPE_BOOL:
                     wrenSetSlotBool(mVM, i + 1, pParamSetter.at(i).boolValue);
                     break;
+                case WREN_TYPE_NULL:
+                    wrenSetSlotNull(mVM, i + 1);
+                    break;
                 default:
                     assert(false);
             }

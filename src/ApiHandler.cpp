@@ -98,7 +98,9 @@ WHERE table_schema = 'public')--");
                                     break;
                                 }
                             }
-                            if (number && !paramString.empty()) {
+                            if(paramString.empty()) {
+                                params.push_back(ScriptValue::makeNull());
+                            } else if (number) {
                                 params.push_back(ScriptValue::makeDouble(std::stod(body.queryParam("param"))));
                             } else {
                                 params.push_back(ScriptValue::makeString(body.queryParam("param")));
