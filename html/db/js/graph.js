@@ -1,15 +1,16 @@
 const params = new URLSearchParams(window.location.search);
 const TABLENAME = params.get("tablename");
+g = null;
 $(function() {
-    let g = new Dygraph(
+    g = new Dygraph(
         // containing div
         document.getElementById("graphdiv"),
-        "/api/db/csv/" + TABLENAME + "?truncateTimestamps=true",
+        "/api/db/csv/" + TABLENAME + "?truncateTimestamps=true&skipId=true",
         {
             rollPeriod: 1,
             showRoller: true
         }
     );
-    $(".main-grid").resize(() => {g.resize();});
+    $("#graphdiv").resize(() => {g.resize();});
     $(window).resize(() => {g.resize();});
 })
