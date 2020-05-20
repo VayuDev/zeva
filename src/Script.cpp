@@ -92,7 +92,8 @@ void Script::create(const std::string& pModule, const std::string& pCode) {
     mExecuteThread.emplace([this] {
         while(mShouldRun) {
             std::unique_lock<std::mutex> lock(mQueueMutex);
-            if(!mWorkQueue.empty()) {
+            mQueueAwaitCV.wait(lock);
+            while(!mWorkQueue.empty()) {
                 auto& work = mWorkQueue.front();
                 std::variant<ScriptValue, std::basic_string<char>> ret;
                 try {
@@ -103,9 +104,6 @@ void Script::create(const std::string& pModule, const std::string& pCode) {
                 mResultList.emplace_front(std::make_pair(work.first, ret));
                 mWorkQueue.pop();
             }
-            lock.unlock();
-            using namespace std::chrono_literals;
-            std::this_thread::sleep_for(1ms);
         }
     });
 }
@@ -115,7 +113,8 @@ Script::Script(const std::string& pModule, const std::string& pCode) {
 
 Script::~Script() {
     mShouldRun = false;
-    std::unique_lock<std::mutex> lock(mQueueMutex);
+    mQueueAwaitCV.notify_all();
+
     if(mExecuteThread && mExecuteThread->joinable()) {
         mExecuteThread->join();
     }
@@ -167,6 +166,8 @@ std::future<ScriptReturn> Script::execute(const std::string& pFunctionName, cons
         }
         return wrenValueToScriptValue(mVM, 0);
     }));
+    lock.unlock();
+    mQueueAwaitCV.notify_all();
     return std::async(std::launch::deferred, [this, this_id] {
         while(mShouldRun) {
             std::unique_lock<std::mutex> lock{mQueueMutex};

@@ -65,7 +65,7 @@ public:
     inline void addListener(std::function<void(const std::string&)> pListener) {
         mListeners.emplace_back(std::move(pListener));
     }
-    virtual void awaitNotifications(int millis) {};
+    virtual void awaitNotifications(int millis) {(void)millis;};
 protected:
     void onNotification(const std::string& pPayload);
 private:

@@ -66,8 +66,10 @@ int main() {
     while(true) {
         switch(gServer->poll(1)) {
             case seasocks::Server::PollResult::Error:
+                gServer.reset();
                 return 1;
             case seasocks::Server::PollResult::Terminated:
+                gServer.reset();
                 return 0;
             case seasocks::Server::PollResult::Continue:
                 break;

@@ -67,6 +67,7 @@ private:
     std::atomic<bool> mShouldRun = true;
     std::atomic<int> mIdCounter = 0;
     std::mutex mQueueMutex;
+    std::condition_variable mQueueAwaitCV;
     std::optional<std::thread> mExecuteThread;
     
     std::queue<std::pair<int, std::function<ScriptReturn()>>> mWorkQueue;
