@@ -5,7 +5,7 @@ class ScriptModule is Script {
     onRunOnce(param) {
     }
 
-    onFileChange(event, filename) {
+    onTableChanged(filename, event) {
 
     }
 

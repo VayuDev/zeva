@@ -7,7 +7,7 @@ void attachNotifyTriggerToAllTables(DatabaseWrapper& pDb) {
     pDb.query(R"(
 CREATE OR REPLACE FUNCTION table_changed() RETURNS trigger AS $BODY$
     BEGIN
-       PERFORM pg_notify('onTableChanged', TG_OP || '%' || TG_TABLE_NAME);
+       PERFORM pg_notify('onTableChanged', TG_TABLE_NAME || '%' || TG_OP);
        RETURN NEW;
     END;
     $BODY$ LANGUAGE plpgsql;
