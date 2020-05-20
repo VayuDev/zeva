@@ -126,13 +126,15 @@ void PostgreSQLQueryResult::log() const {
 }
 
 PostgreSQLDatabase::PostgreSQLDatabase(std::string pDbName, std::string pUserName, std::string pPassword,
-                                       std::string pHost, uint16_t pPort) {
-    mConnectString = "dbname = " + pDbName +
-                     " user = " + pUserName +
-                     " password = " + pPassword +
-                     " hostaddr = " + pHost +
-                     " port = " + std::to_string(pPort);
-    mConnection = std::make_unique<pqxx::connection>(mConnectString);
+                                       std::string pHost, uint16_t pPort)
+                                       : mConnectString("dbname = " + pDbName +
+                                                        " user = " + pUserName +
+                                                        " password = " + pPassword +
+                                                        " hostaddr = " + pHost +
+                                                        " port = " + std::to_string(pPort)),
+                                         mConnection(std::make_unique<pqxx::connection>(mConnectString)),
+                                         mNotificationReceiver(*this) {
+
     pqxx::nontransaction n{*mConnection};
     pqxx::result r{n.exec("select typname, oid from pg_type;")};
 
@@ -190,6 +192,10 @@ std::string PostgreSQLDatabase::performCopyToStdout(const std::string& pQuery) {
     return output;
 }
 
+void PostgreSQLDatabase::awaitNotifications(int millis) {
+    mConnection->await_notification(0, millis * 1000);
+}
+
 size_t PostgreSQLQueryResult::getRowCount() const {
     return mData.size();
 }
@@ -204,4 +210,12 @@ const QueryValue &PostgreSQLQueryResult::getValue(size_t pRow, size_t pColumn) c
 
 const std::vector<std::string> &PostgreSQLQueryResult::getColumnNames() const {
     return mColumns;
+}
+
+void PostgreSQLDatabase::NotificationReceiver::operator()(const std::string &payload, int) {
+    mDb.onNotification(payload);
+}
+
+PostgreSQLDatabase::NotificationReceiver::NotificationReceiver(PostgreSQLDatabase &pDb)
+: pqxx::notification_receiver(*pDb.mConnection, "tableChange"), mDb(pDb) {
 }

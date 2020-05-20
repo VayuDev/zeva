@@ -4,6 +4,7 @@
 #include <list>
 #include <vector>
 #include <variant>
+#include <functional>
 #include <memory>
 #include <ctime>
 
@@ -61,4 +62,12 @@ class DatabaseWrapper {
 public:
     virtual ~DatabaseWrapper() = default;
     virtual std::unique_ptr<QueryResult> query(std::string pQuery, std::vector<QueryValue> pPlaceholders = {}) = 0;
+    inline void addListener(std::function<void(const std::string&)> pListener) {
+        mListeners.emplace_back(std::move(pListener));
+    }
+    virtual void awaitNotifications(int millis) {};
+protected:
+    void onNotification(const std::string& pPayload);
+private:
+    std::list<std::function<void(const std::string& pPayload)>> mListeners;
 };

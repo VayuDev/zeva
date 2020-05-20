@@ -24,9 +24,20 @@ public:
     ~PostgreSQLDatabase();
     virtual std::unique_ptr<QueryResult> query(std::string pQuery, std::vector<QueryValue> pPlaceholders = {}) override;
     std::string performCopyToStdout(const std::string& pQuery);
+    void awaitNotifications(int millis) override;
 
 private:
+    std::string mConnectString;
     std::unique_ptr<pqxx::connection> mConnection;
     std::map<pqxx::oid, QueryValueType> mTypes;
-    std::string mConnectString;
+
+class NotificationReceiver : public pqxx::notification_receiver {
+public:
+    explicit NotificationReceiver(PostgreSQLDatabase& pDb);
+private:
+    void operator()(std::string const &payload, int backend_pid) override;
+    PostgreSQLDatabase& mDb;
+};
+    NotificationReceiver mNotificationReceiver;
+
 };

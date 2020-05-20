@@ -35,7 +35,9 @@ int main() {
 
     }
     conn->performCopyToStdout("COPY (SELECT * FROM scripts ORDER BY id ASC) TO STDOUT WITH (DELIMITER ',', FORMAT CSV, HEADER);");
-
+    conn->addListener([](const std::string& pPayload) {
+        log().error(pPayload.c_str());
+    });
 
     auto manager = std::make_shared<ScriptManager>();
     //load scripts
@@ -48,7 +50,6 @@ int main() {
         } catch(std::exception& e){
             log().error("Failed to handle script exception: %s", e.what());
         }
-
     }
 
     auto router = std::make_shared<WebHttpRouter>();
@@ -62,5 +63,15 @@ int main() {
 
     signal(SIGTERM, sighandler);
     signal(SIGINT, sighandler);
-    gServer->loop();
+    while(true) {
+        switch(gServer->poll(1)) {
+            case seasocks::Server::PollResult::Error:
+                return 1;
+            case seasocks::Server::PollResult::Terminated:
+                return 0;
+            case seasocks::Server::PollResult::Continue:
+                break;
+        }
+        conn->awaitNotifications(1);
+    }
 }
