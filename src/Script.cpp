@@ -49,7 +49,7 @@ void Script::create(const std::string& pModule, const std::string& pCode) {
         auto sign = toFunctionSignature(pFuncName, pArity);
         mFunctions[pFuncName] = wrenMakeCallHandle(mVM, sign.c_str());
     };
-    append("onFileChange", 2);
+    append("onTableChanged", 2);
     append("onRunOnce", 1);
     append("onAudio", 2);
     append("new", 0);
@@ -62,7 +62,7 @@ void Script::create(const std::string& pModule, const std::string& pCode) {
     "  \n"
     "  onRunOnce(a) {\n"
     "  }\n"
-    "  onFileChange(a, b) {\n"
+    "  onTableChanged(a, b) {\n"
     "  }\n"
     "  onAudio(a, b) {\n"
     "  }\n"

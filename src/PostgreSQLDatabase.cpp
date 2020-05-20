@@ -217,5 +217,5 @@ void PostgreSQLDatabase::NotificationReceiver::operator()(const std::string &pay
 }
 
 PostgreSQLDatabase::NotificationReceiver::NotificationReceiver(PostgreSQLDatabase &pDb)
-: pqxx::notification_receiver(*pDb.mConnection, "tableChange"), mDb(pDb) {
+: pqxx::notification_receiver(*pDb.mConnection, "onTableChanged"), mDb(pDb) {
 }

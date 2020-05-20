@@ -16,6 +16,7 @@
 #include "PostgreSQLDatabase.hpp"
 #include <fstream>
 #include <signal.h>
+#include "DatabaseHelper.hpp"
 
 std::unique_ptr<seasocks::Server> gServer;
 
@@ -34,12 +35,20 @@ int main() {
     } catch(...) {
 
     }
-    conn->performCopyToStdout("COPY (SELECT * FROM scripts ORDER BY id ASC) TO STDOUT WITH (DELIMITER ',', FORMAT CSV, HEADER);");
-    conn->addListener([](const std::string& pPayload) {
-        log().error(pPayload.c_str());
+    DatabaseHelper::attachNotifyTriggerToAllTables(*conn);
+    auto manager = std::make_shared<ScriptManager>();
+    conn->addListener([manager](const std::string& pPayload) {
+        auto splitterLocation = pPayload.find('%');
+        if(splitterLocation == std::string::npos) {
+            log().error("Database notify isn't formatted correctly! %s", pPayload.c_str());
+        } else {
+            manager->onTableChanged(
+                    pPayload.substr(0, splitterLocation),
+                    pPayload.substr(splitterLocation + 1, pPayload.length() - splitterLocation - 1));
+        }
+
     });
 
-    auto manager = std::make_shared<ScriptManager>();
     //load scripts
     auto scripts = conn->query("SELECT name,code FROM scripts");
     for(size_t i = 0; i < scripts->getRowCount(); ++i) {

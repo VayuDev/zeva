@@ -20,3 +20,9 @@ void ScriptManager::deleteScript(const std::string &pName) {
         mScripts.erase(pName);
     }
 }
+
+void ScriptManager::onTableChanged(const std::string& pTable, const std::string &pType) {
+    for(auto& script: mScripts) {
+        script.second.execute("onTableChanged", {ScriptValue::makeString(pTable), ScriptValue::makeString(pType)});
+    }
+}
