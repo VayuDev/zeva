@@ -19,6 +19,7 @@ Logger::Logger(std::string pName)
 }
 
 void Logger::log(Level level, const char* message) {
+    std::lock_guard<std::mutex> lock(mMutex);
     std::string str{message};
     sanitize(str);
     size_t index;
