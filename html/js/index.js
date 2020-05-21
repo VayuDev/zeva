@@ -51,6 +51,48 @@ $(function() {
             $("#nav_script").addClass("selected");
         } else if(pathname.startsWith("/html/db")) {
             $("#nav_db").addClass("selected");
+        } else if(pathname.startsWith("/html/log")) {
+            $("#nav_log").addClass("selected");
+        } else if(pathname.startsWith("/html/apps")) {
+            $("#nav_apps").addClass("selected");
         }
     });
 })
+
+class ReconnectingSocket {
+    constructor(suburl, onopen = () => { }, onmsg = (msg) => { }, onclose = () => { }) {
+        this.onopen = onopen;
+        this.onmsg = onmsg;
+        this.onclose = onclose;
+        this.url = (location.protocol !== 'https:' ? "ws://" : "wss://") + location.host + suburl;
+        this.connect();
+    }
+
+    connect() {
+        this.socket = new WebSocket(this.url);
+        console.log("Trying to connect...");
+        this.socket.addEventListener("open", () => {
+            console.log("Connected!");
+            this.onopen();
+        });
+        this.socket.addEventListener("message", this.onmsg);
+        let err = (e) => {
+            if (this.socket.readyState === WebSocket.CLOSING || this.socket.readyState === WebSocket.CLOSED) {
+                console.warn("Connection lost!");
+                this.onclose()
+                setTimeout(() => { this.connect() }, 1000)
+            }
+        };
+        this.socket.addEventListener("close", err);
+        this.socket.addEventListener("error", err);
+    }
+
+    send(msg) {
+        console.debug("WS Sending: '" + msg + "'");
+        this.socket.send(msg);
+    }
+
+    isOpen() {
+        return this.socket.readyState === WebSocket.OPEN
+    }
+}

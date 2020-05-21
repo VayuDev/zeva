@@ -9,6 +9,7 @@
 #include <cassert>
 
 std::shared_ptr<seasocks::Response> WebHttpRouter::handle(const seasocks::Request &request) {
+    if (request.verb() == seasocks::Request::Verb::WebSocket) return seasocks::Response::unhandled();
 
     seasocks::CrackedUri path{request.getRequestUri()};
     if(path.path().empty()) {

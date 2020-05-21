@@ -17,6 +17,7 @@
 #include <fstream>
 #include <signal.h>
 #include "DatabaseHelper.hpp"
+#include <ModuleLog.hpp>
 
 std::unique_ptr<seasocks::Server> gServer;
 
@@ -65,10 +66,12 @@ int main() {
     router->addHandler(std::make_shared<ApiHandler>(conn, manager));
     router->addHandler(std::make_shared<HtmlHandler>());
 
-    auto webLogger = std::make_shared<Logger>("Seasocks");
+    auto webLogger = Logger::create("Seasocks");
     gServer = std::make_unique<seasocks::Server>(webLogger);
     gServer->addPageHandler(router);
+    gServer->addWebSocketHandler("/api/log/ws_log", std::make_shared<ModuleLogWebsocket>());
     gServer->startListening(9090);
+
 
     signal(SIGTERM, sighandler);
     signal(SIGINT, sighandler);
