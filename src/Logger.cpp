@@ -15,9 +15,9 @@ std::map<std::string, std::shared_ptr<Logger>> Logger::sLogRegistry;
 std::shared_mutex Logger::sLogRegistryMutex;
 
 static void sanitize(std::string& pStr) {
-    for(size_t i = 0;i < pStr.size(); ++i) {
-        if((pStr.at(i) < '0' || pStr.at(i) > 'z') && pStr.at(i) != ',' && pStr.at(i) != ' ' && pStr.at(i) != '!' && pStr.at(i) != '.') {
-            pStr.at(i) = '?';
+    for(char i : pStr) {
+        if(!isprint(i)) {
+            i = '?';
         }
     }
 }
