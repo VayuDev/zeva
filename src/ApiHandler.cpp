@@ -112,11 +112,11 @@ WHERE table_schema = 'public')--");
 
                         auto scriptReturn = mScriptManager->executeScript(scriptName->getValue(0, 0).stringValue,
                                                                           "onRunOnce", params).get();
-                        auto scriptValue = std::get_if<ScriptValue>(&scriptReturn);
+                        auto scriptValue = std::get_if<ScriptValue>(&scriptReturn.value);
 
                         if (!scriptValue) {
                             return seasocks::Response::error(seasocks::ResponseCode::InternalServerError,
-                                                             std::get<std::string>(scriptReturn));
+                                                             std::get<std::string>(scriptReturn.value));
                         }
 
                         nlohmann::json resp;

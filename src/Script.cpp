@@ -95,12 +95,23 @@ void Script::create(const std::string& pModule, const std::string& pCode) {
             mQueueAwaitCV.wait(lock);
             while(!mWorkQueue.empty()) {
                 auto& work = mWorkQueue.front();
-                std::variant<ScriptValue, std::basic_string<char>> ret;
+                ScriptReturn ret;
                 try {
                     ret = work.second();
                 } catch(std::exception& e) {
-                    ret = std::string{e.what()};
+                    ret.value = std::string{e.what()};
                 }
+
+                //delete old return values that haven't been taken out yet
+                const auto now = ret.timestamp;
+                for(auto it = mResultList.cbegin(); it != mResultList.cend();) {
+                    if(it->second.timestamp + 60 <= now) {
+                        it = mResultList.erase(it);
+                    } else {
+                        ++it;
+                    }
+                }
+
                 mResultList.emplace_front(std::make_pair(work.first, ret));
                 mWorkQueue.pop();
             }
@@ -139,7 +150,7 @@ std::string Script::popLastError() {
 std::future<ScriptReturn> Script::execute(const std::string& pFunctionName, const std::vector<ScriptValue>& pParamSetter) {
     int this_id = mIdCounter++;
     std::unique_lock<std::mutex> lock{mQueueMutex};
-    mWorkQueue.emplace(std::make_pair(this_id, [this, pFunctionName, pParamSetter] {
+    mWorkQueue.emplace(std::make_pair(this_id, [this, pFunctionName, pParamSetter] () -> ScriptReturn {
         wrenEnsureSlots(mVM, 4);
         wrenSetSlotHandle(mVM, 0, mInstance);
         for(size_t i = 0; i < pParamSetter.size(); ++i) {
@@ -164,7 +175,12 @@ std::future<ScriptReturn> Script::execute(const std::string& pFunctionName, cons
         if(interpretResult != WrenInterpretResult::WREN_RESULT_SUCCESS) {
             throw std::runtime_error("Running script failed: " + popLastError());
         }
-        return wrenValueToScriptValue(mVM, 0);
+        ScriptReturn ret;
+        ret.value = wrenValueToScriptValue(mVM, 0);
+        struct timespec t;
+        clock_gettime(CLOCK_MONOTONIC_COARSE, &t);
+        ret.timestamp = t.tv_sec;
+        return ret;
     }));
     lock.unlock();
     mQueueAwaitCV.notify_all();

@@ -41,7 +41,16 @@ public:
     }
 };
 
-using ScriptReturn = std::variant<ScriptValue, std::string>;
+class ScriptReturn {
+public:
+    time_t timestamp = -1;
+    std::variant<ScriptValue, std::string> value;
+    ScriptReturn() = default;
+    explicit ScriptReturn(std::string pError)
+    : value(std::move(pError)) {
+
+    }
+};
 
 class Script final {
 public:
