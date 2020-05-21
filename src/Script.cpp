@@ -6,6 +6,7 @@
 #include "ScriptLibs.hpp"
 #include <cassert>
 #include <Util.hpp>
+#include <nlohmann/json.hpp>
 
 static std::string toFunctionSignature(const std::string& pName, size_t pArity) {
     bool first = true;
@@ -101,6 +102,16 @@ void Script::create(const std::string& pModule, const std::string& pCode) {
                     ret = work.second();
                 } catch(std::exception& e) {
                     ret.value = std::string{e.what()};
+                }
+                auto *returnError = std::get_if<std::string>(&ret.value);
+                if(returnError) {
+                    mLogger->error("%s failed with %s", mModuleName.c_str(), returnError->c_str());
+                } else {
+                    ScriptValue val = std::get<ScriptValue>(ret.value);
+                    if(val.type != WREN_TYPE_NULL) {
+                        auto jsonStr = scriptValueToJson(std::move(val)).dump();
+                        mLogger->info("%s returned with %s", mModuleName.c_str(), jsonStr.c_str());
+                    }
                 }
 
                 //delete old return values that haven't been taken out yet
