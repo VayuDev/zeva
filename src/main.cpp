@@ -72,6 +72,7 @@ int main() {
     gServer->addWebSocketHandler("/api/log/ws_log", std::make_shared<ModuleLogWebsocket>());
     gServer->startListening(9090);
 
+    log().info("Started server");
 
     signal(SIGTERM, sighandler);
     signal(SIGINT, sighandler);

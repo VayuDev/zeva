@@ -40,15 +40,13 @@ void ModuleLogWebsocket::onDisconnect(seasocks::WebSocket *connection) {
     if(mConnections.count(connection) > 0) {
         auto id = mConnections.at(connection);
 
-        if(id.has_value()) {
-            std::unique_lock<std::mutex> logLock{id->first->mMutex};
-            id->first->deleteHandler(id->second);
-        }
+        std::unique_lock<std::mutex> logLock{id.first->mMutex};
+        id.first->deleteHandler(id.second);
+        logLock.unlock();
+
         std::lock_guard<std::shared_mutex> lock2{mConnectionsMutex};
         mConnections.erase(connection);
     }
 }
 
-ModuleLogWebsocket::ModuleLogWebsocket() {
-
-}
+ModuleLogWebsocket::ModuleLogWebsocket() = default;
