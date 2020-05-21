@@ -1,4 +1,5 @@
 #include "ScriptManager.hpp"
+#include <Logger.hpp>
 
 #include <utility>
 
@@ -8,7 +9,7 @@ void ScriptManager::addScript(const std::string& pName, const std::string& pCode
     }
     mScripts.emplace(std::piecewise_construct,
                      std::forward_as_tuple(pName),
-                     std::forward_as_tuple(pName, pCode));
+                     std::forward_as_tuple(pName, pCode, mLogger));
 }    
 
 std::future<ScriptReturn> ScriptManager::executeScript(const std::string& pName, const std::string& pFunction, const std::vector<ScriptValue>& pParamSetter) {
@@ -25,4 +26,9 @@ void ScriptManager::onTableChanged(const std::string& pTable, const std::string 
     for(auto& script: mScripts) {
         script.second.execute("onTableChanged", {ScriptValue::makeString(pTable), ScriptValue::makeString(pType)});
     }
+}
+
+ScriptManager::ScriptManager(std::shared_ptr<Logger> pLogger)
+: mLogger(std::move(pLogger)) {
+
 }

@@ -28,14 +28,15 @@ void Script::create(const std::string& pModule, const std::string& pCode) {
     wrenInitConfiguration(&config);
     config.errorFn = [] (WrenVM* pVM, WrenErrorType, const char* module, int line, const char* message) {
         std::string msg = (module ? module : "(null)") + std::string{" ("} + std::to_string(line) + "): " + message + "\n";
-        log().error(msg.c_str());
-        Script *self = (Script*) wrenGetUserData(pVM);
+        auto *self = (Script*) wrenGetUserData(pVM);
+        self->mLogger->error("%s: %s", self->mModuleName.c_str(), msg.c_str());
         self->setLastError(std::move(msg));
     };
-    config.writeFn = [] (WrenVM*, const char* text) {
+    config.writeFn = [] (WrenVM* pVM, const char* text) {
         std::string str{text};
-        if(str != "" && str != "\n") {
-            log().info(str.c_str());
+        auto *self = (Script*) wrenGetUserData(pVM);
+        if(!str.empty() && str != "\n") {
+            self->mLogger->info("%s:\t %s", self->mModuleName.c_str(), str.c_str());
         }
         
     };
@@ -118,7 +119,8 @@ void Script::create(const std::string& pModule, const std::string& pCode) {
         }
     });
 }
-Script::Script(const std::string& pModule, const std::string& pCode) {
+Script::Script(const std::string& pModule, const std::string& pCode, std::shared_ptr<Logger> pLogger)
+: mLogger(std::move(pLogger)) {
     create(pModule, pCode);
 }
 

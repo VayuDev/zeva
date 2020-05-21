@@ -6,7 +6,7 @@ function appendLog(msg) {
 
 let socket = new ReconnectingSocket("/api/log/ws_log",
     () => {
-        socket.send("Global");
+        socket.send("Scripts");
         first = true;
     }, (msg) => {
         msg = JSON.parse(msg.data);

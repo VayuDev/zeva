@@ -37,7 +37,7 @@ int main() {
 
     }
     DatabaseHelper::attachNotifyTriggerToAllTables(*conn);
-    auto manager = std::make_shared<ScriptManager>();
+    auto manager = std::make_shared<ScriptManager>(Logger::create("Scripts"));
     conn->addListener([manager](const std::string& pPayload) {
         auto splitterLocation = pPayload.find('%');
         if(splitterLocation == std::string::npos) {

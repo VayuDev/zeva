@@ -54,7 +54,7 @@ public:
 
 class Script final {
 public:
-    Script(const std::string& pModule, const std::string& pCode);
+    Script(const std::string& pModule, const std::string& pCode, std::shared_ptr<class Logger> pLogger);
     Script(const Script&) = delete;
     Script(Script&&) = delete;
     void operator=(const Script&) = delete;
@@ -81,4 +81,6 @@ private:
     
     std::queue<std::pair<int, std::function<ScriptReturn()>>> mWorkQueue;
     std::list<std::pair<int, ScriptReturn>> mResultList;
+
+    std::shared_ptr<class Logger> mLogger;
 };
