@@ -69,7 +69,7 @@ int main() {
     auto webLogger = Logger::create("Seasocks");
     gServer = std::make_unique<seasocks::Server>(webLogger);
     gServer->addPageHandler(router);
-    gServer->addWebSocketHandler("/api/log/ws_log", std::make_shared<ModuleLogWebsocket>());
+    gServer->addWebSocketHandler("/api/log/ws_log", std::make_shared<ModuleLogWebsocket>(*gServer));
     gServer->startListening(9090);
 
     log().info("Started server");

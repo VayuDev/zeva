@@ -1,7 +1,7 @@
 first = null;
 
 function appendLog(msg) {
-    $("#logContainer").append(msg["msg"] + "<br>");
+    $("#logContainer").prepend(msg["msg"] + "<br>");
 }
 
 let socket = new ReconnectingSocket("/api/log/ws_log",

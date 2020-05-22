@@ -1,6 +1,7 @@
 #include "ModuleLog.hpp"
 #include "Logger.hpp"
 #include <nlohmann/json.hpp>
+#include <seasocks/Server.h>
 
 static nlohmann::json rowToJson(const std::pair<seasocks::Logger::Level, std::string>& msg) {
     nlohmann::json row;
@@ -22,7 +23,9 @@ void ModuleLogWebsocket::onData(seasocks::WebSocket *connection, const char *dat
             json.push_back(rowToJson(msg));
         }
         int id = log->appendHandler([connection, log, this] (const std::pair<seasocks::Logger::Level, std::string>& msg) {
-            connection->send(rowToJson(msg).dump());
+            this->mServer.execute([connection, msg]{
+                connection->send(rowToJson(msg).dump());
+            });
         });
         logLock.unlock();
         connection->send(json.dump());
@@ -49,4 +52,7 @@ void ModuleLogWebsocket::onDisconnect(seasocks::WebSocket *connection) {
     }
 }
 
-ModuleLogWebsocket::ModuleLogWebsocket() = default;
+ModuleLogWebsocket::ModuleLogWebsocket(seasocks::Server& pServer)
+: mServer(pServer) {
+
+}
