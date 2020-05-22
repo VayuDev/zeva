@@ -2,6 +2,7 @@
 
 #include <utility>
 #include <seasocks/Response.h>
+#include <seasocks/ResponseBuilder.h>
 #include "Util.hpp"
 #include "nlohmann/json.hpp"
 #include "Logger.hpp"
@@ -25,6 +26,27 @@ std::shared_ptr<seasocks::Response> ApiHandler::handle(const seasocks::CrackedUr
                         auto idStr = pUrl.queryParam("scriptid");
                         auto id = std::stoll(idStr);
                         responseData = mDb->query("SELECT * FROM scripts WHERE id=$1 ORDER BY id ASC", {QueryValue::makeInt(id)});
+                    } else if(pUrl.path().at(2) == "draw" && pUrl.hasParam("scriptid")) {
+                        auto id = std::stoll(pUrl.queryParam("scriptid"));
+                        auto scriptName = mDb->query("SELECT name FROM scripts WHERE id=$1", {QueryValue::makeInt(id)})
+                                ->getValue(0, 0).stringValue;
+
+                        ScriptReturn ret;
+                        if(pUrl.hasParam("width") && pUrl.hasParam("height")) {
+                            auto width = std::stoll(pUrl.queryParam("width"));
+                            auto height = std::stoll(pUrl.queryParam("height"));
+                            ret = mScriptManager->executeScript(scriptName, "drawImage",
+                                    {ScriptValue::makeInt(width), ScriptValue::makeInt(height)}).get();
+                        } else {
+                            ret = mScriptManager->executeScript(scriptName, "drawImage",{}).get();
+                        }
+                        auto imageVal = std::get_if<ScriptValue>(&ret.value);
+                        if(imageVal) {
+                            return seasocks::ResponseBuilder().withContentType("image/png").operator<<(imageVal->stringValue).build();
+                        } else {
+                            return seasocks::Response::error(seasocks::ResponseCode::InternalServerError, std::get<std::string>(ret.value));
+                        }
+
                     }
                 }
                 //GET DB

@@ -140,9 +140,12 @@ ScriptValue wrenValueToScriptValue(struct WrenVM *pVM, int pSlot) {
         case WrenType::WREN_TYPE_NUM:
             ret.doubleValue = wrenGetSlotDouble(pVM, pSlot);
             break;
-        case WrenType::WREN_TYPE_STRING:
-            ret.stringValue = wrenGetSlotString(pVM, pSlot);
+        case WrenType::WREN_TYPE_STRING: {
+            int length;
+            const char* bytes = wrenGetSlotBytes(pVM, pSlot, &length);
+            ret.stringValue.append(bytes, length);
             break;
+        }
         case WrenType::WREN_TYPE_FOREIGN:
         case WrenType::WREN_TYPE_NULL:
             break;

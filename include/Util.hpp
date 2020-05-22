@@ -2,6 +2,7 @@
 #include "DatabaseWrapper.hpp"
 #include "nlohmann/json_fwd.hpp"
 #include <filesystem>
+#include "Script.hpp"
 
 
 nlohmann::json queryResultToJson(const QueryResult&);

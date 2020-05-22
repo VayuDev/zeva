@@ -53,22 +53,18 @@ void Script::create(const std::string& pModule, const std::string& pCode) {
     };
     append("onTableChanged", 2);
     append("onRunOnce", 1);
-    append("onAudio", 2);
+    append("drawImage", 2);
     append("new", 0);
     
     //compile parent script
     auto compileRes = wrenInterpret(mVM, pModule.c_str(), 
-    "class Script {\n"
-    "  construct new() {\n"
-    "  }\n"
-    "  \n"
-    "  onRunOnce(a) {\n"
-    "  }\n"
-    "  onTableChanged(a, b) {\n"
-    "  }\n"
-    "  onAudio(a, b) {\n"
-    "  }\n"
-    "}\n");
+    R"(
+class Script {
+    construct new() {}
+    onRunOnce(a) {}
+    onTableChanged(a, b) {}
+    drawImage(width, height) {}
+})");
 
     if(compileRes != WrenInterpretResult::WREN_RESULT_SUCCESS) {
         throw std::runtime_error("Base Script compilation failed: " + popLastError());
@@ -109,7 +105,13 @@ void Script::create(const std::string& pModule, const std::string& pCode) {
                 } else {
                     ScriptValue val = std::get<ScriptValue>(ret.value);
                     if(val.type != WREN_TYPE_NULL) {
-                        auto jsonStr = scriptValueToJson(std::move(val)).dump();
+                        std::string jsonStr;
+                        try {
+                            jsonStr = scriptValueToJson(std::move(val)).dump();
+                        } catch(...) {
+                            jsonStr = "(unable to parse)";
+                        }
+
                         mLogger->info("%s returned with %s", mModuleName.c_str(), jsonStr.c_str());
                     }
                 }

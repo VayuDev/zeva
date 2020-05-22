@@ -5,6 +5,10 @@
 #include "PostgreSQLDatabase.hpp"
 #include <cassert>
 #include <TcpClient.hpp>
+#include "Util.hpp"
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 WrenForeignClassMethods bindForeignClass(WrenVM*, const char* module, const char* classname) {
     (void) module;
@@ -194,6 +198,39 @@ static void tcpClientRecvString(WrenVM* pVM) {
     }
 }
 
+static void exportImage(WrenVM* pVM) {
+    if(wrenGetSlotType(pVM, 1) != WREN_TYPE_LIST || wrenGetSlotType(pVM, 2) != WREN_TYPE_NUM || wrenGetSlotType(pVM, 3) != WREN_TYPE_NUM) {
+        wrenSetSlotNull(pVM, 0);
+        return;
+    }
+    auto width = (int)wrenGetSlotDouble(pVM, 2);
+    auto height = (int)wrenGetSlotDouble(pVM, 3);
+    if(width > 10000 || height > 10000 || width <= 0 || height <= 0) {
+        wrenSetSlotNull(pVM, 0);
+        return;
+    }
+    wrenEnsureSlots(pVM, 5);
+    auto *data = (uint8_t*) malloc(width * height * 3);
+    for(size_t i = 0; i < width * height; ++i) {
+        wrenGetListElement(pVM, 1, i, 2);
+        wrenGetListElement(pVM, 2, 0, 3);
+        wrenGetListElement(pVM, 2, 1, 4);
+        wrenGetListElement(pVM, 2, 2, 5);
+        data[i*3 + 0] = (uint8_t) wrenGetSlotDouble(pVM, 3);
+        data[i*3 + 1] = (uint8_t) wrenGetSlotDouble(pVM, 4);
+        data[i*3 + 2] = (uint8_t) wrenGetSlotDouble(pVM, 5);
+    }
+    int imageLen;
+    auto image = stbi_write_png_to_mem(data, width * 3, width, height, 3, &imageLen);
+    free(data);
+    /*auto file = fopen("/tmp/test", "wb");
+    fwrite(image, 1, imageLen, file);
+    fclose(file);*/
+    assert(image);
+    wrenSetSlotBytes(pVM, 0, reinterpret_cast<const char *>(image), imageLen);
+    free(image);
+}
+
 WrenForeignMethodFn bindForeignMethod( 
     WrenVM* vm, 
     const char* module, 
@@ -219,7 +256,10 @@ WrenForeignMethodFn bindForeignMethod(
         } else if(strcmp("recvString()", signature) == 0) {
             return tcpClientRecvString;
         }
-
+    } else if(strcmp(className, "Image") == 0 && !isStatic) {
+        if(strcmp("exportInternal(_,_,_)", signature) == 0) {
+            return exportImage;
+        }
     }
     assert(false);
 }
@@ -239,6 +279,21 @@ foreign class TcpClient {
     foreign recvByte()
     foreign sendString(str)
     foreign recvString()
+}
+
+class Image {
+    construct new(width, height) {
+        _width = width
+        _height = height
+        _pixels = List.filled(width * height, [0, 1, 1])
+    }
+    setPixel(x, y, color) {
+        _pixels[y * _width + x] = color
+    }
+    foreign exportInternal(pixels, width, height)
+    export() {
+        return exportInternal(_pixels, _width, _height)
+    }
 }
 )--";
 }

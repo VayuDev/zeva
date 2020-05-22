@@ -48,6 +48,12 @@ function addScript(id, name, prepend) {
     });
     div.append(run);
 
+    let render = $("<span></span>").text("Draw");
+    render.click(function() {
+        window.location = "/html/scripts/draw.html?scriptid=" + id;
+    });
+    div.append(render);
+
     let del = $("<span></span>").text("Delete").addClass("deleteButton");
     del.click(function() {
         deleteScript(id, name, () => {
