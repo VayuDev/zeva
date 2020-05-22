@@ -7,11 +7,26 @@
     <script src="../js/index.js"></script>
     <script src="js/lib.js"></script>
     <script src="js/draw.js"></script>
+    <style>
+        #outputContainer {
+            height: calc(100vh - 70px);
+            width: 100vw;
+            text-align: center;
+        }
+        #output {
+            display: inline-block;
+            margin: 0 auto;
+            padding: 3px;
+            border: 3px solid black;
+        }
+    </style>
 </head>
 <body>
 <div class="main-grid">
     <div id="header"></div>
-    <img id="output">
+    <div id="outputContainer">
+        <img id="output">
+    </div>
 </div>
 </body>
 </html>

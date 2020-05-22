@@ -19,6 +19,11 @@ function saveScript() {
     })
 }
 
+function drawImage() {
+    let img = $("<img>").attr("src", "/api/scripts/draw?scriptid=" + SCRIPTID + "&cachefix=" + Math.random());
+    logImage(img);
+}
+
 function clearLog() {
     $("#output").text("");
 }

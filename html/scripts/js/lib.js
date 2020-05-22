@@ -11,6 +11,15 @@ function logToOutputAndMsg(result, isError) {
     }
 }
 
+function logImage(img) {
+    let output = $("#output");
+    if(output.length) {
+        output.append(img);
+        output.append("\n");
+        output.animate({scrollTop: output.prop("scrollHeight")});
+    }
+}
+
 function runScript(scriptid, param = null) {
     $.ajax({
         type: "POST",
