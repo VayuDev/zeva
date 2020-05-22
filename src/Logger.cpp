@@ -66,8 +66,9 @@ std::shared_ptr<Logger> Logger::getLog(const std::string &pName) {
 }
 
 Logger::~Logger() {
-    std::lock_guard<std::shared_mutex> lock{sLogRegistryMutex};
-    sLogRegistry.erase(mName);
+    //TODO find a way to delete a logger upon destruction
+    //std::lock_guard<std::shared_mutex> lock{sLogRegistryMutex};
+    //sLogRegistry.erase(mName);
 }
 
 std::shared_ptr<Logger> Logger::create(const std::string &pName) {
