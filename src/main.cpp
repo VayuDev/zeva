@@ -73,6 +73,9 @@ int main() {
     gServer->startListening(9090);
 
     log().info("Started server");
+    log().error("This is an error");
+    log().warning("This is a warning");
+    log().severe("This is severe");
 
     signal(SIGTERM, sighandler);
     signal(SIGINT, sighandler);
