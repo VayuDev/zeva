@@ -11,7 +11,7 @@
 #include <atomic>
 #include <forward_list>
 
-using LogHandler = std::function<void(const std::pair<seasocks::Logger::Level, std::string>&)>;
+using LogHandler = std::function<void(const std::tuple<seasocks::Logger::Level, time_t, std::string>&)>;
 
 class Logger final : public seasocks::Logger {
 public:
@@ -29,7 +29,7 @@ private:
 
     friend class ModuleLogWebsocket;
     std::mutex mMutex;
-    std::list<std::pair<Level, std::string>> mLog;
+    std::list<std::tuple<Level, time_t, std::string>> mLog;
     std::string mName;
 
     std::atomic<int> mHandlerIdCounter = 0;

@@ -54,7 +54,23 @@ void Logger::log(Level level, const char* message) {
     }
     std::cout << "[" << levelToString(level) << "] [" << mName << "] " << message << "\n";
     std::cout << "\033[0m";
-    const auto& inserted = mLog.emplace_back(std::make_pair(level, str));
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME_COARSE, &ts);
+    //delete the oldest two messages if they are older than one day
+    //we only delete at most two to increase the performance of the logger.
+    //Old messages get deleted slowly one after the other when new ones
+    //come in.
+    size_t iterations = 0;
+    for(auto it = mLog.cbegin(); it != mLog.cend() && iterations++ < 2;) {
+        auto timestamp = std::get<time_t>(*mLog.cbegin());
+        if(ts.tv_sec - 60 * 60 * 24 >= timestamp) {
+            it = mLog.erase(it);
+        } else {
+            it++;
+        }
+    }
+
+    const auto& inserted = mLog.emplace_back(std::forward_as_tuple(level, ts.tv_sec, str));
     for(auto& handler: mHandlers) {
         handler.second(inserted);
     }

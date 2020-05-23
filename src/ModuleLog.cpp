@@ -3,10 +3,12 @@
 #include <nlohmann/json.hpp>
 #include <seasocks/Server.h>
 
-static nlohmann::json rowToJson(const std::pair<seasocks::Logger::Level, std::string>& msg) {
+static nlohmann::json rowToJson(const std::tuple<seasocks::Logger::Level, time_t, std::string>& msg) {
     nlohmann::json row;
-    row["level"] = seasocks::Logger::levelToString(msg.first);
-    row["msg"] = msg.second;
+    const auto&[level, timestamp, logmsg] = msg;
+    row["level"] = seasocks::Logger::levelToString(level);
+    row["msg"] = logmsg;
+    row["timestamp"] = timestamp;
     return row;
 }
 
@@ -22,7 +24,7 @@ void ModuleLogWebsocket::onData(seasocks::WebSocket *connection, const char *dat
         for(const auto& msg: log->mLog) {
             json.push_back(rowToJson(msg));
         }
-        int id = log->appendHandler([connection, log, this] (const std::pair<seasocks::Logger::Level, std::string>& msg) {
+        int id = log->appendHandler([connection, log, this] (const std::tuple<seasocks::Logger::Level, time_t, std::string>& msg) {
             auto msgCpy = msg;
             this->mServer.execute([connection, msgCpy = std::move(msgCpy), this] {
                 std::lock_guard<std::shared_mutex> lock{mConnectionsMutex};
