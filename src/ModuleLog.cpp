@@ -23,8 +23,14 @@ void ModuleLogWebsocket::onData(seasocks::WebSocket *connection, const char *dat
             json.push_back(rowToJson(msg));
         }
         int id = log->appendHandler([connection, log, this] (const std::pair<seasocks::Logger::Level, std::string>& msg) {
-            this->mServer.execute([connection, msg]{
-                connection->send(rowToJson(msg).dump());
+            auto msgCpy = msg;
+            this->mServer.execute([connection, msgCpy = std::move(msgCpy), this] {
+                std::lock_guard<std::shared_mutex> lock{mConnectionsMutex};
+                if(mConnections.count(connection) > 0) {
+                    auto toSend = rowToJson(msgCpy).dump();
+                    connection->send(toSend);
+                }
+
             });
         });
         logLock.unlock();

@@ -14,7 +14,7 @@ input, button {
 }
 #header {
     max-width: 100vw;
-    width: 100vw;
+    width: 100%;
     overflow-x: hidden;
 }
 

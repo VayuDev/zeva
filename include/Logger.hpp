@@ -9,6 +9,7 @@
 #include <map>
 #include <shared_mutex>
 #include <atomic>
+#include <forward_list>
 
 using LogHandler = std::function<void(const std::pair<seasocks::Logger::Level, std::string>&)>;
 
@@ -19,6 +20,7 @@ public:
 
     static std::shared_ptr<Logger> create(const std::string& pName);
     static std::shared_ptr<Logger> getLog(const std::string& pName);
+    static std::forward_list<std::string> getAllLoggerNames();
 private:
     static std::map<std::string, std::shared_ptr<Logger>> sLogRegistry;
     static std::shared_mutex sLogRegistryMutex;

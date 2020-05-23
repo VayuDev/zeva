@@ -50,7 +50,7 @@ std::shared_ptr<seasocks::Response> ApiHandler::handle(const seasocks::CrackedUr
                     }
                 }
                 //GET DB
-                if(pUrl.path().at(1) == "db") {
+                else if(pUrl.path().at(1) == "db") {
                     if(pUrl.path().at(2) == "all") {
                         responseData = mDb->query(
                                 R"--(
@@ -92,6 +92,12 @@ WHERE table_schema = 'public')--");
                         auto ret = pdb->performCopyToStdout("COPY (SELECT " + selection + " FROM " + tablename + " ORDER BY " + firstColumnName + " ASC)\n"
                                    " TO STDOUT WITH (DELIMITER ',', FORMAT CSV, HEADER);");
                         return seasocks::Response::textResponse(ret);
+                    }
+                }
+                //GET LOG
+                else if(pUrl.path().at(1) == "log") {
+                    if(pUrl.path().at(2) == "all") {
+                        responseJson = Logger::getAllLoggerNames();
                     }
                 }
                 break;

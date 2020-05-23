@@ -96,3 +96,12 @@ class ReconnectingSocket {
         return this.socket.readyState === WebSocket.OPEN
     }
 }
+
+function getUrlParam(name) {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(name);
+}
+
+function getUrlParamAsNumber(name) {
+    return Number(getUrlParam(name));
+}

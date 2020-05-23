@@ -77,3 +77,12 @@ std::shared_ptr<Logger> Logger::create(const std::string &pName) {
     sLogRegistry.emplace(pName, logger);
     return logger;
 }
+
+std::forward_list<std::string> Logger::getAllLoggerNames() {
+    std::forward_list<std::string> ret;
+    std::shared_lock<std::shared_mutex> lock{sLogRegistryMutex};
+    for(const auto& logger: sLogRegistry) {
+        ret.push_front(logger.first);
+    }
+    return ret;
+}

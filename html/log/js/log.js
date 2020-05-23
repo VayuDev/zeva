@@ -1,21 +1,14 @@
-first = null;
-
-function appendLog(msg) {
-    $("#logContainer").prepend(msg["msg"] + "<br>");
+function addLogger(name) {
+    let row = $("<div></div>").text(name).click(() => {
+       window.location = "/html/log/view.html?logname=" + name;
+    }).css("cursor", "pointer");
+    $(".elementList").append(row);
 }
 
-let socket = new ReconnectingSocket("/api/log/ws_log",
-    () => {
-        socket.send("Scripts");
-        first = true;
-    }, (msg) => {
-        msg = JSON.parse(msg.data);
-        if(first) {
-            first = false;
-            for (let i = 0; i < msg.length; i++) {
-                appendLog(msg[i]);
-            }
-        } else {
-            appendLog(msg);
+$(function() {
+    $.getJSON("/api/log/all", "", function(data) {
+        for(let i = 0; i < data.length; ++i) {
+            addLogger(data[i])
         }
     })
+})
