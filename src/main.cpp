@@ -11,13 +11,15 @@
 #include <seasocks/PrintfLogger.h>
 #include <seasocks/ServerImpl.h>
 #include "WebHttpRouter.hpp"
-#include "ApiHandler.hpp"
+#include "ScriptsApiHandler.hpp"
 #include "HtmlHandler.hpp"
 #include "PostgreSQLDatabase.hpp"
 #include <fstream>
 #include <signal.h>
 #include "DatabaseHelper.hpp"
 #include <ModuleLog.hpp>
+#include <DatabaseApiHandler.hpp>
+#include <LogApiHandler.hpp>
 
 std::unique_ptr<seasocks::Server> gServer;
 
@@ -63,8 +65,10 @@ int main() {
     }
 
     auto router = std::make_shared<WebHttpRouter>();
-    router->addHandler(std::make_shared<ApiHandler>(conn, manager));
-    router->addHandler(std::make_shared<HtmlHandler>());
+    router->addHandler("api", "log", std::make_shared<LogApiHandler>());
+    router->addHandler("api", "scripts", std::make_shared<ScriptsApiHandler>(conn, manager));
+    router->addHandler("api", "db", std::make_shared<DatabaseApiHandler>(conn, manager));
+    router->addHandler("", "", std::make_shared<HtmlHandler>());
 
     auto webLogger = Logger::create("Seasocks");
     gServer = std::make_unique<seasocks::Server>(webLogger);
@@ -73,9 +77,6 @@ int main() {
     gServer->startListening(9090);
 
     log().info("Started server");
-    log().error("This is an error");
-    log().warning("This is a warning");
-    log().severe("This is severe");
 
     signal(SIGTERM, sighandler);
     signal(SIGINT, sighandler);

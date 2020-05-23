@@ -164,3 +164,22 @@ ScriptValue wrenValueToScriptValue(struct WrenVM *pVM, int pSlot) {
     }
     return ret;
 }
+
+
+std::shared_ptr<seasocks::Response> responseFromJsonOrQuery(
+        const std::optional<nlohmann::json>& pJson,
+        const std::unique_ptr<QueryResult>& pQueryResult,
+        const seasocks::CrackedUri& pRequestUri) {
+    if(pQueryResult) {
+        if(pRequestUri.hasParam("format") && pRequestUri.queryParam("format") == "list") {
+            auto json = queryResultToJson(*pQueryResult);
+            return seasocks::Response::jsonResponse(json.dump());
+        } else {
+            auto json = queryResultToJsonMap(*pQueryResult);
+            return seasocks::Response::jsonResponse(json.dump());
+        }
+    } else if(pJson) {
+        return seasocks::Response::jsonResponse(pJson->dump());
+    }
+    return seasocks::Response::unhandled();
+}
