@@ -108,7 +108,7 @@ class Script {
                     if(val.type != WREN_TYPE_NULL) {
                         std::string jsonStr;
                         try {
-                            jsonStr = scriptValueToJson(std::move(val)).dump();
+                            jsonStr = scriptValueToJson(std::move(val)).asString();
                         } catch(...) {
                             jsonStr = "(unable to parse)";
                         }
@@ -133,8 +133,7 @@ class Script {
         }
     });
 }
-Script::Script(const std::string& pModule, const std::string& pCode, std::shared_ptr<Logger> pLogger)
-: mLogger(std::move(pLogger)) {
+Script::Script(const std::string& pModule, const std::string& pCode) {
     create(pModule, pCode);
 }
 
@@ -187,7 +186,7 @@ std::future<ScriptReturn> Script::execute(const std::string& pFunctionName, cons
                     assert(false);
             }
         }
-        auto interpretResult = wrenCall(mVM, mFunctions[pFunctionName]);
+        auto interpretResult = wrenCall(mVM, mFunctions.at(pFunctionName));
         if(interpretResult != WrenInterpretResult::WREN_RESULT_SUCCESS) {
             throw std::runtime_error("Running script failed: " + popLastError());
         }
@@ -216,5 +215,4 @@ std::future<ScriptReturn> Script::execute(const std::string& pFunctionName, cons
         }
         return ScriptReturn{std::string{"Error"}};
     });
-    
 }

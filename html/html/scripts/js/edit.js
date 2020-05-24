@@ -9,7 +9,6 @@ function saveScript() {
             "scriptid": SCRIPTID,
             "code": editor.getValue()
         },
-        dataType: "json",
         error: function(err, textStatus, errorThrown) {
             notifyError(err.responseText);
         },

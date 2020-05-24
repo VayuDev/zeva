@@ -54,7 +54,7 @@ public:
 
 class Script final {
 public:
-    Script(const std::string& pModule, const std::string& pCode, std::shared_ptr<class Logger> pLogger);
+    Script(const std::string& pModule, const std::string& pCode);
     Script(const Script&) = delete;
     Script(Script&&) = delete;
     void operator=(const Script&) = delete;
@@ -62,7 +62,7 @@ public:
     ~Script();
     
     void setLastError(std::string pLastError);
-    std::future<ScriptReturn> execute(const std::string& pFunctionName, const std::vector<ScriptValue>& );
+    std::future<ScriptReturn> execute(const std::string& pFunctionName, const std::vector<ScriptValue>&);
 private:
     void create(const std::string& pModule, const std::string& pCode);
 
@@ -82,5 +82,7 @@ private:
     std::queue<std::pair<int, std::function<ScriptReturn()>>> mWorkQueue;
     std::list<std::pair<int, ScriptReturn>> mResultList;
 
-    std::shared_ptr<class Logger> mLogger;
+    void executeScriptWithCallback(const std::string &pName, const std::string &pFunction,
+                                   const std::vector<ScriptValue> &pParamSetter,
+                                   std::function<void(const ScriptReturn &)> &&pCallback);
 };

@@ -1,10 +1,9 @@
 #include <fstream>
 #include "Util.hpp"
-#include "nlohmann/json.hpp"
+#include "Script.hpp"
 #include "Script.hpp"
 
-
-nlohmann::json scriptValueToJson(ScriptValue && pVal) {
+Json::Value scriptValueToJson(ScriptValue&& pVal) {
     switch(pVal.type) {
         case WREN_TYPE_STRING:
             return std::move(pVal.stringValue);
@@ -12,13 +11,13 @@ nlohmann::json scriptValueToJson(ScriptValue && pVal) {
             return pVal.doubleValue;
         case WREN_TYPE_FOREIGN:
         case WREN_TYPE_NULL:
-            return nullptr;
+            return Json::Value::null;
         case WREN_TYPE_BOOL:
             return pVal.boolValue;
         case WREN_TYPE_LIST: {
-            auto list = nlohmann::json::array();
+            Json::Value list;
             for(auto & i : pVal.listValue) {
-                list.push_back(scriptValueToJson(std::move(i)));
+                list.append(scriptValueToJson(std::move(i)));
             }
             return list;
         }

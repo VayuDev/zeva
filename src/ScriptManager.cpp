@@ -3,31 +3,42 @@
 #include <utility>
 
 void ScriptManager::addScript(const std::string& pName, const std::string& pCode) {
+    std::lock_guard<std::shared_mutex> lock{mScriptsMutex};
     if(mScripts.count(pName) > 0) {
         mScripts.erase(pName);
     }
     mScripts.emplace(std::piecewise_construct,
                      std::forward_as_tuple(pName),
-                     std::forward_as_tuple(pName, pCode, mLogger));
+                     std::forward_as_tuple(pName, pCode));
 }    
 
 std::future<ScriptReturn> ScriptManager::executeScript(const std::string& pName, const std::string& pFunction, const std::vector<ScriptValue>& pParamSetter) {
+    std::shared_lock<std::shared_mutex> lock{mScriptsMutex};
     return mScripts.at(pName).execute(pFunction, pParamSetter);
 }
 
 void ScriptManager::deleteScript(const std::string &pName) {
+    std::lock_guard<std::shared_mutex> lock{mScriptsMutex};
     if(mScripts.count(pName) > 0) {
         mScripts.erase(pName);
     }
 }
 
 void ScriptManager::onTableChanged(const std::string& pTable, const std::string &pType) {
+    std::shared_lock<std::shared_mutex> lock{mScriptsMutex};
     for(auto& script: mScripts) {
         script.second.execute("onTableChanged", {ScriptValue::makeString(pTable), ScriptValue::makeString(pType)});
     }
 }
 
-ScriptManager::ScriptManager(std::shared_ptr<Logger> pLogger)
-: mLogger(std::move(pLogger)) {
-
+void ScriptManager::executeScriptWithCallback(const std::string &pName, const std::string &pFunction,
+                                              const std::vector<ScriptValue> &pParamSetter,
+                                              std::function<void(ScriptReturn &&)> &&pCallback) {
+    std::thread t{[=] {
+        std::shared_lock<std::shared_mutex> lock{mScriptsMutex};
+        auto future = mScripts.at(pName).execute(pFunction, pParamSetter);
+        lock.unlock();
+        pCallback(future.get());
+    }};
+    t.detach();
 }
