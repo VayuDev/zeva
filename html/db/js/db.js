@@ -4,12 +4,12 @@ function addTable(name, is_protected, prepend) {
 
     let table = $("<span></span>").addClass("list-element-button").text("Graph");
     table.click(function () {
-        window.location = "/html/db/graph.html?tablename=" + name;
+        window.location = "/db/graph.html?tablename=" + name;
     });
     div.append(table);
     let graph = $("<span></span>").text("Table");
     graph.click(function() {
-        window.location = "/html/db/table.html?tablename=" + name;
+        window.location = "/db/table.html?tablename=" + name;
     });
     div.append(graph);
     let del = $("<span></span>").text("Delete").addClass("deleteButton");

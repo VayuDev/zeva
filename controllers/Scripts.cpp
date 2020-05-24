@@ -3,7 +3,7 @@
 #include "ScriptManager.hpp"
 
 void Api::Scripts::getAllScripts(const drogon::HttpRequestPtr&, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
-    drogon::app().getDbClient()->execSqlAsync("SELECT * FROM scripts",
+    drogon::app().getDbClient()->execSqlAsync("SELECT * FROM scripts ORDER BY name",
     [callback=std::move(callback)](const drogon::orm::Result& r) {
         Json::Value ret;
         for(const auto& row: r) {
@@ -53,8 +53,15 @@ void Api::Scripts::runScript(const drogon::HttpRequestPtr&,
     drogon::app().getDbClient()->execSqlAsync("SELECT name FROM scripts WHERE id=$1",
     [callback=std::move(callback),param=std::move(pParam)](const drogon::orm::Result& r) {
         auto name = r.at(0)["name"].as<std::string>();
-        //TODO convert to int
-        ScriptManager::the().executeScriptWithCallback(name, "onRunOnce", {ScriptValue::makeString(param)},
+        ScriptValue scriptParameter;
+        if(!param.empty()) {
+            try {
+                scriptParameter = ScriptValue::makeInt(std::stoll(param));
+            } catch(...) {
+                scriptParameter = ScriptValue::makeString(param);
+            }
+        }
+        ScriptManager::the().executeScriptWithCallback(name, "onRunOnce", {std::move(scriptParameter)},
                 [callback=std::move(callback)](ScriptReturn&& ret) {
             auto error = std::get_if<std::string>(&ret.value);
             if(error) {
@@ -106,4 +113,18 @@ void Api::Scripts::deleteScript(const drogon::HttpRequestPtr&,
         ScriptManager::the().deleteScript(name);
         callback(genResponse("Deleted script"));
     }, genErrorHandler(callback), scriptid);
+}
+
+void Api::Scripts::createScript(const drogon::HttpRequestPtr&,
+                                std::function<void(const drogon::HttpResponsePtr &)> &&callback, std::string &&pName) {
+    auto code = readWholeFile("assets/template.wren");
+    std::string name = pName;
+    drogon::app().getDbClient()->execSqlAsync("INSERT INTO scripts (name, code) VALUES ($1, $2) RETURNING id",
+    [callback=std::move(callback), name, code](const drogon::orm::Result& r) {
+        ScriptManager::the().addScript(name, code);
+        Json::Value response;
+        response["name"] = name;
+        response["id"] = r.at(0)["id"].as<long>();
+        callback(drogon::HttpResponse::newHttpJsonResponse(std::move(response)));
+    }, genErrorHandler(callback), pName, code);
 }

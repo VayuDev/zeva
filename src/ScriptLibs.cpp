@@ -254,6 +254,10 @@ static void exportImage(WrenVM* pVM) {
     free(image);
 }
 
+static void genRandomDouble(WrenVM* pVM) {
+    wrenSetSlotDouble(pVM, 0, (rand()%1'000'000)/1'000'000.0);
+}
+
 WrenForeignMethodFn bindForeignMethod( 
     WrenVM* vm, 
     const char* module, 
@@ -283,6 +287,10 @@ WrenForeignMethodFn bindForeignMethod(
         if(strcmp("exportInternal(_,_,_)", signature) == 0) {
             return exportImage;
         }
+    } else if(strcmp(className, "Math") == 0 && isStatic) {
+        if(strcmp("random()", signature) == 0) {
+            return genRandomDouble;
+        }
     }
     assert(false);
 }
@@ -307,6 +315,9 @@ foreign class TcpClient {
 
 class Image {
     construct new(width, height) {
+        if (width >= 2000 || height >= 2000) {
+            Fiber.abort("Too much memory requested!")
+        }
         _width = width
         _height = height
         _pixels = List.filled(width * height, [0, 1, 1])
@@ -318,6 +329,10 @@ class Image {
     export() {
         return exportInternal(_pixels, _width, _height)
     }
+}
+
+class Math {
+    foreign static random()
 }
 )--";
 }

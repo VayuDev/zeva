@@ -39,7 +39,7 @@ function addScript(id, name, prepend) {
     div.append($("<span></span>").text(name).addClass("list-element"));
     let edit = $("<span></span>").addClass("list-element-button").text("Edit");
     edit.click(function () {
-        window.location = "/html/scripts/edit.html?scriptid=" + id;
+        window.location = "edit.html?scriptid=" + id;
     });
     div.append(edit);
     let run = $("<span></span>").text("Run");
@@ -50,7 +50,7 @@ function addScript(id, name, prepend) {
 
     let render = $("<span></span>").text("Draw");
     render.click(function() {
-        window.location = "/html/scripts/draw.html?scriptid=" + id;
+        window.location = "draw.html?scriptid=" + id;
     });
     div.append(render);
 

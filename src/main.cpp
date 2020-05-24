@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS timelog_entry (
 
     DatabaseHelper::attachNotifyTriggerToAllTables(*conn);
 
+    srand(time(0));
     //load scripts
     conn->addListener([](const std::string& pPayload) {
         auto splitterLocation = pPayload.find('%');
@@ -62,6 +63,7 @@ CREATE TABLE IF NOT EXISTS timelog_entry (
         }
 
     });
+
 
     //load scripts
     auto scripts = conn->query("SELECT name,code FROM scripts");
@@ -102,6 +104,8 @@ CREATE TABLE IF NOT EXISTS timelog_entry (
         resp->setBody(std::to_string((int) pStatus));
         return resp;
     });
+
+    LOG_INFO << "Server started!";
     drogon::app().run();
     LOG_INFO << "Quitting";
 }

@@ -13,24 +13,28 @@ namespace  Api {
             METHOD_ADD(Scripts::runScript, "run?scriptid={}&param={}", drogon::Post);
             METHOD_ADD(Scripts::drawScript, "draw?scriptid={}", drogon::Get);
             METHOD_ADD(Scripts::deleteScript, "delete?scriptid={}", drogon::Post);
+            METHOD_ADD(Scripts::createScript, "create?scriptname={}", drogon::Post);
         METHOD_LIST_END
 
-        void getAllScripts(const drogon::HttpRequestPtr &req,
+        void getAllScripts(const drogon::HttpRequestPtr&,
                            std::function<void(const drogon::HttpResponsePtr &)> &&callback);
-        void getScript(const drogon::HttpRequestPtr &req,
+        void getScript(const drogon::HttpRequestPtr&,
                        std::function<void(const drogon::HttpResponsePtr &)> &&callback,
                        int scriptid);
-        void updateScript(const drogon::HttpRequestPtr &req,
+        void updateScript(const drogon::HttpRequestPtr&,
                        std::function<void(const drogon::HttpResponsePtr &)> &&callback,
                        int scriptid, std::string&& pCode);
-        void runScript(const drogon::HttpRequestPtr &req,
+        void runScript(const drogon::HttpRequestPtr&,
                        std::function<void(const drogon::HttpResponsePtr &)> &&callback,
                        int scriptid, std::string&& pParam);
-        void drawScript(const drogon::HttpRequestPtr &req,
+        void drawScript(const drogon::HttpRequestPtr&,
                        std::function<void(const drogon::HttpResponsePtr &)> &&callback,
                        int scriptid);
-        void deleteScript(const drogon::HttpRequestPtr &req,
+        void deleteScript(const drogon::HttpRequestPtr&,
                         std::function<void(const drogon::HttpResponsePtr &)> &&callback,
                         int scriptid);
+        void createScript(const drogon::HttpRequestPtr&,
+                          std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+                          std::string&& pName);
     };
 }

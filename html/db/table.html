@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ZeVa 2.0</title>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+    <!-- Bootstrap core CSS -->
+    <link href="/csv-to-html-table/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/csv-to-html-table/css/dataTables.bootstrap.css" rel="stylesheet">
+
+    <script type="text/javascript" src="/csv-to-html-table/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/csv-to-html-table/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="/csv-to-html-table/js/jquery.csv.min.js"></script>
+    <script type="text/javascript" src="/csv-to-html-table/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="/csv-to-html-table/js/dataTables.bootstrap.js"></script>
+    <script type="text/javascript" src="/csv-to-html-table/js/csv_to_html_table.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="/css/style.css">
+    <script src="../js/index.js"></script>
+    <script src="js/table.js"></script>
+    <style>
+        #tablediv {
+            width: 100vw;
+            max-width: 100vw;
+            height: calc(100vh - 90px);
+            font-size: 20px;
+            overflow-x: hidden;
+            margin: 5px;
+        }
+        body {
+            overflow-x: hidden;
+        }
+    </style>
+</head>
+<body>
+<div class="main-grid">
+    <div id="header"></div>
+    <table id="tablediv">
+    </table>
+</div>
+</body>
+</html>
+

@@ -43,17 +43,17 @@ function notify(msg, classname = "notify-info") {
 }
 
 $(function() {
-    $("#header").load("/html/templates/header.html", "", () => {
+    $("#header").load("/templates/header.html", "", () => {
         let pathname = window.location.pathname;
-        if(pathname.startsWith("/html/hub")) {
+        if(pathname.startsWith("/hub")) {
             $("#nav_hub").addClass("selected");
-        } else if(pathname.startsWith("/html/scripts")) {
+        } else if(pathname.startsWith("/scripts")) {
             $("#nav_script").addClass("selected");
-        } else if(pathname.startsWith("/html/db")) {
+        } else if(pathname.startsWith("/db")) {
             $("#nav_db").addClass("selected");
-        } else if(pathname.startsWith("/html/log")) {
+        } else if(pathname.startsWith("/log")) {
             $("#nav_log").addClass("selected");
-        } else if(pathname.startsWith("/html/apps")) {
+        } else if(pathname.startsWith("/apps")) {
             $("#nav_apps").addClass("selected");
         }
     });
