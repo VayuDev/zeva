@@ -1,12 +1,12 @@
 #include "Script.hpp"
 #include "wren.hpp"
-#include "Logger.hpp"
 #include <iostream>
 #include <cstring>
 #include "ScriptLibs.hpp"
 #include <cassert>
 #include <Util.hpp>
 #include <nlohmann/json.hpp>
+#include <drogon/HttpAppFramework.h>
 
 static std::string toFunctionSignature(const std::string& pName, size_t pArity) {
     bool first = true;
@@ -30,14 +30,15 @@ void Script::create(const std::string& pModule, const std::string& pCode) {
     config.errorFn = [] (WrenVM* pVM, WrenErrorType, const char* module, int line, const char* message) {
         std::string msg = (module ? module : "(null)") + std::string{" ("} + std::to_string(line) + "): " + message + "\n";
         auto *self = (Script*) wrenGetUserData(pVM);
-        self->mLogger->error("%s: %s", self->mModuleName.c_str(), msg.c_str());
+
+        LOG_ERROR << self->mModuleName << ": " << msg;
         self->setLastError(std::move(msg));
     };
     config.writeFn = [] (WrenVM* pVM, const char* text) {
         std::string str{text};
         auto *self = (Script*) wrenGetUserData(pVM);
         if(!str.empty() && str != "\n") {
-            self->mLogger->info("%s:\t %s", self->mModuleName.c_str(), str.c_str());
+            LOG_INFO << self->mModuleName.c_str() << ": " << str.c_str();
         }
         
     };
@@ -101,7 +102,7 @@ class Script {
                 }
                 auto *returnError = std::get_if<std::string>(&ret.value);
                 if(returnError) {
-                    mLogger->error("%s failed with %s", mModuleName.c_str(), returnError->c_str());
+                    LOG_ERROR << mModuleName << " failed with " << returnError;
                 } else {
                     ScriptValue val = std::get<ScriptValue>(ret.value);
                     if(val.type != WREN_TYPE_NULL) {
@@ -112,7 +113,7 @@ class Script {
                             jsonStr = "(unable to parse)";
                         }
 
-                        mLogger->info("%s returned with %s", mModuleName.c_str(), jsonStr.c_str());
+                        LOG_INFO << mModuleName << " returned with " << jsonStr;
                     }
                 }
 

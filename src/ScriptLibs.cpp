@@ -1,7 +1,6 @@
 #include "ScriptLibs.hpp"
 #include <cstring>
 #include <stdexcept>
-#include "Logger.hpp"
 #include "PostgreSQLDatabase.hpp"
 #include <cassert>
 #include <TcpClient.hpp>
@@ -56,7 +55,6 @@ WrenForeignClassMethods bindForeignClass(WrenVM*, const char* module, const char
                     try {
                         new(data)TcpClient(hostname, port);
                     } catch(std::exception& e) {
-                        log().error("Failed to construct a TcpClient: %s", e.what());
                         wrenSetSlotNull(pVM, 0);
                     }
                 },

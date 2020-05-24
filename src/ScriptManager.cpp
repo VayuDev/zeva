@@ -1,5 +1,4 @@
 #include "ScriptManager.hpp"
-#include <Logger.hpp>
 
 #include <utility>
 

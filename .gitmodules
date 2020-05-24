@@ -1,12 +1,12 @@
 [submodule "wren"]
 	path = wren
 	url = https://github.com/wren-lang/wren.git
-[submodule "seasocks"]
-	path = seasocks
-	url = http://gitea.fritz.box:3000/vayudev/seasocks.git
 [submodule "json"]
 	path = json
 	url = https://github.com/nlohmann/json.git
 [submodule "html/csv-to-html-table"]
 	path = html/csv-to-html-table
 	url = https://github.com/derekeder/csv-to-html-table.git
+[submodule "drogon"]
+	path = drogon
+	url = https://github.com/an-tao/drogon.git

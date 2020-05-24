@@ -10,10 +10,8 @@ set(JSON_BuildTests OFF CACHE INTERNAL "")
 add_subdirectory(json)
 include_directories(${PROJECT_SOURCE_DIR}/json/include)
 
-set(UNITTESTS OFF)
-set(SEASOCKS_EXAMPLE_APP OFF)
-add_subdirectory("seasocks")
-include_directories("${PROJECT_SOURCE_DIR}/seasocks/src/main/c")
+add_subdirectory("drogon")
+include_directories("${PROJECT_SOURCE_DIR}/drogon/lib/inc")
 
 include_directories("${PROJECT_SOURCE_DIR}/zegdb/include")
 include_directories("${PROJECT_SOURCE_DIR}/zegdb/c_include")
@@ -31,8 +29,9 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra -fno-strict-aliasing")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -fno-strict-aliasing")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -msse3 -fno-strict-aliasing")
 
-file(GLOB_RECURSE SOURCES "${PROJECT_SOURCE_DIR}/src/*.cpp")
-file(GLOB_RECURSE HEADERS "${PROJECT_SOURCE_DIR}/include/*.hpp")
+file(GLOB_RECURSE SOURCES
+        "${PROJECT_SOURCE_DIR}/src/*.cpp"
+        "${PROJECT_SOURCE_DIR}/controllers/*.cpp")
 file(GLOB_RECURSE WREN_SOURCES 
   "${PROJECT_SOURCE_DIR}/wren/src/vm/*.c"
   "${PROJECT_SOURCE_DIR}/wren/src/optional/*.c")
@@ -42,6 +41,6 @@ add_definitions(-D_LINUX_)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(pqxx libpq REQUIRED)
 
-add_executable(ZeVa2_0 ${SOURCES} ${HEADERS} ${WREN_SOURCES})
+add_executable(ZeVa2_0 ${SOURCES} ${WREN_SOURCES})
 
-target_link_libraries(ZeVa2_0 pthread zstd seasocks nlohmann_json::nlohmann_json pqxx pq)
+target_link_libraries(ZeVa2_0 pthread zstd drogon nlohmann_json::nlohmann_json pqxx pq)

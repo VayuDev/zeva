@@ -9,7 +9,6 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <stdexcept>
-#include <Logger.hpp>
 
 static void error(std::string pMsg) {
     char error[512];

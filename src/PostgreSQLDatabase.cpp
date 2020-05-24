@@ -86,7 +86,6 @@ std::unique_ptr<QueryResult> PostgreSQLDatabase::query(std::string pQuery, std::
                         value.boolValue = row[(int)c].as<bool>();
                         break;
                     default:
-                        log().error("Unknown type %i", (int)row[(int)c].type());
                         assert(false);
                 }
             }
@@ -99,13 +98,10 @@ std::unique_ptr<QueryResult> PostgreSQLDatabase::query(std::string pQuery, std::
 }
 
 void PostgreSQLQueryResult::log() const {
-    ::log().info("Rows: %i", (int)getRowCount());
-    ::log().info("Columns: %i", (int)getColumnCount());
     std::string columnsStr;
     for(size_t i = 0; i < getColumnNames().size(); ++i) {
         columnsStr += getColumnNames().at(i) + ", ";
     }
-    ::log().info(columnsStr.c_str());
     for(size_t r = 0; r < getRowCount(); ++r) {
         std::string rowStr = "";
         for(size_t c = 0; c < getColumnCount(); ++c) {
@@ -121,7 +117,6 @@ void PostgreSQLQueryResult::log() const {
                     assert(false);
             }
         }
-        ::log().info(rowStr.c_str());
     }
 }
 

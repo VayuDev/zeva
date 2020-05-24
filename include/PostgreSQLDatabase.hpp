@@ -3,7 +3,6 @@
 #include <memory>
 #include <map>
 #include <pqxx/pqxx>
-#include "Logger.hpp"
 
 class PostgreSQLQueryResult : public QueryResult {
 public:

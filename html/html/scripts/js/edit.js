@@ -30,8 +30,7 @@ function clearLog() {
 
 $(function() {
     $.getJSON("/api/scripts/get", "scriptid=" + SCRIPTID, function(json) {
-        let row = json[0];
-        $("#editor").text(row["code"])
+        $("#editor").text(json["code"])
         editor = ace.edit("editor");
         editor.commands.addCommand({
             name: 'save',
