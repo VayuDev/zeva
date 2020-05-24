@@ -9,31 +9,52 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+struct DatabaseStorage {
+    bool inited = false;
+    PostgreSQLDatabase db;
+};
+
+extern const char* CONFIG_FILE;
+
 WrenForeignClassMethods bindForeignClass(WrenVM*, const char* module, const char* classname) {
     (void) module;
     if(strcmp(classname, "Database") == 0) {
         WrenForeignClassMethods methods = {
             .allocate = [] (WrenVM* pVM) {
-                if(wrenGetSlotType(pVM, 1) != WREN_TYPE_STRING) {
-                    wrenSetSlotNull(pVM, 0);
-                    return;
+                void *data = wrenSetSlotNewForeign(pVM, 0, 0, sizeof(DatabaseStorage));
+                auto *db = (DatabaseStorage*)data;
+                db->inited = false;
+                try {
+                    if(wrenGetSlotType(pVM, 1) != WREN_TYPE_STRING) {
+                        new(&db->db)PostgreSQLDatabase(CONFIG_FILE);
+                        db->inited = true;
+                    } else if (wrenGetSlotType(pVM, 1) == WREN_TYPE_STRING
+                                && wrenGetSlotType(pVM, 2) == WREN_TYPE_STRING
+                                && wrenGetSlotType(pVM, 3) == WREN_TYPE_STRING
+                                && wrenGetSlotType(pVM, 4) == WREN_TYPE_STRING
+                                && wrenGetSlotType(pVM, 5) == WREN_TYPE_NUM) {
+                        new(data)PostgreSQLDatabase(
+                                wrenGetSlotString(pVM, 1),
+                                wrenGetSlotString(pVM, 2),
+                                wrenGetSlotString(pVM, 3),
+                                wrenGetSlotString(pVM, 4),
+                                wrenGetSlotDouble(pVM, 5));
+                        db->inited = true;
+                    } else {
+                        db->inited = false;
+                    }
+                } catch(std::exception& e) {
+                    LOG_ERROR << "Script failed to connect to db: " << e.what() << "\n";
+                    db->inited = false;
                 }
-                void *data = wrenSetSlotNewForeign(pVM, 0, 0, sizeof(PostgreSQLDatabase));
-                const char *dbname = wrenGetSlotString(pVM, 1);
-                if(wrenGetSlotType(pVM, 2) == WREN_TYPE_STRING) {
-                    new(data)PostgreSQLDatabase(dbname,
-                            wrenGetSlotString(pVM, 2),
-                            wrenGetSlotString(pVM, 3),
-                            wrenGetSlotString(pVM, 4),
-                            wrenGetSlotDouble(pVM, 5));
-                } else {
-                    new(data)PostgreSQLDatabase(dbname);
-                }
-
             },
             .finalize = [] (void *data) {
-                auto* db = (PostgreSQLDatabase*)data;
-                db->~PostgreSQLDatabase();
+                auto* db = reinterpret_cast<DatabaseStorage*>(data);
+                if(db && db->inited) {
+                    db->db.~PostgreSQLDatabase();
+                }
+                db->inited = false;
+
             },
         };
         return methods;
@@ -69,13 +90,26 @@ WrenForeignClassMethods bindForeignClass(WrenVM*, const char* module, const char
     return methods;
 }
 
+static void passToVM(WrenVM* pVM, int pSlot, const char* pType, const char *pMsg) {
+    wrenEnsureSlots(pVM, pSlot + 3);
+    wrenSetSlotNewList(pVM, pSlot);
+    wrenSetSlotString(pVM, pSlot + 1, pType);
+    wrenSetSlotString(pVM, pSlot + 2, pMsg);
+    wrenInsertInList(pVM, pSlot, 0, pSlot + 1);
+    wrenInsertInList(pVM, pSlot, 1, pSlot + 2);
+}
+
 static void databaseQuerySync(WrenVM *pVM) {
     if(wrenGetSlotType(pVM, 1) == WREN_TYPE_STRING) {
-        auto* db = (PostgreSQLDatabase*) wrenGetSlotForeign(pVM, 0);
+        auto* db = (DatabaseStorage*) wrenGetSlotForeign(pVM, 0);
+        if(!db->inited) {
+            passToVM(pVM, 0, "error", "Database didn't connect!");
+            return;
+        }
         const char *text = wrenGetSlotString(pVM, 1);
         wrenEnsureSlots(pVM, 2);
         try {
-            auto ret = db->query(text);
+            auto ret = db->db.query(text);
             //LOAD VALUES
             wrenSetSlotString(pVM, 1, "ok");
             wrenEnsureSlots(pVM, 4);
@@ -118,15 +152,6 @@ static void databaseQuerySync(WrenVM *pVM) {
     } else {
         wrenSetSlotNull(pVM, 0);
     }
-}
-
-static void passToVM(WrenVM* pVM, int pSlot, const char* pType, const char *pMsg) {
-    wrenEnsureSlots(pVM, pSlot + 3);
-    wrenSetSlotNewList(pVM, 0);
-    wrenSetSlotString(pVM, 1, pType);
-    wrenSetSlotString(pVM, 2, pMsg);
-    wrenInsertInList(pVM, 0, 0, 1);
-    wrenInsertInList(pVM, 0, 1, 2);
 }
 
 static void tcpClientIsConnected(WrenVM* pVM) {
@@ -264,8 +289,9 @@ WrenForeignMethodFn bindForeignMethod(
 
 const char *foreignClassesString() {
     return R"--(
+
 foreign class Database {
-    construct new(dbname) {}
+    construct new() {}
     construct new(dbname, username, password, hostname, port) {}
     foreign query(request)
 }

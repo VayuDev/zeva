@@ -23,3 +23,10 @@ inline drogon::HttpResponsePtr genError(const std::string& pMsg) {
     errResp->setBody(pMsg);
     return errResp;
 }
+
+inline drogon::HttpResponsePtr genResponse(const std::string& pMsg) {
+    auto resp = drogon::HttpResponse::newHttpResponse();
+    resp->setContentTypeCode(drogon::CT_TEXT_PLAIN);
+    resp->setBody(pMsg);
+    return resp;
+}

@@ -12,6 +12,7 @@ namespace  Api {
             METHOD_ADD(Scripts::updateScript, "update?scriptid={}&code={}", drogon::Post);
             METHOD_ADD(Scripts::runScript, "run?scriptid={}&param={}", drogon::Post);
             METHOD_ADD(Scripts::drawScript, "draw?scriptid={}", drogon::Get);
+            METHOD_ADD(Scripts::deleteScript, "delete?scriptid={}", drogon::Post);
         METHOD_LIST_END
 
         void getAllScripts(const drogon::HttpRequestPtr &req,
@@ -28,5 +29,8 @@ namespace  Api {
         void drawScript(const drogon::HttpRequestPtr &req,
                        std::function<void(const drogon::HttpResponsePtr &)> &&callback,
                        int scriptid);
+        void deleteScript(const drogon::HttpRequestPtr &req,
+                        std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+                        int scriptid);
     };
 }

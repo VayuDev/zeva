@@ -2,7 +2,7 @@
 #include "Util.hpp"
 #include "ScriptManager.hpp"
 
-void Api::Scripts::getAllScripts(const drogon::HttpRequestPtr &req, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+void Api::Scripts::getAllScripts(const drogon::HttpRequestPtr&, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
     drogon::app().getDbClient()->execSqlAsync("SELECT * FROM scripts",
     [callback=std::move(callback)](const drogon::orm::Result& r) {
         Json::Value ret;
@@ -17,7 +17,7 @@ void Api::Scripts::getAllScripts(const drogon::HttpRequestPtr &req, std::functio
     }, genErrorHandler(callback));
 }
 
-void Api::Scripts::getScript(const drogon::HttpRequestPtr &req,
+void Api::Scripts::getScript(const drogon::HttpRequestPtr&,
                              std::function<void(const drogon::HttpResponsePtr &)> &&callback, int scriptid) {
     drogon::app().getDbClient()->execSqlAsync("SELECT * FROM scripts WHERE id=$1",
     [callback=std::move(callback)](const drogon::orm::Result& r) {
@@ -31,7 +31,7 @@ void Api::Scripts::getScript(const drogon::HttpRequestPtr &req,
     }, genErrorHandler(callback), scriptid);
 }
 
-void Api::Scripts::updateScript(const drogon::HttpRequestPtr &req,
+void Api::Scripts::updateScript(const drogon::HttpRequestPtr&,
                                 std::function<void(const drogon::HttpResponsePtr &)> &&callback, int scriptid,
                                 std::string &&pCode) {
     std::string codeCopy = pCode;
@@ -48,7 +48,7 @@ void Api::Scripts::updateScript(const drogon::HttpRequestPtr &req,
     }, genErrorHandler(callback), std::move(codeCopy), scriptid);
 }
 
-void Api::Scripts::runScript(const drogon::HttpRequestPtr &req,
+void Api::Scripts::runScript(const drogon::HttpRequestPtr&,
                              std::function<void(const drogon::HttpResponsePtr &)> &&callback, int scriptid, std::string&& pParam) {
     drogon::app().getDbClient()->execSqlAsync("SELECT name FROM scripts WHERE id=$1",
     [callback=std::move(callback),param=std::move(pParam)](const drogon::orm::Result& r) {
@@ -73,7 +73,7 @@ void Api::Scripts::runScript(const drogon::HttpRequestPtr &req,
     }, genErrorHandler(callback), scriptid);
 }
 
-void Api::Scripts::drawScript(const drogon::HttpRequestPtr &req,
+void Api::Scripts::drawScript(const drogon::HttpRequestPtr&,
                               std::function<void(const drogon::HttpResponsePtr &)> &&callback, int scriptid) {
     drogon::app().getDbClient()->execSqlAsync("SELECT name FROM scripts WHERE id=$1",
     [callback=std::move(callback)](const drogon::orm::Result& r) {
@@ -95,5 +95,15 @@ void Api::Scripts::drawScript(const drogon::HttpRequestPtr &req,
                 }
             }
         });
+    }, genErrorHandler(callback), scriptid);
+}
+
+void Api::Scripts::deleteScript(const drogon::HttpRequestPtr&,
+                                std::function<void(const drogon::HttpResponsePtr &)> &&callback, int scriptid) {
+    drogon::app().getDbClient()->execSqlAsync("DELETE FROM scripts WHERE id=$1 RETURNING name",
+    [callback=std::move(callback)](const drogon::orm::Result& r) {
+        auto name = r.at(0)["name"].as<std::string>();
+        ScriptManager::the().deleteScript(name);
+        callback(genResponse("Deleted script"));
     }, genErrorHandler(callback), scriptid);
 }

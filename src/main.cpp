@@ -15,7 +15,7 @@ static void sighandler(int) {
 
 }
 
-constexpr static const char* CONFIG_FILE = "assets/config.json";
+const char* CONFIG_FILE = "assets/config.json";
 
 int main() {
     //init database
@@ -72,6 +72,11 @@ CREATE TABLE IF NOT EXISTS timelog_entry (
         }
     }
 
+    trantor::Logger::setOutputFunction([](const char* str, uint64_t len) {
+        std::cout.write(str, len);
+    }, []() {
+        std::cout << std::flush;
+    });
 
 
     signal(SIGTERM, sighandler);

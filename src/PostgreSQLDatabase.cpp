@@ -179,7 +179,10 @@ void PostgreSQLDatabase::init() {
 }
 
 PostgreSQLDatabase::~PostgreSQLDatabase() {
-    mConnection->disconnect();
+    if(mConnection) {
+        mConnection->disconnect();
+        mConnection = nullptr;
+    }
 }
 
 std::string PostgreSQLDatabase::performCopyToStdout(const std::string& pQuery) {

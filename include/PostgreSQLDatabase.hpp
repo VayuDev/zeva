@@ -5,6 +5,7 @@
 #include <pqxx/pqxx>
 #include <filesystem>
 #include <json/value.h>
+#include <repl.h>
 
 class PostgreSQLQueryResult : public QueryResult {
 public:
@@ -27,10 +28,9 @@ public:
     virtual std::unique_ptr<QueryResult> query(std::string pQuery, std::vector<QueryValue> pPlaceholders = {}) override;
     std::string performCopyToStdout(const std::string& pQuery);
     void awaitNotifications(int millis) override;
-
 private:
+    friend WrenForeignClassMethods bindForeignClass(WrenVM*, const char*, const char*);
     void init();
-
     std::string mConnectString;
     std::unique_ptr<pqxx::connection> mConnection;
     std::map<pqxx::oid, QueryValueType> mTypes;
