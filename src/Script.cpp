@@ -28,7 +28,7 @@ void Script::create(const std::string& pModule, const std::string& pCode) {
     WrenConfiguration config; 
     wrenInitConfiguration(&config);
     config.errorFn = [] (WrenVM* pVM, WrenErrorType, const char* module, int line, const char* message) {
-        std::string msg = (module ? module : "(null)") + std::string{" ("} + std::to_string(line) + "): " + message + "\n";
+        std::string msg = (module ? module : "(null)") + std::string{" ("} + std::to_string(line) + "): " + message;
         auto *self = (Script*) wrenGetUserData(pVM);
 
         LOG_ERROR << self->mModuleName << ": " << msg;

@@ -18,6 +18,7 @@ inline std::function<void(const drogon::orm::DrogonDbException&)> genErrorHandle
     };
 }
 inline drogon::HttpResponsePtr genError(const std::string& pMsg) {
+    LOG_ERROR << "Generating error: " << pMsg;
     auto errResp = drogon::HttpResponse::newHttpResponse();
     errResp->setStatusCode(drogon::k500InternalServerError);
     errResp->setBody(pMsg);
@@ -30,3 +31,5 @@ inline drogon::HttpResponsePtr genResponse(const std::string& pMsg) {
     resp->setBody(pMsg);
     return resp;
 }
+
+bool isValidAscii(const signed char *c, size_t len);

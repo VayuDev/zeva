@@ -14,12 +14,7 @@
     }
   ],
   "app": {
-    "log": {
-      "log_path": "./",
-      "logfile_base_name": "",
-      "log_size_limit": 100000000,
-      "log_level": "TRACE"
-    },
+
     "document_root": "html"
   }
 }

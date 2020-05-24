@@ -2,6 +2,7 @@
 #include "Util.hpp"
 #include "Script.hpp"
 #include "Script.hpp"
+#include <unicode/ucnv.h>
 
 Json::Value scriptValueToJson(ScriptValue&& pVal) {
     switch(pVal.type) {
@@ -72,3 +73,9 @@ ScriptValue wrenValueToScriptValue(struct WrenVM *pVM, int pSlot) {
     return ret;
 }
 
+bool isValidAscii(const signed char *c, size_t len) {
+    for (size_t i = 0; i < len; i++) {
+        if(c[i] < 0) return false;
+    }
+    return true;
+}

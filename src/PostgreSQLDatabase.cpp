@@ -27,7 +27,7 @@ namespace pqxx {
 
 
 std::unique_ptr<QueryResult> PostgreSQLDatabase::query(std::string pQuery, std::vector<QueryValue> pPlaceholders) {
-
+    assert(mConnection);
     mConnection->prepare(pQuery, pQuery);
     pqxx::work w{*mConnection};
     pqxx::result r;
@@ -124,7 +124,7 @@ void PostgreSQLQueryResult::log() const {
 }
 
 
-PostgreSQLDatabase::PostgreSQLDatabase(const std::filesystem::path &pConfigFile) {
+PostgreSQLDatabase::PostgreSQLDatabase(const std::filesystem::path &pConfigFile, bool connect) {
     std::ifstream instream{pConfigFile};
     Json::Value config;
     instream >> config;
@@ -134,10 +134,11 @@ PostgreSQLDatabase::PostgreSQLDatabase(const std::filesystem::path &pConfigFile)
                    " password = "     + dbconfig["passwd"].asString()  +
                    " hostaddr = "     + dbconfig["host"].asString() +
                    " port = "         + std::to_string(5432);
-
-    mConnection = std::make_unique<pqxx::connection>(mConnectString);
-    mNotificationReceiver.emplace(*this);
-    init();
+    if(connect) {
+        mConnection = std::make_unique<pqxx::connection>(mConnectString);
+        mNotificationReceiver.emplace(*this);
+        init();
+    }
 }
 
 PostgreSQLDatabase::PostgreSQLDatabase(std::string pDbName, std::string pUserName, std::string pPassword,

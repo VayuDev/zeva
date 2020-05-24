@@ -6,13 +6,16 @@
 #include <cstring>
 #include <cstdlib>
 #include <fstream>
-#include <signal.h>
+
 #include <drogon/HttpAppFramework.h>
 #include "PostgreSQLDatabase.hpp"
 #include "DatabaseHelper.hpp"
 
-static void sighandler(int) {
+#include <csignal>
+#include "Util.hpp"
 
+static void sighandler(int) {
+    drogon::app().quit();
 }
 
 const char* CONFIG_FILE = "assets/config.json";
@@ -73,17 +76,20 @@ CREATE TABLE IF NOT EXISTS timelog_entry (
     }
 
     trantor::Logger::setOutputFunction([](const char* str, uint64_t len) {
-        std::cout.write(str, len);
+        if(isValidAscii(reinterpret_cast<const signed char *>(str), len))
+            std::cout.write(str, len);
+        else
+            std::cout << "INVALID ASCII\n";
     }, []() {
         std::cout << std::flush;
     });
-
 
     signal(SIGTERM, sighandler);
     signal(SIGINT, sighandler);
     signal(SIGABRT, sighandler);
     drogon::app().addListener("0.0.0.0", 8080);
     drogon::app().loadConfigFile(CONFIG_FILE);
+    drogon::app().setLogLevel(trantor::Logger::LogLevel::kDebug);
 
     auto resp404 = drogon::HttpResponse::newHttpResponse();
     resp404->setStatusCode(drogon::HttpStatusCode::k404NotFound);

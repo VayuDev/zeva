@@ -22,7 +22,7 @@ private:
 
 class PostgreSQLDatabase : public DatabaseWrapper {
 public:
-    explicit PostgreSQLDatabase(const std::filesystem::path& pConfigFile);
+    explicit PostgreSQLDatabase(const std::filesystem::path& pConfigFile, bool connect = true);
     PostgreSQLDatabase(std::string pDbName, std::string pUserName, std::string pPassword, std::string pHost, uint16_t pPort);
     ~PostgreSQLDatabase();
     virtual std::unique_ptr<QueryResult> query(std::string pQuery, std::vector<QueryValue> pPlaceholders = {}) override;
