@@ -73,6 +73,17 @@ input, button {
     justify-content: space-between;
 }
 
+.elementList .subElement {
+    margin-left: 70px;
+    width: calc(100% - 90px);
+    background-color: #2ca81e;
+}
+
+.elementList .spacer {
+    height: 10px;
+    background-color: unset;
+}
+
 .elementList * *:first-child {
     width: 100%;
 }

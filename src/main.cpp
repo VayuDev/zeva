@@ -31,13 +31,31 @@ static void sighandler(int) {
 
 int main() {
     auto conn = std::make_shared<PostgreSQLDatabase>("testdb");
-    conn->query("CREATE TABLE IF NOT EXISTS scripts (id SERIAL, name TEXT UNIQUE, code TEXT)");
+    conn->query("CREATE TABLE IF NOT EXISTS scripts (id SERIAL PRIMARY KEY, name TEXT UNIQUE, code TEXT)");
     try {
-        conn->query("CREATE TABLE protected (id SERIAL, name TEXT)");
+        conn->query("CREATE TABLE protected (id SERIAL PRIMARY KEY, name TEXT UNIQUE)");
         conn->query("INSERT INTO protected (name) VALUES ('scripts'), ('protected')");
-    } catch(...) {
+    } catch(...) {}
+    conn->query(R"(
+CREATE TABLE IF NOT EXISTS timelog (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL
+))");
+    conn->query(R"(
+CREATE TABLE IF NOT EXISTS timelog_activity (
+    id SERIAL PRIMARY KEY,
+    timelogid BIGINT NOT NULL REFERENCES timelog(id),
+    name TEXT NOT NULL
+))");
+    conn->query(
+            R"(
+CREATE TABLE IF NOT EXISTS timelog_entry (
+    timelogid BIGINT NOT NULL REFERENCES timelog(id),
+    activityid BIGINT NOT NULL REFERENCES timelog_activity(id),
+    duration INTERVAL NOT NULL,
+    PRIMARY KEY(timelogid,activityid)
+))");
 
-    }
     DatabaseHelper::attachNotifyTriggerToAllTables(*conn);
     auto manager = std::make_shared<ScriptManager>(Logger::create("Scripts"));
     conn->addListener([manager](const std::string& pPayload) {
