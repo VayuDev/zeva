@@ -38,8 +38,13 @@ void Api::Scripts::updateScript(const drogon::HttpRequestPtr &req,
     drogon::app().getDbClient()->execSqlAsync("UPDATE SCRIPTS SET code=$1 WHERE id=$2 RETURNING name",
     [callback=std::move(callback), pCode=std::move(pCode)](const drogon::orm::Result& r) {
         auto name = r.at(0)["name"].as<std::string>();
-        ScriptManager::the().addScript(name, pCode);
-        callback(drogon::HttpResponse::newHttpResponse());
+        try {
+            ScriptManager::the().addScript(name, pCode);
+            callback(drogon::HttpResponse::newHttpResponse());
+        } catch(std::exception& e) {
+            callback(genError(e.what()));
+        }
+
     }, genErrorHandler(callback), std::move(codeCopy), scriptid);
 }
 

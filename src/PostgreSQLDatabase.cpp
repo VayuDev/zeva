@@ -6,6 +6,9 @@
 #include <pqxx/tablereader.hxx>
 #include <pqxx/strconv.hxx>
 #include "libpq-fe.h"
+#include <drogon/HttpAppFramework.h>
+#include <Util.hpp>
+#include <fstream>
 
 namespace pqxx {
     template<> struct PQXX_LIBEXPORT string_traits<std::optional<timeval>>
@@ -120,16 +123,37 @@ void PostgreSQLQueryResult::log() const {
     }
 }
 
+
+PostgreSQLDatabase::PostgreSQLDatabase(const std::filesystem::path &pConfigFile) {
+    std::ifstream instream{pConfigFile};
+    Json::Value config;
+    instream >> config;
+    const auto dbconfig = config["db_clients"][0];
+    mConnectString = "dbname = "      + dbconfig["dbname"].asString()  +
+                   " user = "         + dbconfig["user"].asString()  +
+                   " password = "     + dbconfig["passwd"].asString()  +
+                   " hostaddr = "     + dbconfig["host"].asString() +
+                   " port = "         + std::to_string(5432);
+
+    mConnection = std::make_unique<pqxx::connection>(mConnectString);
+    mNotificationReceiver.emplace(*this);
+    init();
+}
+
 PostgreSQLDatabase::PostgreSQLDatabase(std::string pDbName, std::string pUserName, std::string pPassword,
                                        std::string pHost, uint16_t pPort)
-                                       : mConnectString("dbname = " + pDbName +
-                                                        " user = " + pUserName +
-                                                        " password = " + pPassword +
-                                                        " hostaddr = " + pHost +
-                                                        " port = " + std::to_string(pPort)),
-                                         mConnection(std::make_unique<pqxx::connection>(mConnectString)),
-                                         mNotificationReceiver(*this) {
+: mConnectString("dbname = " + pDbName +
+            " user = " + pUserName +
+            " password = " + pPassword +
+            " hostaddr = " + pHost +
+            " port = " + std::to_string(pPort)),
+mConnection(std::make_unique<pqxx::connection>(mConnectString)),
+mNotificationReceiver(*this) {
 
+    init();
+}
+
+void PostgreSQLDatabase::init() {
     pqxx::nontransaction n{*mConnection};
     pqxx::result r{n.exec("select typname, oid from pg_type;")};
 
@@ -151,6 +175,7 @@ PostgreSQLDatabase::PostgreSQLDatabase(std::string pDbName, std::string pUserNam
         }
         mTypes[oid] = type;
     }
+    LOG_TRACE << "PostgreSQLDatabase created";
 }
 
 PostgreSQLDatabase::~PostgreSQLDatabase() {
@@ -190,6 +215,9 @@ std::string PostgreSQLDatabase::performCopyToStdout(const std::string& pQuery) {
 void PostgreSQLDatabase::awaitNotifications(int millis) {
     mConnection->await_notification(0, millis * 1000);
 }
+
+
+
 
 size_t PostgreSQLQueryResult::getRowCount() const {
     return mData.size();
