@@ -87,8 +87,7 @@ class Script {
         throw std::runtime_error("Instantiation failed: " + popLastError());
     }
     mInstance = wrenGetSlotHandle(mVM, 0);
-    
-    mExecuteThread.emplace([this] {
+    auto& thread = mExecuteThread.emplace([this] {
         while(mShouldRun) {
             std::unique_lock<std::mutex> lock(mQueueMutex);
             mQueueAwaitCV.wait(lock);
@@ -132,6 +131,10 @@ class Script {
             }
         }
     });
+    char threadNameBuff[16];
+    snprintf(threadNameBuff, 16, "script_%s", mModuleName.c_str());
+    threadNameBuff[15] = '\0';
+    pthread_setname_np(thread.native_handle(), threadNameBuff);
 }
 Script::Script(const std::string& pModule, const std::string& pCode) {
     create(pModule, pCode);
