@@ -13,6 +13,7 @@
 
 #include <csignal>
 #include "Util.hpp"
+#include <regex>
 
 static void sighandler(int) {
     drogon::app().quit();
@@ -28,6 +29,7 @@ int main() {
         conn->query("CREATE TABLE protected (id SERIAL PRIMARY KEY, name TEXT UNIQUE)");
         conn->query("INSERT INTO protected (name) VALUES ('scripts'), ('protected')");
     } catch(...) {}
+    //timelog table
     conn->query(R"(
 CREATE TABLE IF NOT EXISTS timelog (
     id SERIAL PRIMARY KEY,
@@ -47,11 +49,35 @@ CREATE TABLE IF NOT EXISTS timelog_entry (
     duration INTERVAL NOT NULL,
     PRIMARY KEY(timelogid,activityid)
 ))");
+    //log table
+    try {
+        conn->query("CREATE TABLE log_level (id SERIAL PRIMARY KEY, name TEXT UNIQUE)");
+        conn->query(R"(
+INSERT INTO log_level (id, name) VALUES
+    (0, 'trace'),
+    (1, 'debug'),
+    (2, 'info'),
+    (3, 'warn'),
+    (4, 'error'),
+    (5, 'fatal'),
+    (6, 'syserr');
+)");
+    } catch(std::exception& e) {
+    }
+
+
+    conn->query(R"(
+CREATE TABLE IF NOT EXISTS log (
+    id SERIAL PRIMARY KEY,
+    created TIMESTAMP WITH TIME ZONE NOT NULL,
+    level BIGINT NOT NULL REFERENCES log_level(id),
+    msg TEXT NOT NULL
+))");
 
     DatabaseHelper::attachNotifyTriggerToAllTables(*conn);
 
     srand(time(0));
-    //load scripts
+    //event trigger
     conn->addListener([](const std::string& pPayload) {
         auto splitterLocation = pPayload.find('%');
         if(splitterLocation == std::string::npos) {
@@ -64,28 +90,49 @@ CREATE TABLE IF NOT EXISTS timelog_entry (
 
     });
 
-
-    //load scripts
-    auto scripts = conn->query("SELECT name,code FROM scripts");
-    for(size_t i = 0; i < scripts->getRowCount(); ++i) {
-        auto name = scripts->getValue(i, 0).stringValue;
-        auto code = scripts->getValue(i, 1).stringValue;
-        try {
-            ScriptManager::the().addScript(name, code);
-        } catch(std::exception& e){
-            LOG_ERROR << "Failed to load script '" << name << "' with exception: " << e.what();
-        }
-    }
-
-    trantor::Logger::setOutputFunction([](const char* str, uint64_t len) {
-        if(isValidAscii(reinterpret_cast<const signed char *>(str), len))
+    //setup log
+    std::regex levelFinder{R"([a-zA-Z]+)"};
+    trantor::Logger::setOutputFunction([&levelFinder, conn](const char* str, uint64_t len) {
+        if(isValidAscii(reinterpret_cast<const signed char *>(str), len)) {
             std::cout.write(str, len);
-        else
+            std::string msg{str, len - 1};
+            int64_t level = 0;
+            std::smatch levelMatch;
+            if(!std::regex_search(msg, levelMatch, levelFinder)) {
+                assert(false);
+            }
+            std::string restString = levelMatch.suffix();
+            if(!std::regex_search(restString, levelMatch, levelFinder)) {
+                assert(false);
+            }
+            const std::string& logLevel = levelMatch[0];
+            if(logLevel == "TRACE") {
+                level = 0;
+            } else if(logLevel == "DEBUG") {
+                level = 1;
+            } else if(logLevel == "INFO") {
+                level = 2;
+            } else if(logLevel == "WARN") {
+                level = 3;
+            } else if(logLevel == "ERROR") {
+                level = 4;
+            } else if(logLevel == "FATAL") {
+                level = 5;
+            } else if(logLevel == "SYSERR") {
+                level = 6;
+            }
+            drogon::app().getDbClient()->execSqlAsync("INSERT INTO log (level, created, msg) VALUES ($1, CURRENT_TIMESTAMP, $2)",
+                                                      [](const drogon::orm::Result&) {},
+                                                      [](const drogon::orm::DrogonDbException&) {},
+                                                      level, std::move(msg));
+        } else {
             std::cout << "INVALID ASCII\n";
+        }
     }, []() {
         std::cout << std::flush;
     });
 
+    //setup webserver
     signal(SIGTERM, sighandler);
     signal(SIGINT, sighandler);
     signal(SIGABRT, sighandler);
@@ -104,8 +151,20 @@ CREATE TABLE IF NOT EXISTS timelog_entry (
         resp->setBody(std::to_string((int) pStatus));
         return resp;
     });
-
-    LOG_INFO << "Server started!";
+    drogon::app().getLoop()->queueInLoop([conn] {
+        //load scripts
+        auto scripts = conn->query("SELECT name,code FROM scripts");
+        for(size_t i = 0; i < scripts->getRowCount(); ++i) {
+            auto name = scripts->getValue(i, 0).stringValue;
+            auto code = scripts->getValue(i, 1).stringValue;
+            try {
+                ScriptManager::the().addScript(name, code);
+            } catch(std::exception& e){
+                LOG_ERROR << "Failed to load script '" << name << "' with exception: " << e.what();
+            }
+        }
+        LOG_INFO << "Server completely started";
+    });
     drogon::app().run();
-    LOG_INFO << "Quitting";
+    LOG_INFO << "Quitting server";
 }
