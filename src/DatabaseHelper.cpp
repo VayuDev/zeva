@@ -30,7 +30,16 @@ void createDb(DatabaseWrapper &pDb) {
     pDb.query("CREATE TABLE IF NOT EXISTS scripts (id SERIAL PRIMARY KEY, name TEXT UNIQUE, code TEXT)");
     try {
         pDb.query("CREATE TABLE protected (id SERIAL PRIMARY KEY, name TEXT UNIQUE)");
-        pDb.query("INSERT INTO protected (name) VALUES ('scripts'), ('protected')");
+        pDb.query(R"(
+INSERT INTO protected (name) VALUES
+    ('scripts'),
+    ('protected'),
+    ('log'),
+    ('log_level'),
+    ('timelog'),
+    ('timelog_activity'),
+    ('timelog_entry')
+)");
     } catch(...) {}
     //timelog table
     pDb.query(R"(
