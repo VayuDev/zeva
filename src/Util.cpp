@@ -7,7 +7,9 @@
 Json::Value scriptValueToJson(ScriptValue&& pVal) {
     switch(pVal.type) {
         case WREN_TYPE_STRING:
-            return std::move(pVal.stringValue);
+            if(!isValidAscii(reinterpret_cast<const signed char *>(pVal.stringValue.c_str()), pVal.stringValue.size()))
+                throw std::runtime_error("Wren value contains invalid ascii!");
+            return pVal.stringValue;
         case WREN_TYPE_NUM:
             return pVal.doubleValue;
         case WREN_TYPE_FOREIGN:

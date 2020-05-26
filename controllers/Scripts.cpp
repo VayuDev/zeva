@@ -72,7 +72,12 @@ void Api::Scripts::runScript(const drogon::HttpRequestPtr&,
             } else {
                 auto val = std::get<ScriptValue>(ret.value);
                 Json::Value json;
-                json["return"] = scriptValueToJson(std::move(val));
+                try {
+                    json["return"] = scriptValueToJson(std::move(val));
+                } catch(std::runtime_error& e) {
+                    json["return"] = std::string{"("} + e.what() + ')';
+                }
+
                 json["type"] = "ok";
                 callback(drogon::HttpResponse::newHttpJsonResponse(std::move(json)));
             }
