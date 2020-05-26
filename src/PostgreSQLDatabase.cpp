@@ -180,6 +180,7 @@ void PostgreSQLDatabase::init() {
 }
 
 PostgreSQLDatabase::~PostgreSQLDatabase() {
+    mNotificationReceiver.reset();
     if(mConnection) {
         mConnection->disconnect();
         mConnection = nullptr;

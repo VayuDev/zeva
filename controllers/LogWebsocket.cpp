@@ -12,7 +12,7 @@ void LogWebsocket::handleNewMessage(const drogon::WebSocketConnectionPtr& pConn,
     std::lock_guard<std::shared_mutex> lock(mConnectionsMutex);
     try {
         mConnections.emplace(pConn, stringToLogLevel(pMsg));
-        drogon::app().getDbClient()->execSqlAsync("SELECT * FROM log",
+        drogon::app().getDbClient()->execSqlAsync("SELECT * FROM log ORDER BY created",
         [this, conn = pConn](const drogon::orm::Result& r) {
             Json::Value response;
             for(const auto& row: r) {

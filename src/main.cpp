@@ -60,13 +60,9 @@ int main() {
     LogNotificationReceiver recv{conn->getConnection(), logWebsocketController};
 
     //handle notifications
-    std::atomic<bool> shouldRun = true;
-    std::thread t{
-        [conn, &shouldRun] {
-            while(shouldRun) {
-                conn->awaitNotifications(100);
-            }
-        }};
+    drogon::app().getLoop()->runEvery(0.1, [conn] {
+        conn->awaitNotifications(1);
+    });
 
     //setup log
     std::regex levelFinder{R"([a-zA-Z]+)"};
@@ -136,7 +132,4 @@ int main() {
     });
     drogon::app().run();
     LOG_INFO << "Quitting server";
-    shouldRun = false;
-    if(t.joinable())
-        t.join();
 }
