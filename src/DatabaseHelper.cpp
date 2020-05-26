@@ -25,4 +25,68 @@ WHERE table_schema = 'public'
     }
 }
 
+void createDb(DatabaseWrapper &pDb) {
+
+    pDb.query("CREATE TABLE IF NOT EXISTS scripts (id SERIAL PRIMARY KEY, name TEXT UNIQUE, code TEXT)");
+    try {
+        pDb.query("CREATE TABLE protected (id SERIAL PRIMARY KEY, name TEXT UNIQUE)");
+        pDb.query("INSERT INTO protected (name) VALUES ('scripts'), ('protected')");
+    } catch(...) {}
+    //timelog table
+    pDb.query(R"(
+CREATE TABLE IF NOT EXISTS timelog (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL
+))");
+    pDb.query(R"(
+CREATE TABLE IF NOT EXISTS timelog_activity (
+    id SERIAL PRIMARY KEY,
+    timelogid BIGINT NOT NULL REFERENCES timelog(id),
+    name TEXT NOT NULL
+))");
+    pDb.query(
+            R"(
+CREATE TABLE IF NOT EXISTS timelog_entry (
+    timelogid BIGINT NOT NULL REFERENCES timelog(id),
+    activityid BIGINT NOT NULL REFERENCES timelog_activity(id),
+    duration INTERVAL NOT NULL,
+    PRIMARY KEY(timelogid,activityid)
+))");
+    //log table
+    try {
+        pDb.query("CREATE TABLE log_level (id SERIAL PRIMARY KEY, name TEXT UNIQUE)");
+        pDb.query(R"(
+INSERT INTO log_level (id, name) VALUES
+    (0, 'trace'),
+    (1, 'debug'),
+    (2, 'info'),
+    (3, 'warn'),
+    (4, 'error'),
+    (5, 'fatal'),
+    (6, 'syserr');
+)");
+    } catch(std::exception& e) {
+    }
+
+    pDb.query(R"(
+CREATE TABLE IF NOT EXISTS log (
+    id SERIAL PRIMARY KEY,
+    created TIMESTAMP WITH TIME ZONE NOT NULL,
+    level BIGINT NOT NULL REFERENCES log_level(id),
+    msg TEXT NOT NULL
+))");
+    //log trigger
+    pDb.query(R"(
+CREATE OR REPLACE FUNCTION new_log() RETURNS trigger AS $BODY$
+    BEGIN
+        PERFORM pg_notify('newlog', NEW.level || '%' || NEW.msg);
+        RETURN NULL;
+    END;
+    $BODY$ LANGUAGE plpgsql;
+)");
+    try {pDb.query("DROP TRIGGER newLogTrigger ON log");} catch(...) {}
+    try {pDb.query("CREATE TRIGGER newLogTrigger AFTER INSERT ON log FOR EACH ROW EXECUTE FUNCTION new_log()");} catch(...) {}
+    DatabaseHelper::attachNotifyTriggerToAllTables(pDb);
+}
+
 }

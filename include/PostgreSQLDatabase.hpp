@@ -28,6 +28,10 @@ public:
     virtual std::unique_ptr<QueryResult> query(std::string pQuery, std::vector<QueryValue> pPlaceholders = {}) override;
     std::string performCopyToStdout(const std::string& pQuery);
     void awaitNotifications(int millis) override;
+
+    pqxx::connection& getConnection() {
+        return *mConnection;
+    }
 private:
     friend WrenForeignClassMethods bindForeignClass(WrenVM*, const char*, const char*);
     void init();

@@ -10,6 +10,7 @@
 #include <drogon/HttpAppFramework.h>
 #include "PostgreSQLDatabase.hpp"
 #include "DatabaseHelper.hpp"
+#include "LogWebsocket.hpp"
 
 #include <csignal>
 #include "Util.hpp"
@@ -21,60 +22,25 @@ static void sighandler(int) {
 
 const char* CONFIG_FILE = "assets/config.json";
 
+class LogNotificationReceiver : private pqxx::notification_receiver {
+public:
+    LogNotificationReceiver(pqxx::connection& pConn, std::shared_ptr<LogWebsocket> pLog)
+            : pqxx::notification_receiver(pConn, "newlog"), mLog(std::move(pLog)) {}
+
+    void operator()(const std::string &payload, int) override {
+        auto firstPercentageIndex = payload.find('%');
+        auto level = std::stoll(payload.substr(0, firstPercentageIndex));
+        auto msg = payload.substr(firstPercentageIndex + 1, std::string::npos);
+        mLog->newLogMessage(level, msg);
+    }
+private:
+    std::shared_ptr<LogWebsocket> mLog;
+};
+
 int main() {
     //init database
     auto conn = std::make_shared<PostgreSQLDatabase>(CONFIG_FILE);
-    conn->query("CREATE TABLE IF NOT EXISTS scripts (id SERIAL PRIMARY KEY, name TEXT UNIQUE, code TEXT)");
-    try {
-        conn->query("CREATE TABLE protected (id SERIAL PRIMARY KEY, name TEXT UNIQUE)");
-        conn->query("INSERT INTO protected (name) VALUES ('scripts'), ('protected')");
-    } catch(...) {}
-    //timelog table
-    conn->query(R"(
-CREATE TABLE IF NOT EXISTS timelog (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL
-))");
-    conn->query(R"(
-CREATE TABLE IF NOT EXISTS timelog_activity (
-    id SERIAL PRIMARY KEY,
-    timelogid BIGINT NOT NULL REFERENCES timelog(id),
-    name TEXT NOT NULL
-))");
-    conn->query(
-            R"(
-CREATE TABLE IF NOT EXISTS timelog_entry (
-    timelogid BIGINT NOT NULL REFERENCES timelog(id),
-    activityid BIGINT NOT NULL REFERENCES timelog_activity(id),
-    duration INTERVAL NOT NULL,
-    PRIMARY KEY(timelogid,activityid)
-))");
-    //log table
-    try {
-        conn->query("CREATE TABLE log_level (id SERIAL PRIMARY KEY, name TEXT UNIQUE)");
-        conn->query(R"(
-INSERT INTO log_level (id, name) VALUES
-    (0, 'trace'),
-    (1, 'debug'),
-    (2, 'info'),
-    (3, 'warn'),
-    (4, 'error'),
-    (5, 'fatal'),
-    (6, 'syserr');
-)");
-    } catch(std::exception& e) {
-    }
-
-
-    conn->query(R"(
-CREATE TABLE IF NOT EXISTS log (
-    id SERIAL PRIMARY KEY,
-    created TIMESTAMP WITH TIME ZONE NOT NULL,
-    level BIGINT NOT NULL REFERENCES log_level(id),
-    msg TEXT NOT NULL
-))");
-
-    DatabaseHelper::attachNotifyTriggerToAllTables(*conn);
+    DatabaseHelper::createDb(*conn);
 
     srand(time(0));
     //event trigger
@@ -90,41 +56,41 @@ CREATE TABLE IF NOT EXISTS log (
 
     });
 
+    auto logWebsocketController = std::make_shared<LogWebsocket>();
+    LogNotificationReceiver recv{conn->getConnection(), logWebsocketController};
+
+    //handle notifications
+    std::atomic<bool> shouldRun = true;
+    std::thread t{
+        [conn, &shouldRun] {
+            while(shouldRun) {
+                conn->awaitNotifications(100);
+            }
+        }};
+
     //setup log
     std::regex levelFinder{R"([a-zA-Z]+)"};
-    trantor::Logger::setOutputFunction([&levelFinder, conn](const char* str, uint64_t len) {
+    trantor::Logger::setOutputFunction([&levelFinder, conn, logWebsocketController](const char* str, uint64_t len) {
         if(isValidAscii(reinterpret_cast<const signed char *>(str), len)) {
             std::cout.write(str, len);
-            std::string msg{str, len - 1};
-            int64_t level = 0;
-            std::smatch levelMatch;
-            if(!std::regex_search(msg, levelMatch, levelFinder)) {
-                assert(false);
+            if(drogon::app().isRunning()) {
+                std::string msg{str, len - 1};
+                std::smatch levelMatch;
+                if (!std::regex_search(msg, levelMatch, levelFinder)) {
+                    assert(false);
+                }
+                std::string restString = levelMatch.suffix();
+                if (!std::regex_search(restString, levelMatch, levelFinder)) {
+                    assert(false);
+                }
+                const std::string &logLevel = levelMatch[0];
+                int64_t level = stringToLogLevel(logLevel);
+                drogon::app().getDbClient()->execSqlAsync(
+                        "INSERT INTO log (level, created, msg) VALUES ($1, CURRENT_TIMESTAMP, $2)",
+                        [](const drogon::orm::Result &) {},
+                        [](const drogon::orm::DrogonDbException &) {},
+                        level, std::move(msg));
             }
-            std::string restString = levelMatch.suffix();
-            if(!std::regex_search(restString, levelMatch, levelFinder)) {
-                assert(false);
-            }
-            const std::string& logLevel = levelMatch[0];
-            if(logLevel == "TRACE") {
-                level = 0;
-            } else if(logLevel == "DEBUG") {
-                level = 1;
-            } else if(logLevel == "INFO") {
-                level = 2;
-            } else if(logLevel == "WARN") {
-                level = 3;
-            } else if(logLevel == "ERROR") {
-                level = 4;
-            } else if(logLevel == "FATAL") {
-                level = 5;
-            } else if(logLevel == "SYSERR") {
-                level = 6;
-            }
-            drogon::app().getDbClient()->execSqlAsync("INSERT INTO log (level, created, msg) VALUES ($1, CURRENT_TIMESTAMP, $2)",
-                                                      [](const drogon::orm::Result&) {},
-                                                      [](const drogon::orm::DrogonDbException&) {},
-                                                      level, std::move(msg));
         } else {
             std::cout << "INVALID ASCII\n";
         }
@@ -139,6 +105,7 @@ CREATE TABLE IF NOT EXISTS log (
     drogon::app().addListener("0.0.0.0", 8080);
     drogon::app().loadConfigFile(CONFIG_FILE);
     drogon::app().setLogLevel(trantor::Logger::LogLevel::kDebug);
+    drogon::app().registerController(logWebsocketController);
 
     auto resp404 = drogon::HttpResponse::newHttpResponse();
     resp404->setStatusCode(drogon::HttpStatusCode::k404NotFound);
@@ -151,20 +118,25 @@ CREATE TABLE IF NOT EXISTS log (
         resp->setBody(std::to_string((int) pStatus));
         return resp;
     });
-    drogon::app().getLoop()->queueInLoop([conn] {
-        //load scripts
-        auto scripts = conn->query("SELECT name,code FROM scripts");
-        for(size_t i = 0; i < scripts->getRowCount(); ++i) {
-            auto name = scripts->getValue(i, 0).stringValue;
-            auto code = scripts->getValue(i, 1).stringValue;
+
+    //load scripts
+    drogon::app().getLoop()->queueInLoop([] {
+        auto client = std::make_shared<PostgreSQLDatabase>(CONFIG_FILE);
+        auto res = client->query("SELECT name,code FROM scripts");
+        for(size_t i = 0; i < res->getRowCount(); ++i) {
+            auto name = res->getValue(i, 0).stringValue;
+            auto code = res->getValue(i, 1).stringValue;
             try {
                 ScriptManager::the().addScript(name, code);
             } catch(std::exception& e){
                 LOG_ERROR << "Failed to load script '" << name << "' with exception: " << e.what();
             }
         }
-        LOG_INFO << "Server completely started";
+        LOG_WARN << "Server completely started";
     });
     drogon::app().run();
     LOG_INFO << "Quitting server";
+    shouldRun = false;
+    if(t.joinable())
+        t.join();
 }

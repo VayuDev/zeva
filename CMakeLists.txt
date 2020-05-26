@@ -13,9 +13,8 @@ include_directories(${PROJECT_SOURCE_DIR}/json/include)
 add_subdirectory("drogon")
 include_directories("${PROJECT_SOURCE_DIR}/drogon/lib/inc")
 
-include_directories("${PROJECT_SOURCE_DIR}/zegdb/include")
-include_directories("${PROJECT_SOURCE_DIR}/zegdb/c_include")
-include_directories("${PROJECT_SOURCE_DIR}/zegdb/lib/include")
+
+include_directories("${PROJECT_SOURCE_DIR}/controllers")
 
 include_directories("${PROJECT_SOURCE_DIR}/wren/src/include")
 include_directories("${PROJECT_SOURCE_DIR}/wren/src/module")

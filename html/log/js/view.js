@@ -11,7 +11,7 @@ let socket = new ReconnectingSocket("/api/log/ws_log",
         first = true;
     }, (msg) => {
         msg = JSON.parse(msg.data);
-        if(first) {
+        if (first) {
             first = false;
             $("#logContainer").text("");
             for (let i = 0; i < msg.length; i++) {

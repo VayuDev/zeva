@@ -33,3 +33,22 @@ inline drogon::HttpResponsePtr genResponse(const std::string& pMsg) {
 }
 
 bool isValidAscii(const signed char *c, size_t len);
+
+inline trantor::Logger::LogLevel stringToLogLevel(const std::string& logLevel) {
+    if(logLevel == "TRACE") {
+        return trantor::Logger::kTrace;
+    } else if(logLevel == "DEBUG") {
+        return trantor::Logger::kDebug;
+    } else if(logLevel == "INFO") {
+        return trantor::Logger::kInfo;
+    } else if(logLevel == "WARN") {
+        return trantor::Logger::kWarn;
+    } else if(logLevel == "ERROR") {
+        return trantor::Logger::kError;
+    } else if(logLevel == "FATAL") {
+        return trantor::Logger::kFatal;
+    } else if(logLevel == "SYSERR") {
+        return trantor::Logger::kFatal;
+    }
+    throw std::runtime_error("Unknown log level '" + logLevel + "'");
+}
