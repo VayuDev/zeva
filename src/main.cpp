@@ -115,6 +115,10 @@ int main() {
         return resp;
     });
 
+    drogon::app().registerHandler("/", [](const drogon::HttpRequestPtr&, std::function<void (const drogon::HttpResponsePtr &)> && callback) {
+        callback(drogon::HttpResponse::newRedirectionResponse("/hub/hub.html"));
+    });
+
     //load scripts
     drogon::app().getLoop()->queueInLoop([] {
         auto client = std::make_shared<PostgreSQLDatabase>(CONFIG_FILE);
@@ -131,5 +135,5 @@ int main() {
         LOG_WARN << "Server completely started";
     });
     drogon::app().run();
-    LOG_INFO << "Quitting server";
+    LOG_WARN << "Quitting server";
 }
