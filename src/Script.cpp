@@ -25,6 +25,7 @@ static std::string toFunctionSignature(const std::string& pName, size_t pArity) 
 
 void Script::create(const std::string& pModule, const std::string& pCode) {
     mModuleName = pModule;
+    mCode = pCode;
     WrenConfiguration config; 
     wrenInitConfiguration(&config);
     config.errorFn = [] (WrenVM* pVM, WrenErrorType, const char* module, int line, const char* message) {

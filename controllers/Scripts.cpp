@@ -34,18 +34,21 @@ void Api::Scripts::getScript(const drogon::HttpRequestPtr&,
 void Api::Scripts::updateScript(const drogon::HttpRequestPtr&,
                                 std::function<void(const drogon::HttpResponsePtr &)> &&callback, int64_t scriptid,
                                 std::string &&pCode) {
-    std::string codeCopy = pCode;
-    drogon::app().getDbClient()->execSqlAsync("UPDATE SCRIPTS SET code=$1 WHERE id=$2 RETURNING name",
-    [callback=std::move(callback), pCode=std::move(pCode)](const drogon::orm::Result& r) {
+    drogon::app().getDbClient()->execSqlAsync("SELECT name FROM scripts WHERE id=$1",
+    [callback=std::move(callback), pCode=std::move(pCode), scriptid](const drogon::orm::Result& r) mutable {
         auto name = r.at(0)["name"].as<std::string>();
+        drogon::HttpResponsePtr response;
         try {
             ScriptManager::the().addScript(name, pCode);
-            callback(drogon::HttpResponse::newHttpResponse());
+            response = drogon::HttpResponse::newHttpResponse();
         } catch(std::exception& e) {
-            callback(genError(e.what()));
+            response = genError(e.what());
         }
-
-    }, genErrorHandler(callback), std::move(codeCopy), scriptid);
+        drogon::app().getDbClient()->execSqlAsync("UPDATE scripts SET code=$1 WHERE id=$2",
+        [callback=std::move(callback), response=std::move(response)](const drogon::orm::Result& r) {
+            callback(response);
+        }, genErrorHandler(callback), std::move(pCode), scriptid);
+    }, genErrorHandler(callback), scriptid);
 }
 
 void Api::Scripts::runScript(const drogon::HttpRequestPtr&,

@@ -8,7 +8,7 @@
 
 class ScriptManager {
 public:
-    void addScript(const std::string& pName, const std::string& pCode);
+    void addScript(const std::string& pName, const std::string& pCode, bool pCheckIfCodeChanged = false);
     void deleteScript(const std::string& pName);
     std::future<ScriptReturn> executeScript(const std::string& pName, const std::string& pFunction, const std::vector<ScriptValue>& pParamSetter);
     void executeScriptWithCallback(const std::string& pName, const std::string& pFunction, const std::vector<ScriptValue>& pParamSetter,
