@@ -2,7 +2,6 @@
 #include "Util.hpp"
 #include "Script.hpp"
 #include "Script.hpp"
-#include <unicode/ucnv.h>
 
 Json::Value scriptValueToJson(ScriptValue&& pVal) {
     switch(pVal.type) {

@@ -129,7 +129,7 @@ void Api::Scripts::createScript(const drogon::HttpRequestPtr&,
         ScriptManager::the().addScript(name, code);
         Json::Value response;
         response["name"] = name;
-        response["id"] = r.at(0)["id"].as<long>();
+        response["id"] = r.at(0)["id"].as<int64_t>();
         callback(drogon::HttpResponse::newHttpJsonResponse(std::move(response)));
     }, genErrorHandler(callback), pName, code);
 }
