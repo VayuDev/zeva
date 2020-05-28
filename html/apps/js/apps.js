@@ -41,9 +41,9 @@ $(function() {
                             console.log(subs[j]);
                             let subRow = $("<div></div>")
                                 .addClass("subElement")
-                                .text(subs[j]["name"])
                                 .css("cursor", "pointer")
-                                .click(() => {window.location = data[i]["path"] + "?subid=" + subs[j]["id"]});
+                                .click(() => {window.location = data[i]["path"] + "?subid=" + subs[j]["id"]})
+                                .append($("<span></span>").text(subs[j]["name"]))
                             $(".elementList").append(subRow);
                         }
                     }

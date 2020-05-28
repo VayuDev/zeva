@@ -60,8 +60,20 @@ input, button {
     display: grid;
     grid-gap: 10px;
 }
-.elementList * {
+.elementList > * {
     background-color: #ffa500;
+    border-radius: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    color: white;
+    width: calc(100% - 20px);
+
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.elementList * {
     border-radius: 10px;
     padding-left: 10px;
     padding-right: 10px;

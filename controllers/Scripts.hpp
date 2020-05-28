@@ -20,19 +20,19 @@ namespace  Api {
                            std::function<void(const drogon::HttpResponsePtr &)> &&callback);
         void getScript(const drogon::HttpRequestPtr&,
                        std::function<void(const drogon::HttpResponsePtr &)> &&callback,
-                       int scriptid);
+                       int64_t scriptid);
         void updateScript(const drogon::HttpRequestPtr&,
                        std::function<void(const drogon::HttpResponsePtr &)> &&callback,
-                       int scriptid, std::string&& pCode);
+                       int64_t scriptid, std::string&& pCode);
         void runScript(const drogon::HttpRequestPtr&,
                        std::function<void(const drogon::HttpResponsePtr &)> &&callback,
-                       int scriptid, std::string&& pParam);
+                       int64_t scriptid, std::string&& pParam);
         void drawScript(const drogon::HttpRequestPtr&,
                        std::function<void(const drogon::HttpResponsePtr &)> &&callback,
-                       int scriptid);
+                       int64_t scriptid);
         void deleteScript(const drogon::HttpRequestPtr&,
                         std::function<void(const drogon::HttpResponsePtr &)> &&callback,
-                        int scriptid);
+                        int64_t scriptid);
         void createScript(const drogon::HttpRequestPtr&,
                           std::function<void(const drogon::HttpResponsePtr &)> &&callback,
                           std::string&& pName);

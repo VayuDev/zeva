@@ -27,9 +27,9 @@ WHERE table_schema = 'public'
 
 void createDb(DatabaseWrapper &pDb) {
 
-    pDb.query("CREATE TABLE IF NOT EXISTS scripts (id SERIAL PRIMARY KEY, name TEXT UNIQUE, code TEXT)");
+    pDb.query("CREATE TABLE IF NOT EXISTS scripts (id BIGSERIAL PRIMARY KEY, name TEXT UNIQUE, code TEXT)");
     try {
-        pDb.query("CREATE TABLE protected (id SERIAL PRIMARY KEY, name TEXT UNIQUE)");
+        pDb.query("CREATE TABLE protected (id BIGSERIAL PRIMARY KEY, name TEXT UNIQUE)");
         pDb.query(R"(
 INSERT INTO protected (name) VALUES
     ('scripts'),
@@ -44,12 +44,12 @@ INSERT INTO protected (name) VALUES
     //timelog table
     pDb.query(R"(
 CREATE TABLE IF NOT EXISTS timelog (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     name TEXT NOT NULL
 ))");
     pDb.query(R"(
 CREATE TABLE IF NOT EXISTS timelog_activity (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     timelogid BIGINT NOT NULL REFERENCES timelog(id),
     name TEXT NOT NULL
 ))");
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS timelog_entry (
 ))");
     //log table
     try {
-        pDb.query("CREATE TABLE log_level (id SERIAL PRIMARY KEY, name TEXT UNIQUE)");
+        pDb.query("CREATE TABLE log_level (id BIGSERIAL PRIMARY KEY, name TEXT UNIQUE)");
         pDb.query(R"(
 INSERT INTO log_level (id, name) VALUES
     (0, 'trace'),
@@ -79,7 +79,7 @@ INSERT INTO log_level (id, name) VALUES
 
     pDb.query(R"(
 CREATE TABLE IF NOT EXISTS log (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     created TIMESTAMP WITH TIME ZONE NOT NULL,
     level BIGINT NOT NULL REFERENCES log_level(id),
     msg TEXT NOT NULL
