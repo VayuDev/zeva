@@ -232,6 +232,14 @@ static void exportImage(WrenVM* pVM) {
         wrenSetSlotNull(pVM, 0);
         return;
     }
+    auto clamp = [](auto pNum) {
+        if(pNum > 255)
+            return 255.0;
+        else if(pNum < 0)
+            return 0.0;
+        return pNum;
+    };
+
     wrenEnsureSlots(pVM, 5);
     auto *data = (uint8_t*) malloc(width * height * 3);
     for(size_t i = 0; i < width * height; ++i) {
@@ -239,9 +247,9 @@ static void exportImage(WrenVM* pVM) {
         wrenGetListElement(pVM, 2, 0, 3);
         wrenGetListElement(pVM, 2, 1, 4);
         wrenGetListElement(pVM, 2, 2, 5);
-        data[i*3 + 0] = (uint8_t) wrenGetSlotDouble(pVM, 3);
-        data[i*3 + 1] = (uint8_t) wrenGetSlotDouble(pVM, 4);
-        data[i*3 + 2] = (uint8_t) wrenGetSlotDouble(pVM, 5);
+        data[i*3 + 0] = (uint8_t) clamp(wrenGetSlotDouble(pVM, 3));
+        data[i*3 + 1] = (uint8_t) clamp(wrenGetSlotDouble(pVM, 4));
+        data[i*3 + 2] = (uint8_t) clamp(wrenGetSlotDouble(pVM, 5));
     }
     int imageLen;
     auto image = stbi_write_png_to_mem(data, width * 3, width, height, 3, &imageLen);
