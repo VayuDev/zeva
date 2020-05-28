@@ -6,12 +6,60 @@
     <link rel="stylesheet" type="text/css" href="../css/style.css">
     <script src="../js/index.js"></script>
     <script src="js/timelogger.js"></script>
+    <style>
+        .spaceCenterWide {
+            display: grid;
+            grid-auto-rows: 80px;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 300px) );
+            grid-gap: 10px;
+            width: 80vw;
+            justify-content: center;
+        }
+        .spaceCenterWide > * {
+            font-size: 30px;
+            background-color: white;
+            border: 5px solid var(--color-p1);
+            border-radius: 10px;
+            text-align: center;
+            line-height: 70px;
+            cursor: pointer;
+        }
+        .spaceCenterWide > #running {
+            border-color: #4cae4c;
+        }
+        .spaceCenterWide > #selected {
+            border-color: #a439c4;
+            background-color: #cd96e2;
+        }
+        #timer {
+            text-align: center;
+        }
+        #spaceCenterWideContainer {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
 </head>
 <body>
 <div class="main-grid">
     <div id="header"></div>
     <div class="spaceCenter">
-
+        <div id="timer">
+            5:00
+        </div>
+        <div class="hSpan">
+            <button>Start activity</button>
+            <button>Stop activity</button>
+        </div>
+    </div>
+    <div id="spaceCenterWideContainer">
+        <div class="spaceCenterWide">
+        </div>
+    </div>
+    <div class="spaceCenter hSpan">
+        <button onclick="addNewActivity()">Add new activity</button>
+        <button>Delete activity</button>
     </div>
 </div>
 </body>

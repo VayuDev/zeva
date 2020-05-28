@@ -27,3 +27,13 @@ void Api::Apps::Timelogger::getStatus(const drogon::HttpRequestPtr&,
         }
     }, genErrorHandler(callback), pSubid);
 }
+
+void Api::Apps::Timelogger::createActivity(const drogon::HttpRequestPtr &req,
+                                           std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+                                           int64_t pTimelogId,
+                                           std::string &&pActivityName) {
+    drogon::app().getDbClient()->execSqlAsync("INSERT INTO timelog_activity (timelogid, name) VALUES ($1, $2)",
+    [callback = std::move(callback)](const drogon::orm::Result& r) mutable {
+        callback(genResponse("Success!"));
+    }, genErrorHandler(callback), pTimelogId, std::move(pActivityName));
+}
