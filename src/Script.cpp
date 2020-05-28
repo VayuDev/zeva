@@ -102,7 +102,7 @@ class Script {
                 }
                 auto *returnError = std::get_if<std::string>(&ret.value);
                 if(returnError) {
-                    LOG_ERROR << mModuleName << " failed with " << returnError;
+                    LOG_ERROR << mModuleName << " failed with: " << returnError;
                 } else {
                     ScriptValue val = std::get<ScriptValue>(ret.value);
                     if(val.type != WREN_TYPE_NULL) {
@@ -113,7 +113,7 @@ class Script {
                             jsonStr = "(unable to parse)";
                         }
 
-                        LOG_INFO << mModuleName << " returned with " << jsonStr;
+                        LOG_INFO << mModuleName << " returned with: " << jsonStr;
                     }
                 }
 

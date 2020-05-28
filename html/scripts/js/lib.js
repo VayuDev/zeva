@@ -32,7 +32,7 @@ function runScript(scriptid, param = null) {
             logToOutputAndMsg(err.responseText, true);
         },
         success: function(data, status, jqXHR) {
-            logToOutputAndMsg(JSON.parse(jqXHR.responseText)["return"], false);
+            logToOutputAndMsg(JSON.stringify(JSON.parse(jqXHR.responseText)["return"]), false);
         }
     })
 }
