@@ -30,7 +30,8 @@ include_directories("${PROJECT_SOURCE_DIR}/include")
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -fno-strict-aliasing")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -fno-strict-aliasing")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -msse3 -fno-strict-aliasing")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -mtune=native -fno-strict-aliasing")
+set(CMAKE_C_FLAGS_RELEASE "-O3 -march=native -mtune=native -fno-strict-aliasing")
 
 file(GLOB_RECURSE SOURCES
         "${PROJECT_SOURCE_DIR}/src/*.cpp"
@@ -51,7 +52,6 @@ include_directories(${pqxx_libpq_INCLUDEDIR})
 find_package(PostgreSQL REQUIRED)
 include_directories(${PostgreSQL_INCLUDE_DIRS})
 
-string(REPLACE "-msse3" "-march=native" CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE})
 add_executable(ZeVa2_0 ${SOURCES} ${WREN_SOURCES})
 
 target_link_libraries(ZeVa2_0 pthread zstd drogon nlohmann_json::nlohmann_json pqxx pq stdc++fs)
