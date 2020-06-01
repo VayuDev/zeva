@@ -50,14 +50,14 @@ CREATE TABLE IF NOT EXISTS timelog (
     pDb.query(R"(
 CREATE TABLE IF NOT EXISTS timelog_activity (
     id BIGSERIAL PRIMARY KEY,
-    timelogid BIGINT NOT NULL REFERENCES timelog(id),
+    timelogid BIGINT NOT NULL REFERENCES timelog(id) ON DELETE CASCADE,
     name TEXT NOT NULL
 ))");
     pDb.query(
             R"(
 CREATE TABLE IF NOT EXISTS timelog_entry (
-    timelogid BIGINT NOT NULL REFERENCES timelog(id),
-    activityid BIGINT NOT NULL REFERENCES timelog_activity(id),
+    timelogid BIGINT NOT NULL REFERENCES timelog(id) ON DELETE CASCADE,
+    activityid BIGINT NOT NULL REFERENCES timelog_activity(id) ON DELETE CASCADE,
     duration INTERVAL NOT NULL,
     PRIMARY KEY(timelogid,activityid)
 ))");

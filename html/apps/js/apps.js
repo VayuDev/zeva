@@ -44,6 +44,26 @@ $(function() {
                                 .css("cursor", "pointer")
                                 .click(() => {window.location = data[i]["path"] + "?subid=" + subs[j]["id"]})
                                 .append($("<span></span>").text(subs[j]["name"]))
+                                .append($("<span></span>").text("Delete").addClass("deleteButton").click((event) => {
+                                    //deleter
+                                    event.stopPropagation();
+                                    if(!confirm("Are you sure you want to delete " + subs[j]["name"] + "?"))
+                                        return;
+                                    $.ajax({
+                                        type: "POST",
+                                        url: "/api/apps/delSub",
+                                        data: {
+                                            "appname": data[i]["name"],
+                                            "subid": subs[j]["id"]
+                                        },
+                                        error: function(err, textStatus, errorThrown) {
+                                            notifyError(err.responseText);
+                                        },
+                                        success: function(data, status, jqXHR) {
+                                            subRow.detach();
+                                        }
+                                    });
+                                }))
                             $(".elementList").append(subRow);
                         }
                     }

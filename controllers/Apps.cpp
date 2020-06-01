@@ -37,12 +37,17 @@ void Api::Apps::getSubapps(const drogon::HttpRequestPtr &,
     }
 }
 
+static std::string appnameToTablename(const std::string& pAppname) {
+    if(pAppname == "Timelogger") {
+        return "timelog";
+    }
+    return "";
+}
+
 void Api::Apps::addSub(const drogon::HttpRequestPtr&, std::function<void(const drogon::HttpResponsePtr &)> &&callback,
                   std::string &&pAppname, std::string&& pSubname) {
-    std::string table;
-    if(pAppname == "Timelogger" && !pSubname.empty()) {
-        table = "timelog";
-    } else {
+    std::string table = appnameToTablename(pAppname);
+    if(table.empty() || pSubname.empty()) {
         auto resp = drogon::HttpResponse::newHttpResponse();
         resp->setStatusCode(drogon::k400BadRequest);
         callback(resp);
@@ -51,6 +56,21 @@ void Api::Apps::addSub(const drogon::HttpRequestPtr&, std::function<void(const d
 
     drogon::app().getDbClient()->execSqlAsync("INSERT INTO " + table + " (name) VALUES ($1)",
     [callback = std::move(callback)](const drogon::orm::Result& r) {
-        callback(genResponse("Success!"));
+        callback(genResponse("ok"));
     }, genErrorHandler(callback), std::move(pSubname));
+}
+
+void Api::Apps::delSub(const drogon::HttpRequestPtr&, std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+                  std::string &&pAppname, int64_t pSubId) {
+    std::string table = appnameToTablename(pAppname);
+    if(table.empty()) {
+        auto resp = drogon::HttpResponse::newHttpResponse();
+        resp->setStatusCode(drogon::k400BadRequest);
+        callback(resp);
+        return;
+    }
+    drogon::app().getDbClient()->execSqlAsync("DELETE FROM " + table + " WHERE id = $1",
+    [callback = std::move(callback)](const drogon::orm::Result& r) {
+      callback(genResponse("ok"));
+    }, genErrorHandler(callback), pSubId);
 }

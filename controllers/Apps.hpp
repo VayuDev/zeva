@@ -11,6 +11,7 @@ public:
         METHOD_ADD(Apps::getCategories, "all", drogon::Get);
         METHOD_ADD(Apps::getSubapps, "subsAll?appname={}", drogon::Get);
         METHOD_ADD(Apps::addSub, "addSub?appname={}&subname={}", drogon::Post);
+        METHOD_ADD(Apps::delSub, "delSub?appname={}&subid={}", drogon::Post);
     METHOD_LIST_END
 
     void getCategories(const drogon::HttpRequestPtr &req,
@@ -24,5 +25,9 @@ public:
                     std::function<void(const drogon::HttpResponsePtr &)> &&callback,
                     std::string&& pAppname,
                     std::string&& pSubname);
+    void delSub(const drogon::HttpRequestPtr &req,
+                std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+                std::string&& pAppname,
+                int64_t pSubId);
 };
 }
