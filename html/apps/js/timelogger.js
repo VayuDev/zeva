@@ -2,7 +2,7 @@ $(function() {
     $.getJSON("/api/apps/timelogger/status?subid=" + getUrlParam("subid"), "", function(data) {
         let activities = data["activities"];
         for(let i = 0; i < activities.length; ++i) {
-            let act = $("<div></div>").text(activities[i]["name"]);
+            let act = $("<div></div>").text(activities[i]["name"]).attr("activityid", activities[i]["id"]);
             act.click(() => {
                select(act);
             });
@@ -31,6 +31,26 @@ function addNewActivity() {
             },
             success: function(data, status, jqXHR) {
                 window.location = window.location + "";
+            }
+        })
+    }
+}
+
+function startActivity() {
+    let activityid = $("#selected").attr("activityid")
+    if(activityid) {
+        $.ajax({
+            type: "POST",
+            url: "/api/apps/timelogger/startActivity",
+            data: {
+                "activityid": activityid,
+                "subid": getUrlParam("subid")
+            },
+            error: function(err, textStatus, errorThrown) {
+                notifyError(err.responseText);
+            },
+            success: function(data, status, jqXHR) {
+                notify("Started activity")
             }
         })
     }

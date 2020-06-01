@@ -12,6 +12,7 @@ public:
     METHOD_LIST_BEGIN
         METHOD_ADD(Timelogger::getStatus, "status?subid={}", drogon::Get);
         METHOD_ADD(Timelogger::createActivity, "createActivity?subid={}&activityname={}", drogon::Post);
+        METHOD_ADD(Timelogger::startActivity, "startActivity?subid={}&activityid={}", drogon::Post);
     METHOD_LIST_END
 
     void getStatus(const drogon::HttpRequestPtr &req,
@@ -22,6 +23,10 @@ public:
                         std::function<void(const drogon::HttpResponsePtr &)> &&callback,
                         int64_t pTimelogId,
                         std::string&& pActivityName);
+    void startActivity(const drogon::HttpRequestPtr &req,
+                        std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+                        int64_t pTimelogId,
+                        int64_t pActivityId);
 };
 }
 }

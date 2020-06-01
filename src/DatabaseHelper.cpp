@@ -58,7 +58,8 @@ CREATE TABLE IF NOT EXISTS timelog_activity (
 CREATE TABLE IF NOT EXISTS timelog_entry (
     timelogid BIGINT NOT NULL REFERENCES timelog(id) ON DELETE CASCADE,
     activityid BIGINT NOT NULL REFERENCES timelog_activity(id) ON DELETE CASCADE,
-    duration INTERVAL NOT NULL,
+    created TIMESTAMP WITH TIME ZONE NOT NULL,
+    duration INTERVAL,
     PRIMARY KEY(timelogid,activityid)
 ))");
     //log table
