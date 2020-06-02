@@ -15,6 +15,8 @@ $(function() {
             timerStart = new Date(currentActivityObj["created"] * 1000);
             startTimer();
             setActive($("div[activityid='" + currentActivityObj["id"] + "']"));
+        } else {
+            stopTimer();
         }
     });
 })
@@ -47,12 +49,16 @@ function startTimer() {
     }
     intervalFunc();
     timerId = setInterval(intervalFunc, 1000);
+    $(".stopButtons").show();
+    $(".startButtons").hide();
 }
 
 function stopTimer() {
     if(timerId)
         clearInterval(timerId);
     setTimerDisplay(0);
+    $(".startButtons").show();
+    $(".stopButtons").hide();
 }
 
 function select(act) {
@@ -107,7 +113,7 @@ function startActivity() {
             }
         })
     } else {
-        console.log("Nothing selected")
+        notify("Nothing selected");
     }
 }
 
@@ -127,5 +133,46 @@ function stopActivity() {
             setActive(null);
         }
     })
+}
 
+function deleteActivity() {
+    const activityid = $(".selectedActivity").attr("activityid")
+    if(activityid) {
+        $.ajax({
+            type: "POST",
+            url: "/api/apps/timelogger/deleteActivity",
+            data: {
+                "activityid": activityid,
+                "subid": getUrlParam("subid")
+            },
+            error: function(err, textStatus, errorThrown) {
+                notifyError(err.responseText);
+            },
+            success: function(data, status, jqXHR) {
+                window.location = window.location + "";
+            }
+        })
+    } else {
+        notify("Nothing selected");
+    }
+}
+
+function abortActivity() {
+    if(!confirm("Are you sure you want to abort?"))
+        return;
+    $.ajax({
+        type: "POST",
+        url: "/api/apps/timelogger/abortActivity",
+        data: {
+            "subid": getUrlParam("subid")
+        },
+        error: function(err, textStatus, errorThrown) {
+            notifyError(err.responseText);
+        },
+        success: function(data, status, jqXHR) {
+            stopTimer();
+            $(".activeActivity").removeClass("activeActivity");
+            notify("Activity aborted");
+        }
+    })
 }

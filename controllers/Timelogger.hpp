@@ -14,6 +14,8 @@ public:
         METHOD_ADD(Timelogger::createActivity, "createActivity?subid={}&activityname={}", drogon::Post);
         METHOD_ADD(Timelogger::startActivity, "startActivity?subid={}&activityid={}", drogon::Post);
         METHOD_ADD(Timelogger::stopActivity, "stopActivity?subid={}", drogon::Post);
+        METHOD_ADD(Timelogger::deleteActivity, "deleteActivity?subid={}&activityid={}", drogon::Post);
+        METHOD_ADD(Timelogger::abortActivity, "abortActivity?subid={}", drogon::Post);
     METHOD_LIST_END
 
     void getStatus(const drogon::HttpRequestPtr &req,
@@ -31,6 +33,13 @@ public:
     void stopActivity(const drogon::HttpRequestPtr &req,
                        std::function<void(const drogon::HttpResponsePtr &)> &&callback,
                        int64_t pTimelogId);
+    void abortActivity(const drogon::HttpRequestPtr &req,
+                      std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+                      int64_t pTimelogId);
+    void deleteActivity(const drogon::HttpRequestPtr &req,
+                      std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+                      int64_t pTimelogId,
+                      int64_t pActivityId);
 };
 }
 }

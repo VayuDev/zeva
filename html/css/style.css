@@ -147,3 +147,10 @@ input, button {
     flex-direction: row;
     justify-content: space-evenly;
 }
+
+button {
+    padding: 5px 15px;
+    font-size: 25px;
+    border: 2px solid #2e6da4;
+    border-radius: 10px;
+}

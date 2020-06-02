@@ -37,6 +37,7 @@
         }
         #timer {
             text-align: center;
+            font-size: 40px;
         }
         #spaceCenterWideContainer {
             display: block;
@@ -53,8 +54,9 @@
             00:00:00
         </div>
         <div class="hSpan">
-            <button onclick="startActivity()">Start activity</button>
-            <button onclick="stopActivity()">Stop activity</button>
+            <button onclick="startActivity()" class="startButtons">Start activity</button>
+            <button onclick="stopActivity()" class="stopButtons">Stop activity</button>
+            <button onclick="abortActivity()" class="stopButtons">Abort activity</button>
         </div>
     </div>
     <div id="spaceCenterWideContainer">
@@ -63,7 +65,7 @@
     </div>
     <div class="spaceCenter hSpan">
         <button onclick="addNewActivity()">Add new activity</button>
-        <button>Delete activity</button>
+        <button onclick="deleteActivity()">Delete activity</button>
     </div>
 </div>
 </body>

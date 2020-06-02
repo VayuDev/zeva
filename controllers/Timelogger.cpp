@@ -100,3 +100,29 @@ WHERE timelogid=$1 AND activityid=$2)",
         }, genErrorHandler(callback), pTimelogId, activityId);
     }, genErrorHandler(callback), pTimelogId);
 }
+
+void Api::Apps::Timelogger::deleteActivity(const drogon::HttpRequestPtr &req,
+                                           std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+                                           int64_t pTimelogId, int64_t pActivityId) {
+    drogon::app().getDbClient()->execSqlAsync("DELETE FROM timelog_activity WHERE timelogid=$1 AND id=$2",
+    [callback = std::move(callback),pTimelogId](const drogon::orm::Result& r) mutable {
+        callback(genResponse("ok"));
+    }, genErrorHandler(callback), pTimelogId, pActivityId);
+}
+
+void Api::Apps::Timelogger::abortActivity(const drogon::HttpRequestPtr &req,
+                                          std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+                                          int64_t pTimelogId) {
+    drogon::app().getDbClient()->execSqlAsync("SELECT * FROM timelog_entry WHERE timelogid = $1 ORDER BY created DESC LIMIT 1",
+    [callback = std::move(callback),pTimelogId](const drogon::orm::Result& r) mutable {
+        if (r.empty() || !r.at(0)["duration"].isNull()) {
+          callback(genError("No activity running!"));
+          return;
+        }
+        auto id = r.at(0)["id"].as<int64_t>();
+        drogon::app().getDbClient()->execSqlAsync(R"(DELETE FROM timelog_entry WHERE id=$1)",
+        [callback = std::move(callback)](const drogon::orm::Result& r) mutable {
+            callback(genResponse("ok"));
+        }, genErrorHandler(callback), id);
+    }, genErrorHandler(callback), pTimelogId);
+}
