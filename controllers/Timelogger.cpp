@@ -4,14 +4,16 @@
 void Api::Apps::Timelogger::getStatus(const drogon::HttpRequestPtr&,
                                       std::function<void(const drogon::HttpResponsePtr &)> &&callback,
                                       int64_t pSubid) {
+    //first we fetch the timelog name
     drogon::app().getDbClient()->execSqlAsync("SELECT name FROM timelog WHERE id=$1",
     [callback = std::move(callback), pSubid](const drogon::orm::Result& r) mutable {
         if(r.size() == 1) {
             Json::Value resp;
             resp["name"] = r.at(0)["name"].as<std::string>();
 
+            //then the activities
             drogon::app().getDbClient()->execSqlAsync("SELECT * FROM timelog_activity WHERE timelogid=$1",
-            [callback = std::move(callback), resp = std::move(resp)](const drogon::orm::Result& r) mutable {
+            [callback = std::move(callback), resp = std::move(resp),pSubid](const drogon::orm::Result& r) mutable {
                 Json::Value activities{Json::arrayValue};
                 for(const auto& row: r) {
                     Json::Value jsonRow;
@@ -20,7 +22,22 @@ void Api::Apps::Timelogger::getStatus(const drogon::HttpRequestPtr&,
                     activities.append(std::move(jsonRow));
                 }
                 resp["activities"] = std::move(activities);
-                callback(drogon::HttpResponse::newHttpJsonResponse(std::move(resp)));
+
+                //
+                //now we fetch the currently running activity and its duration
+                drogon::app().getDbClient()->execSqlAsync(
+                        R"(SELECT activityid,duration,extract(epoch from created) AS created FROM timelog_entry WHERE timelogid = $1 ORDER BY created DESC LIMIT 1)",
+                [callback = std::move(callback), resp = std::move(resp)](const drogon::orm::Result& r) mutable {
+                    if(r.size() == 0 || !r.at(0)["duration"].isNull()) {
+                        resp["currentActivity"] = Json::nullValue;
+                    } else {
+                        Json::Value currentActivity;
+                        currentActivity["id"] = r.at(0)["activityid"].as<int64_t>();
+                        currentActivity["created"] = r.at(0)["created"].as<int64_t>();
+                        resp["currentActivity"] = std::move(currentActivity);
+                    }
+                    callback(drogon::HttpResponse::newHttpJsonResponse(std::move(resp)));
+                }, genErrorHandler(callback), pSubid);
             }, genErrorHandler(callback), pSubid);
         } else {
             callback(genError("Invalid timelog id"));
@@ -62,4 +79,24 @@ void Api::Apps::Timelogger::startActivity(const drogon::HttpRequestPtr&,
             }, genErrorHandler(callback), pTimelogId, pActivityId);
         }
     }, callback);
+}
+
+void Api::Apps::Timelogger::stopActivity(const drogon::HttpRequestPtr&,
+                                         std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+                                         int64_t pTimelogId) {
+    drogon::app().getDbClient()->execSqlAsync("SELECT * FROM timelog_entry WHERE timelogid = $1 ORDER BY created DESC LIMIT 1",
+    [callback = std::move(callback),pTimelogId](const drogon::orm::Result& r) mutable {
+        if (r.empty() || !r.at(0)["duration"].isNull()) {
+            callback(genError("No activity running!"));
+            return;
+        }
+        auto activityId = r.at(0)["activityid"].as<int64_t>();
+        drogon::app().getDbClient()->execSqlAsync(R"(
+UPDATE timelog_entry
+SET duration=current_timestamp - (SELECT created FROM timelog_entry WHERE timelogid=$1 AND activityid=$2 ORDER BY created DESC LIMIT 1)
+WHERE timelogid=$1 AND activityid=$2)",
+        [callback = std::move(callback)](const drogon::orm::Result& r) mutable {
+            callback(genResponse("ok"));
+        }, genErrorHandler(callback), pTimelogId, activityId);
+    }, genErrorHandler(callback), pTimelogId);
 }

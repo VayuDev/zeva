@@ -1,3 +1,5 @@
+let timerStart = null;
+
 $(function() {
     $.getJSON("/api/apps/timelogger/status?subid=" + getUrlParam("subid"), "", function(data) {
         let activities = data["activities"];
@@ -8,12 +10,60 @@ $(function() {
             });
             $(".spaceCenterWide").append(act);
         }
+        let currentActivityObj = data["currentActivity"];
+        if(currentActivityObj) {
+            timerStart = new Date(currentActivityObj["created"] * 1000);
+            startTimer();
+            setActive($("div[activityid='" + currentActivityObj["id"] + "']"));
+        }
     });
 })
+function digitToString(digit) {
+    if(digit === 0)
+        return "00";
+    else if(digit >= 10)
+        return digit;
+    else
+        return "0" + digit;
+}
+
+function setTimerDisplay(duration) {
+    let date = new Date(duration * 1000);
+    console.log(date);
+    $("#timer").text(digitToString(date.getHours() - 1)
+        + ":" + digitToString(date.getMinutes())
+        + ":" + digitToString(date.getSeconds()));
+}
+
+let timerId = null;
+function startTimer() {
+    if(timerId)
+        clearInterval(timerId);
+    let intervalFunc = () => {
+        let now = new Date();
+        let duration = Math.floor((now-timerStart) / 1000);
+        console.log(duration)
+        setTimerDisplay(duration);
+    }
+    intervalFunc();
+    timerId = setInterval(intervalFunc, 1000);
+}
+
+function stopTimer() {
+    if(timerId)
+        clearInterval(timerId);
+    setTimerDisplay(0);
+}
 
 function select(act) {
-    $("#selected").attr("id", "");
-    act.attr("id", "selected");
+    $(".selectedActivity").removeClass("selectedActivity");
+    act.addClass("selectedActivity");
+}
+
+function setActive(act) {
+    $(".activeActivity").removeClass("activeActivity");
+    if(act)
+        act.addClass("activeActivity");
 }
 
 function addNewActivity() {
@@ -37,7 +87,7 @@ function addNewActivity() {
 }
 
 function startActivity() {
-    let activityid = $("#selected").attr("activityid")
+    let activityid = $(".selectedActivity").attr("activityid")
     if(activityid) {
         $.ajax({
             type: "POST",
@@ -50,8 +100,32 @@ function startActivity() {
                 notifyError(err.responseText);
             },
             success: function(data, status, jqXHR) {
-                notify("Started activity")
+                notify("Started activity");
+                timerStart = new Date();
+                startTimer();
+                setActive($("div[activityid='" + activityid + "']"));
             }
         })
+    } else {
+        console.log("Nothing selected")
     }
+}
+
+function stopActivity() {
+    $.ajax({
+        type: "POST",
+        url: "/api/apps/timelogger/stopActivity",
+        data: {
+            "subid": getUrlParam("subid")
+        },
+        error: function(err, textStatus, errorThrown) {
+            notifyError(err.responseText);
+        },
+        success: function(data, status, jqXHR) {
+            notify("Stopped activity");
+            stopTimer();
+            setActive(null);
+        }
+    })
+
 }

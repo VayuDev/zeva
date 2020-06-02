@@ -27,9 +27,13 @@
         .spaceCenterWide > #running {
             border-color: #4cae4c;
         }
-        .spaceCenterWide > #selected {
-            border-color: #a439c4;
-            background-color: #cd96e2;
+        .spaceCenterWide > .selectedActivity {
+            border-color: #a439c4 !important;
+            background-color: #cd96e2 !important;
+        }
+        .spaceCenterWide > .activeActivity {
+            border-color: #39c4c4;
+            background-color: #96e2e2;
         }
         #timer {
             text-align: center;
@@ -46,11 +50,11 @@
     <div id="header"></div>
     <div class="spaceCenter">
         <div id="timer">
-            5:00
+            00:00:00
         </div>
         <div class="hSpan">
             <button onclick="startActivity()">Start activity</button>
-            <button>Stop activity</button>
+            <button onclick="stopActivity()">Stop activity</button>
         </div>
     </div>
     <div id="spaceCenterWideContainer">
