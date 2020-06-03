@@ -59,9 +59,15 @@ int main() {
     auto logWebsocketController = std::make_shared<LogWebsocket>();
     LogNotificationReceiver recv{conn->getConnection(), logWebsocketController};
 
+    long passedTime = std::numeric_limits<long>::max();
     //handle notifications
-    drogon::app().getLoop()->runEvery(0.1, [conn] {
+    drogon::app().getLoop()->runEvery(0.1, [conn, &passedTime] () mutable {
         conn->awaitNotifications(1);
+        //delete the old log about every hour
+        if(passedTime++ > 60 * 600) {
+            conn->query("DELETE FROM log WHERE created < (CURRENT_TIMESTAMP - '7 days' :: interval)");
+            passedTime = 0;
+        }
     });
 
     //setup log
