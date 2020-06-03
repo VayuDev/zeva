@@ -17,6 +17,16 @@ inline std::function<void(const drogon::orm::DrogonDbException&)> genErrorHandle
         call(resp);
     };
 }
+
+inline std::function<void(const std::exception&)> genDefErrorHandler(std::function<void(const drogon::HttpResponsePtr &)> call) {
+    return [call](const std::exception &e) {
+        auto resp = drogon::HttpResponse::newHttpResponse();
+        resp->setStatusCode(drogon::HttpStatusCode::k500InternalServerError);
+        resp->setBody(e.what());
+        call(resp);
+    };
+}
+
 inline drogon::HttpResponsePtr genError(const std::string& pMsg) {
     LOG_ERROR << "Generating error: " << pMsg;
     auto errResp = drogon::HttpResponse::newHttpResponse();

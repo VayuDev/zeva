@@ -12,7 +12,7 @@ public:
     void deleteScript(const std::string& pName);
     std::future<ScriptReturn> executeScript(const std::string& pName, const std::string& pFunction, const std::vector<ScriptValue>& pParamSetter);
     void executeScriptWithCallback(const std::string& pName, const std::string& pFunction, const std::vector<ScriptValue>& pParamSetter,
-            std::function<void(ScriptReturn&&)> &&pCallback);
+            std::function<void(ScriptReturn&&)> &&pCallback, std::function<void(std::exception& e)>&& pErrorCallback);
     void onTableChanged(const std::string& pTable, const std::string& pType);
 
     static ScriptManager& the() {

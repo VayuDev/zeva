@@ -35,10 +35,10 @@ TcpClient::TcpClient(const std::string& pHostname, uint16_t pPort) {
           (char *)&serv_addr.sin_addr.s_addr,
           server->h_length);
     serv_addr.sin_port = htons(pPort);
+    setTimeout(1000);
     if (connect(mSockFd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
         error("Failed to connect to " + pHostname + ":" + std::to_string(pPort));
     connected = true;
-    setTimeout(1000);
 
     //keepalive
     int val = 1;

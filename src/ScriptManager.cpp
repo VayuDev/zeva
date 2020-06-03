@@ -49,12 +49,18 @@ void ScriptManager::onTableChanged(const std::string& pTable, const std::string 
 
 void ScriptManager::executeScriptWithCallback(const std::string &pName, const std::string &pFunction,
                                               const std::vector<ScriptValue> &pParamSetter,
-                                              std::function<void(ScriptReturn &&)> &&pCallback) {
+                                              std::function<void(ScriptReturn &&)> &&pCallback,
+                                              std::function<void(std::exception& e)>&& pErrorCallback) {
     std::thread t{[=] {
-        std::shared_lock<std::shared_mutex> lock{mScriptsMutex};
-        auto future = mScripts.at(pName).execute(pFunction, pParamSetter);
-        lock.unlock();
-        pCallback(future.get());
+        try {
+            std::shared_lock<std::shared_mutex> lock{mScriptsMutex};
+            auto future = mScripts.at(pName).execute(pFunction, pParamSetter);
+            lock.unlock();
+            pCallback(future.get());
+        } catch(std::exception& e) {
+            pErrorCallback(e);
+        }
+
     }};
     t.detach();
 }

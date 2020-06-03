@@ -9,10 +9,14 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-struct DatabaseStorage {
+template<typename T>
+struct ScriptStorage {
+    T value;
     bool inited = false;
-    PostgreSQLDatabase db;
 };
+
+using DatabaseStorage = ScriptStorage<PostgreSQLDatabase>;
+using TcpClientStorage = ScriptStorage<TcpClient>;
 
 extern const char* CONFIG_FILE;
 
@@ -21,19 +25,18 @@ WrenForeignClassMethods bindForeignClass(WrenVM*, const char* module, const char
     if(strcmp(classname, "Database") == 0) {
         WrenForeignClassMethods methods = {
             .allocate = [] (WrenVM* pVM) {
-                void *data = wrenSetSlotNewForeign(pVM, 0, 0, sizeof(DatabaseStorage));
-                auto *db = (DatabaseStorage*)data;
+                auto *db = (DatabaseStorage*) wrenSetSlotNewForeign(pVM, 0, 0, sizeof(DatabaseStorage));
                 db->inited = false;
                 try {
                     if(wrenGetSlotType(pVM, 1) != WREN_TYPE_STRING) {
-                        new(&db->db)PostgreSQLDatabase(CONFIG_FILE);
+                        new(&db->value)PostgreSQLDatabase(CONFIG_FILE);
                         db->inited = true;
                     } else if (wrenGetSlotType(pVM, 1) == WREN_TYPE_STRING
                                 && wrenGetSlotType(pVM, 2) == WREN_TYPE_STRING
                                 && wrenGetSlotType(pVM, 3) == WREN_TYPE_STRING
                                 && wrenGetSlotType(pVM, 4) == WREN_TYPE_STRING
                                 && wrenGetSlotType(pVM, 5) == WREN_TYPE_NUM) {
-                        new(data)PostgreSQLDatabase(
+                        new(&db->value)PostgreSQLDatabase(
                                 wrenGetSlotString(pVM, 1),
                                 wrenGetSlotString(pVM, 2),
                                 wrenGetSlotString(pVM, 3),
@@ -51,7 +54,7 @@ WrenForeignClassMethods bindForeignClass(WrenVM*, const char* module, const char
             .finalize = [] (void *data) {
                 auto* db = reinterpret_cast<DatabaseStorage*>(data);
                 if(db && db->inited) {
-                    db->db.~PostgreSQLDatabase();
+                    db->value.~PostgreSQLDatabase();
                 }
                 db->inited = false;
 
@@ -62,26 +65,32 @@ WrenForeignClassMethods bindForeignClass(WrenVM*, const char* module, const char
         WrenForeignClassMethods methods = {
                 .allocate = [] (WrenVM* pVM) {
                     wrenEnsureSlots(pVM, 3);
+                    auto *data = (TcpClientStorage*) wrenSetSlotNewForeign(pVM, 0, 0, sizeof(TcpClientStorage));
+                    data->inited = false;
                     if(wrenGetSlotType(pVM, 1) != WREN_TYPE_STRING && wrenGetSlotType(pVM, 2) != WREN_TYPE_NUM) {
-                        wrenSetSlotNull(pVM, 0);
+                        LOG_ERROR << "ScriptLibs TcpClient: Invalid parameter types!";
                         return;
                     }
-                    auto hostname = wrenGetSlotString(pVM, 1);
-                    auto port = wrenGetSlotDouble(pVM, 2);
-                    void *data = wrenSetSlotNewForeign(pVM, 0, 0, sizeof(TcpClient));
+                    auto hostname   = wrenGetSlotString(pVM, 1);
+                    auto port       = wrenGetSlotDouble(pVM, 2);
+
                     if(port <= 0 || port > std::numeric_limits<uint16_t>::max()) {
-                        wrenSetSlotNull(pVM, 0);
+                        LOG_ERROR << "ScriptLibs TcpClient: Invalid port: " << port << "\n";
                         return;
                     }
                     try {
-                        new(data)TcpClient(hostname, port);
+                        new(&data->value)TcpClient(hostname, port);
+                        data->inited = true;
                     } catch(std::exception& e) {
-                        wrenSetSlotNull(pVM, 0);
+                        LOG_ERROR << "ScriptLibs TcpClient instantiation failed: " << e.what();
+                        return;
                     }
                 },
                 .finalize = [] (void *data) {
-                    auto* socket = (TcpClient*)data;
-                    socket->~TcpClient();
+                    auto* socket = (TcpClientStorage*)data;
+                    if(socket->inited) {
+                        socket->value.~TcpClient();
+                    }
                 },
         };
         return methods;
@@ -109,7 +118,7 @@ static void databaseQuerySync(WrenVM *pVM) {
         const char *text = wrenGetSlotString(pVM, 1);
         wrenEnsureSlots(pVM, 2);
         try {
-            auto ret = db->db.query(text);
+            auto ret = db->value.query(text);
             //LOAD VALUES
             wrenSetSlotString(pVM, 1, "ok");
             wrenEnsureSlots(pVM, 4);
@@ -155,12 +164,16 @@ static void databaseQuerySync(WrenVM *pVM) {
 }
 
 static void tcpClientIsConnected(WrenVM* pVM) {
-    auto* socket = (TcpClient*) wrenGetSlotForeign(pVM, 0);
-    wrenSetSlotBool(pVM, 0, socket->isConnected());
+    auto* socket = (TcpClientStorage*) wrenGetSlotForeign(pVM, 0);
+    wrenSetSlotBool(pVM, 0, socket->inited && socket->value.isConnected());
 }
 
 static void tcpClientSendByte(WrenVM* pVM) {
-    auto* socket = (TcpClient*) wrenGetSlotForeign(pVM, 0);
+    auto* socket = (TcpClientStorage*) wrenGetSlotForeign(pVM, 0);
+    if(!socket->inited) {
+        passToVM(pVM, 0, "error", "TcpClient not initialized!");
+        return;
+    }
     if(wrenGetSlotType(pVM, 1) != WREN_TYPE_STRING) {
         passToVM(pVM, 0, "error", "Pass a string");
         return;
@@ -173,7 +186,7 @@ static void tcpClientSendByte(WrenVM* pVM) {
     }
     uint8_t byte = *bytesPointer;
     try {
-        socket->sendByte(byte);
+        socket->value.sendByte(byte);
         wrenSetSlotString(pVM, 0, "ok");
     } catch(std::exception& e) {
         passToVM(pVM, 0, "error", e.what());
@@ -181,9 +194,13 @@ static void tcpClientSendByte(WrenVM* pVM) {
 }
 
 static void tcpClientRecvByte(WrenVM* pVM) {
-    auto* socket = (TcpClient*) wrenGetSlotForeign(pVM, 0);
+    auto* socket = (TcpClientStorage*) wrenGetSlotForeign(pVM, 0);
+    if(!socket->inited) {
+        passToVM(pVM, 0, "error", "TcpClient not initialized!");
+        return;
+    }
     try {
-        auto byte = socket->recvByte();
+        auto byte = socket->value.recvByte();
         std::string byteString{static_cast<char>(byte), 1};
         passToVM(pVM, 0, "ok", byteString.c_str());
     } catch(std::exception& e) {
@@ -192,7 +209,11 @@ static void tcpClientRecvByte(WrenVM* pVM) {
 }
 
 static void tcpClientSendString(WrenVM* pVM) {
-    auto* socket = (TcpClient*) wrenGetSlotForeign(pVM, 0);
+    auto* socket = (TcpClientStorage*) wrenGetSlotForeign(pVM, 0);
+    if(!socket->inited) {
+        passToVM(pVM, 0, "error", "TcpClient not initialized!");
+        return;
+    }
     if(wrenGetSlotType(pVM, 1) != WREN_TYPE_STRING) {
         passToVM(pVM, 0, "error", "Pass a string");
         return;
@@ -204,7 +225,7 @@ static void tcpClientSendString(WrenVM* pVM) {
         return;
     }
     try {
-        socket->sendString(str);
+        socket->value.sendString(str);
         wrenSetSlotString(pVM, 0, "ok");
     } catch(std::exception& e) {
         passToVM(pVM, 0, "error", e.what());
@@ -212,9 +233,13 @@ static void tcpClientSendString(WrenVM* pVM) {
 }
 
 static void tcpClientRecvString(WrenVM* pVM) {
-    auto* socket = (TcpClient*) wrenGetSlotForeign(pVM, 0);
+    auto* socket = (TcpClientStorage*) wrenGetSlotForeign(pVM, 0);
+    if(!socket->inited) {
+        passToVM(pVM, 0, "error", "TcpClient not initialized!");
+        return;
+    }
     try {
-        auto bytes = socket->recvString();
+        auto bytes = socket->value.recvString();
         passToVM(pVM, 0, "ok", bytes.c_str());
     } catch(std::exception& e) {
         passToVM(pVM, 0, "error", e.what());

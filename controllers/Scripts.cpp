@@ -54,7 +54,7 @@ void Api::Scripts::updateScript(const drogon::HttpRequestPtr&,
 void Api::Scripts::runScript(const drogon::HttpRequestPtr&,
                              std::function<void(const drogon::HttpResponsePtr &)> &&callback, int64_t scriptid, std::string&& pParam) {
     drogon::app().getDbClient()->execSqlAsync("SELECT name FROM scripts WHERE id=$1",
-    [callback=std::move(callback),param=std::move(pParam)](const drogon::orm::Result& r) {
+    [callback=std::move(callback),param=std::move(pParam)](const drogon::orm::Result& r) mutable {
         auto name = r.at(0)["name"].as<std::string>();
         ScriptValue scriptParameter;
         if(!param.empty()) {
@@ -84,7 +84,7 @@ void Api::Scripts::runScript(const drogon::HttpRequestPtr&,
                 json["type"] = "ok";
                 callback(drogon::HttpResponse::newHttpJsonResponse(std::move(json)));
             }
-        });
+        }, genDefErrorHandler(callback));
     }, genErrorHandler(callback), scriptid);
 }
 
@@ -109,7 +109,7 @@ void Api::Scripts::drawScript(const drogon::HttpRequestPtr&,
                     callback(genError("Script didn't return a string!"));
                 }
             }
-        });
+        }, genDefErrorHandler(callback));
     }, genErrorHandler(callback), scriptid);
 }
 
