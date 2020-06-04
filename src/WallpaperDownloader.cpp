@@ -5,13 +5,15 @@
 #include <fstream>
 
 namespace WallpaperDownloader {
+const char* REDDIT_USER_AGENT = "ZeVa Wallpaper Bot";
 
 void downloadWallpapers() {
     auto client = drogon::HttpClient::newHttpClient("https://www.reddit.com");
     auto req = drogon::HttpRequest::newHttpRequest();
-    const char* REDDIT_USER_AGENT = "ZeVa Wallpaper Bot";
+
     req->addHeader("User-Agent", REDDIT_USER_AGENT);
     req->setPath("/r/wallpapers/hot.json?count=10");
+    req->addHeader("Accept-Language", "en-US,en;q=0.5");
     client->sendRequest(req, [](drogon::ReqResult result, const drogon::HttpResponsePtr& resp) {
         if (result != drogon::ReqResult::Ok) {
             LOG_WARN << "Wallpapers: Reddit request returned with error, is the internet working?";
@@ -51,6 +53,8 @@ void downloadWallpapers() {
                     auto hostname = urlStr.substr(0, thirdSlashIndex);
                     auto client = drogon::HttpClient::newHttpClient(hostname);
                     req->setPath(urlStr.substr(thirdSlashIndex));
+                    req->addHeader("Accept-Language", "en-US,en;q=0.5");
+                    req->addHeader("User-Agent", REDDIT_USER_AGENT);
                     client->sendRequest(req, [urlStr](drogon::ReqResult result, const drogon::HttpResponsePtr &resp) {
                         if (result != drogon::ReqResult::Ok) {
                             LOG_WARN << "Wallpapers: Failed to request " << urlStr;

@@ -43,15 +43,11 @@ file(GLOB_RECURSE WREN_SOURCES
 add_definitions(-D_LINUX_)
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(PQXX REQUIRED libpqxx)
 pkg_check_modules(PQ REQUIRED libpq)
-
-include_directories(${pqxx_INCLUDE_DIRS})
-include_directories(${pqxx_libpq_INCLUDEDIR})
 
 find_package(PostgreSQL REQUIRED)
 include_directories(${PostgreSQL_INCLUDE_DIRS})
 
 add_executable(ZeVa2_0 ${SOURCES} ${WREN_SOURCES})
 
-target_link_libraries(ZeVa2_0 pthread zstd drogon nlohmann_json::nlohmann_json pqxx pq stdc++fs)
+target_link_libraries(ZeVa2_0 pthread zstd drogon nlohmann_json::nlohmann_json pq stdc++fs)

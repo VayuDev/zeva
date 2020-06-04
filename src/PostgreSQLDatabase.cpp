@@ -1,102 +1,94 @@
 #include "PostgreSQLDatabase.hpp"
 #include <memory>
-#include <pqxx/pqxx>
 #include <cassert>
-#include <pqxx/util.hxx>
-#include <pqxx/tablereader.hxx>
-#include <pqxx/strconv.hxx>
 #include "libpq-fe.h"
 #include <drogon/HttpAppFramework.h>
 #include <Util.hpp>
 #include <fstream>
 
-namespace pqxx {
-    template<> struct PQXX_LIBEXPORT string_traits<std::optional<timeval>>
-    {
-        static constexpr const char *name() noexcept { return "std::optional<timeval>"; }
-        static constexpr bool has_null() noexcept { return false; }
-        static bool is_null(std::optional<timeval> t) { return  !t.has_value(); }
-        static std::optional<timeval> null() { return {}; }
-        static void from_string(const char Str[], std::optional<timeval> &Obj) {
-            struct tm tm;
-            strptime(Str, "%Y-%m-%d %H:%M:%S", &tm);
-            Obj = timeval{.tv_sec = mktime(&tm), .tv_usec = 0};
-        }
-    };
-}
-
 
 std::unique_ptr<QueryResult> PostgreSQLDatabase::query(std::string pQuery, std::vector<QueryValue> pPlaceholders) {
-    assert(mConnection);
-    mConnection->prepare(pQuery, pQuery);
-    pqxx::work w{*mConnection};
-    pqxx::result r;
-    if(pPlaceholders.empty()) {
-        r = w.exec(pQuery);
-    } else {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-        auto inv = w.prepared(pQuery);
-#pragma GCC diagnostic pop
-        for(const auto& param: pPlaceholders) {
-            switch(param.type) {
-                case QueryValueType::INTEGER:
-                    inv(param.intValue);
-                    break;
-                case QueryValueType::STRING:
-                    inv(param.stringValue);
-                    break;
-                default:
-                    assert(false);
-            }
-        }
-
-        r = inv.exec();
+    assert(mCConnection);
+    auto oids = genOidVector(pPlaceholders);
+    std::vector<const char*> values{pPlaceholders.size()};
+    std::vector<std::string> valuesStrings{pPlaceholders.size()};
+    for(const auto& val: pPlaceholders) {
+        const auto& str = valuesStrings.emplace_back(val.toString());
+        values.emplace_back(str.c_str());
     }
-    w.commit();
 
+    auto result = PQexecParams(
+            mCConnection,
+            pQuery.c_str(),
+            pPlaceholders.size(),
+            oids.data(),
+            values.data(),
+            nullptr,
+            nullptr,
+            0);
+    checkForNewNotifications();
+    if(PQresultStatus(result) != PGRES_TUPLES_OK) {
+        if(PQresultStatus(result) == PGRES_COMMAND_OK) {
+            PQclear(result);
+            return nullptr;
+        } else {
+            PQclear(result);
+            throw std::runtime_error("PostgreSQL error: " + std::string{PQerrorMessage(mCConnection)});
+        }
+    }
+    const auto rows = PQntuples(result);
+    const auto columns = PQnfields(result);
     auto res = std::make_unique<PostgreSQLQueryResult>();
-    for(size_t i = 0; i < r.columns(); ++i) {
+    //get column names
+    for(int i = 0; i < columns; ++i) {
         try {
-            res->mColumns.emplace_back(r.column_name(i));
+            res->mColumns.emplace_back(PQfname(result, i));
         } catch(...) {
             res->mColumns.emplace_back("");
         }
-
     }
-    for (pqxx::result::const_iterator row = r.begin(); row != r.end(); ++row) {
-        res->mData.emplace_back();
-        for(size_t c = 0; c < row.size(); ++c) {
-            auto type = mTypes[row[(int)c].type()];
-
-            QueryValue value;
-            if(!row[(int)c].is_null()) {
+    res->mData.reserve(rows);
+    for(int r = 0; r < rows; ++r) {
+        std::vector<QueryValue> row;
+        for(int c = 0; c < columns; ++c) {
+            QueryValue ret;
+            if(PQgetisnull(result, r, c)) {
+                ret.type = QueryValueType::TNULL;
+            } else {
+                char *val = PQgetvalue(result, r, c);
+                auto length = PQgetlength(result, r, c);
+                auto type = mOidToType.at(PQftype(result, c));
+                ret.type = type;
                 switch(type) {
-                    case QueryValueType::INTEGER:
-                        value.type = QueryValueType::INTEGER;
-                        value.intValue = row[(int)c].as<int64_t>();
-                        break;
                     case QueryValueType::STRING:
-                        value.type = QueryValueType::STRING;
-                        value.stringValue = row[(int)c].as<std::string>();
+                        ret.stringValue.append(val, length);
                         break;
-                    case QueryValueType::TIME:
-                        value.type = QueryValueType::TIME;
-                        value.timeValue = *row[(int)c].as<std::optional<timeval>>();
+                    case QueryValueType::INTEGER:
+                        ret.intValue = std::stoll(val);
                         break;
                     case QueryValueType::BOOL:
-                        value.type = QueryValueType::BOOL;
-                        value.boolValue = row[(int)c].as<bool>();
+                        assert(length > 0);
+                        ret.boolValue = val[0] == 't';
+                        break;
+                    case QueryValueType::TIME: {
+                        struct tm tm;
+                        strptime(val, "%Y-%m-%d %H:%M:%S", &tm);
+                        ret.timeValue = timeval{.tv_sec = mktime(&tm), .tv_usec = 0};
+                        break;
+                    case QueryValueType::DOUBLE:
+                        ret.doubleValue = std::stod(val);
                         break;
                     default:
                         assert(false);
+
+                    }
                 }
             }
-
-            res->mData.at(res->mData.size() - 1).push_back(std::move(value));
+            row.emplace_back(std::move(ret));
         }
+        res->mData.emplace_back(std::move(row));
     }
-
+    PQclear(result);
     return res;
 }
 
@@ -135,8 +127,7 @@ PostgreSQLDatabase::PostgreSQLDatabase(const std::filesystem::path &pConfigFile,
                    " hostaddr = "     + dbconfig["host"].asString() +
                    " port = "         + std::to_string(5432);
     if(connect) {
-        mConnection = std::make_unique<pqxx::connection>(mConnectString);
-        mNotificationReceiver.emplace(*this);
+        mCConnection = PQconnectdb(mConnectString.c_str());
         init();
     }
 }
@@ -147,20 +138,18 @@ PostgreSQLDatabase::PostgreSQLDatabase(std::string pDbName, std::string pUserNam
             " user = " + pUserName +
             " password = " + pPassword +
             " hostaddr = " + pHost +
-            " port = " + std::to_string(pPort)),
-mConnection(std::make_unique<pqxx::connection>(mConnectString)),
-mNotificationReceiver(*this) {
+            " port = " + std::to_string(pPort)) {
 
+    mCConnection = PQconnectdb(mConnectString.c_str());
     init();
 }
 
 void PostgreSQLDatabase::init() {
-    pqxx::nontransaction n{*mConnection};
-    pqxx::result r{n.exec("select typname, oid from pg_type;")};
-
-    for (pqxx::result::const_iterator row = r.begin(); row != r.end(); ++row) {
-        auto name = row[0].as<std::string>();
-        auto oid = row[1].as<pqxx::oid>();
+    auto res = PQexec(mCConnection, "SELECT typname, oid FROM pg_type;");
+    checkForNewNotifications();
+    for (int r = 0; r < PQntuples(res); ++r) {
+        std::string name = PQgetvalue(res, r, 0);
+        auto oid = (Oid) std::stol(PQgetvalue(res, r, 1));
         auto type = QueryValueType::UNKNOWN;
         if(name.find("int") == 0) {
             type = QueryValueType::INTEGER;
@@ -174,27 +163,28 @@ void PostgreSQLDatabase::init() {
         if(name == "bool") {
             type = QueryValueType::BOOL;
         }
-        mTypes[oid] = type;
+        mOidToType[oid] = type;
+        mTypeToOid[type] = oid;
     }
-    LOG_TRACE << "PostgreSQLDatabase created";
+    PQclear(res);
+
+    PQsetNoticeReceiver(mCConnection, [](void*, const PGresult*) {}, nullptr);
 }
 
 PostgreSQLDatabase::~PostgreSQLDatabase() {
-    mNotificationReceiver.reset();
-    if(mConnection) {
-        mConnection->disconnect();
-        mConnection = nullptr;
+    if(mCConnection) {
+        PQfinish(mCConnection);
     }
 }
 
 std::string PostgreSQLDatabase::performCopyToStdout(const std::string& pQuery) {
-    auto conn = PQconnectdb(mConnectString.c_str());
-    auto res = PQexec(conn, pQuery.c_str());
+    auto res = PQexec(mCConnection, pQuery.c_str());
+    checkForNewNotifications();
     char *buff;
     std::string output;
     int ret;
     while(true) {
-        ret = PQgetCopyData(conn, &buff, 0);
+        ret = PQgetCopyData(mCConnection, &buff, 0);
         if(ret <  0){
             break;
         }
@@ -204,25 +194,54 @@ std::string PostgreSQLDatabase::performCopyToStdout(const std::string& pQuery) {
         }
     }
     if(ret == -2) {
-        throw std::runtime_error(std::string{"COPY data transfer failed "} + PQerrorMessage(conn));
+        throw std::runtime_error(std::string{"COPY data transfer failed "} + PQerrorMessage(mCConnection));
     }
     PQclear(res);
-    res = PQgetResult(conn);
+    res = PQgetResult(mCConnection);
     if(PQresultStatus(res) != PGRES_COMMAND_OK) {
         throw std::runtime_error("PostgreSQL returned not ok!");
     }
     PQclear(res);
-    PQfinish(conn);
 
     return output;
 }
 
 void PostgreSQLDatabase::awaitNotifications(int millis) {
-    mConnection->await_notification(0, millis * 1000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(millis));
+    PQconsumeInput(mCConnection);
+    checkForNewNotifications();
 }
 
+std::vector<Oid> PostgreSQLDatabase::genOidVector(const std::vector<QueryValue> &pValues) const {
+    std::vector<Oid> ret(pValues.size());
+    size_t i = 0;
+    for(auto val: pValues) {
+        ret.at(i++) = mTypeToOid.at(val.type);
+    }
+    return ret;
+}
 
+void PostgreSQLDatabase::checkForNewNotifications() {
+    auto notification = PQnotifies(mCConnection);
+    if(notification) {
+        if(notification->extra) {
+            onNotification(notification->relname, notification->extra);
+        }
+        PQfreemem(notification);
+    }
 
+}
+
+void PostgreSQLDatabase::listenTo(const std::string &pChannel) {
+    auto query = "LISTEN " + pChannel;
+    auto listenResp = PQexec(mCConnection, query.c_str());
+    checkForNewNotifications();
+    if(PQresultStatus(listenResp) != PGRES_COMMAND_OK) {
+        PQclear(listenResp);
+        throw std::runtime_error("Failed to listen for table change");
+    }
+    PQclear(listenResp);
+}
 
 size_t PostgreSQLQueryResult::getRowCount() const {
     return mData.size();
@@ -238,12 +257,4 @@ const QueryValue &PostgreSQLQueryResult::getValue(size_t pRow, size_t pColumn) c
 
 const std::vector<std::string> &PostgreSQLQueryResult::getColumnNames() const {
     return mColumns;
-}
-
-void PostgreSQLDatabase::NotificationReceiver::operator()(const std::string &payload, int) {
-    mDb.onNotification(payload);
-}
-
-PostgreSQLDatabase::NotificationReceiver::NotificationReceiver(PostgreSQLDatabase &pDb)
-: pqxx::notification_receiver(*pDb.mConnection, "onTableChanged"), mDb(pDb) {
 }

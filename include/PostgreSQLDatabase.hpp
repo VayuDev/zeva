@@ -2,10 +2,10 @@
 #include "DatabaseWrapper.hpp"
 #include <memory>
 #include <map>
-#include <pqxx/pqxx>
 #include <filesystem>
 #include <json/value.h>
 #include <repl.h>
+#include <libpq-fe.h>
 
 class PostgreSQLQueryResult : public QueryResult {
 public:
@@ -24,28 +24,20 @@ class PostgreSQLDatabase : public DatabaseWrapper {
 public:
     explicit PostgreSQLDatabase(const std::filesystem::path& pConfigFile, bool connect = true);
     PostgreSQLDatabase(std::string pDbName, std::string pUserName, std::string pPassword, std::string pHost, uint16_t pPort);
-    ~PostgreSQLDatabase();
+    ~PostgreSQLDatabase() override;
     virtual std::unique_ptr<QueryResult> query(std::string pQuery, std::vector<QueryValue> pPlaceholders = {}) override;
     std::string performCopyToStdout(const std::string& pQuery);
     void awaitNotifications(int millis) override;
-
-    pqxx::connection& getConnection() {
-        return *mConnection;
-    }
 private:
     friend WrenForeignClassMethods bindForeignClass(WrenVM*, const char*, const char*);
     void init();
     std::string mConnectString;
-    std::unique_ptr<pqxx::connection> mConnection;
-    std::map<pqxx::oid, QueryValueType> mTypes;
+    pg_conn* mCConnection = nullptr;
+    std::map<Oid, QueryValueType> mOidToType;
+    std::map<QueryValueType, Oid> mTypeToOid;
 
-class NotificationReceiver : public pqxx::notification_receiver {
-public:
-    explicit NotificationReceiver(PostgreSQLDatabase& pDb);
-private:
-    void operator()(std::string const &payload, int backend_pid) override;
-    PostgreSQLDatabase& mDb;
-};
-    std::optional<NotificationReceiver> mNotificationReceiver;
+    void checkForNewNotifications();
+    void listenTo(const std::string& pChannel) override;
 
+    [[nodiscard]] std::vector<Oid> genOidVector(const std::vector<QueryValue>& pValues) const;
 };

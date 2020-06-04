@@ -24,21 +24,6 @@ static void sighandler(int) {
 
 const char* CONFIG_FILE = "assets/config.json";
 
-class LogNotificationReceiver : private pqxx::notification_receiver {
-public:
-    LogNotificationReceiver(pqxx::connection& pConn, std::shared_ptr<LogWebsocket> pLog)
-            : pqxx::notification_receiver(pConn, "newlog"), mLog(std::move(pLog)) {}
-
-    void operator()(const std::string &payload, int) override {
-        auto firstPercentageIndex = payload.find('%');
-        auto level = std::stoll(payload.substr(0, firstPercentageIndex));
-        auto msg = payload.substr(firstPercentageIndex + 1, std::string::npos);
-        mLog->newLogMessage(level, msg);
-    }
-private:
-    std::shared_ptr<LogWebsocket> mLog;
-};
-
 int main() {
     //init database
     auto conn = std::make_shared<PostgreSQLDatabase>(CONFIG_FILE);
@@ -46,7 +31,7 @@ int main() {
 
     srand(time(0));
     //event trigger
-    conn->addListener([](const std::string& pPayload) {
+    conn->addListener("on_table_changed", [](const std::string& pPayload) {
         auto splitterLocation = pPayload.find('%');
         if(splitterLocation == std::string::npos) {
             LOG_ERROR << "Database notify isn't formatted correctly!" << pPayload;;
@@ -59,7 +44,12 @@ int main() {
     });
 
     auto logWebsocketController = std::make_shared<LogWebsocket>();
-    LogNotificationReceiver recv{conn->getConnection(), logWebsocketController};
+    conn->addListener("newlog", [logWebsocketController](const std::string& payload) {
+        auto firstPercentageIndex = payload.find('%');
+        auto level = std::stoll(payload.substr(0, firstPercentageIndex));
+        auto msg = payload.substr(firstPercentageIndex + 1, std::string::npos);
+        logWebsocketController->newLogMessage(level, msg);
+    });
 
     long passedTime = std::numeric_limits<long>::max();
     //handle notifications
