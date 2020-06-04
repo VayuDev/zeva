@@ -15,6 +15,8 @@
 #include <csignal>
 #include "Util.hpp"
 #include <regex>
+#include <drogon/HttpClient.h>
+#include "WallpaperDownloader.hpp"
 
 static void sighandler(int) {
     drogon::app().quit();
@@ -139,6 +141,12 @@ int main() {
             }
         }
         LOG_WARN << "Server completely started";
+    });
+    drogon::app().getLoop()->runAfter(1, [] {
+        WallpaperDownloader::downloadWallpapers();
+        drogon::app().getLoop()->runEvery(60*10, [] {
+            WallpaperDownloader::downloadWallpapers();
+        });
     });
     drogon::app().run();
     LOG_WARN << "Quitting server";
