@@ -9,7 +9,11 @@
 #include <ctime>
 #include <cassert>
 #include <tuple>
+#include <thread>
+#include <condition_variable>
 #include <set>
+#include <queue>
+#include <atomic>
 
 enum class QueryValueType {
     INTEGER,
@@ -49,7 +53,7 @@ public:
         ret.stringValue = pStr;
         return ret;
     }
-    std::string toString() const {
+    [[nodiscard]] std::string toString() const {
         switch(type) {
             case QueryValueType::INTEGER:
                 return std::to_string(intValue);
@@ -84,15 +88,10 @@ public:
 
 class DatabaseWrapper {
 public:
-    virtual ~DatabaseWrapper() = default;
+    DatabaseWrapper();
+    virtual ~DatabaseWrapper();
     virtual std::unique_ptr<QueryResult> query(std::string pQuery, std::vector<QueryValue> pPlaceholders = {}) = 0;
-    inline void addListener(const std::string& pChannel, std::function<void(const std::string&)> pListener) {
-        if(mListeningTo.count(pChannel) == 0) {
-            listenTo(pChannel);
-            mListeningTo.emplace(pChannel);
-        }
-        mListeners.emplace_back(std::make_pair(pChannel, std::move(pListener)));
-    }
+    void addListener(const std::string& pChannel, std::function<void(const std::string&)> pListener);
     virtual void awaitNotifications(int millis) {(void)millis;};
 protected:
     virtual void listenTo(const std::string& pChannel) = 0;
@@ -100,4 +99,10 @@ protected:
 private:
     std::list<std::pair<std::string, std::function<void(const std::string&)>>> mListeners;
     std::set<std::string> mListeningTo;
+
+    std::mutex mNotificationMutex;
+    std::queue<std::pair<std::string, std::string>> mNotificationQueue;
+    std::atomic<bool> mShouldRun = true;
+    std::condition_variable mNotifier;
+    std::thread mNotificationThread;
 };

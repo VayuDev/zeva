@@ -10,11 +10,12 @@
 std::unique_ptr<QueryResult> PostgreSQLDatabase::query(std::string pQuery, std::vector<QueryValue> pPlaceholders) {
     assert(mCConnection);
     auto oids = genOidVector(pPlaceholders);
-    std::vector<const char*> values{pPlaceholders.size()};
-    std::vector<std::string> valuesStrings{pPlaceholders.size()};
+    std::vector<char*> values;
     for(const auto& val: pPlaceholders) {
-        const auto& str = valuesStrings.emplace_back(val.toString());
-        values.emplace_back(str.c_str());
+        auto str = val.toString();
+        char *data = new char[str.size() + 1];
+        strcpy(data, str.c_str());
+        values.emplace_back(data);
     }
 
     auto result = PQexecParams(
@@ -26,6 +27,9 @@ std::unique_ptr<QueryResult> PostgreSQLDatabase::query(std::string pQuery, std::
             nullptr,
             nullptr,
             0);
+    for(char *c: values) {
+        delete[] c;
+    }
     checkForNewNotifications();
     if(PQresultStatus(result) != PGRES_TUPLES_OK) {
         if(PQresultStatus(result) == PGRES_COMMAND_OK) {
@@ -151,9 +155,14 @@ void PostgreSQLDatabase::init() {
         std::string name = PQgetvalue(res, r, 0);
         auto oid = (Oid) std::stol(PQgetvalue(res, r, 1));
         auto type = QueryValueType::UNKNOWN;
+        bool writeToReverseMap = true;
         if(name.find("int") == 0) {
             type = QueryValueType::INTEGER;
+            if(name != "int8") {
+                writeToReverseMap = false;
+            }
         }
+
         if(name == "name" || name == "varchar" || name == "text") {
             type = QueryValueType::STRING;
         }
@@ -164,7 +173,9 @@ void PostgreSQLDatabase::init() {
             type = QueryValueType::BOOL;
         }
         mOidToType[oid] = type;
-        mTypeToOid[type] = oid;
+        if(writeToReverseMap) {
+            mTypeToOid[type] = oid;
+        }
     }
     PQclear(res);
 
@@ -229,7 +240,6 @@ void PostgreSQLDatabase::checkForNewNotifications() {
         }
         PQfreemem(notification);
     }
-
 }
 
 void PostgreSQLDatabase::listenTo(const std::string &pChannel) {
