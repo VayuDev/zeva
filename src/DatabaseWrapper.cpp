@@ -26,7 +26,7 @@ DatabaseWrapper::DatabaseWrapper()
         }
     }
 }) {
-
+    pthread_setname_np(mNotificationThread.native_handle(), "ZeVaDBNotifiy");
 }
 
 DatabaseWrapper::~DatabaseWrapper() {
