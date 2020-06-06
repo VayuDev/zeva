@@ -43,7 +43,11 @@ void ScriptManager::onTableChanged(const std::string& pTable, const std::string 
         lock.lock();
     }
     for(auto& script: mScripts) {
-        script.second.execute("onTableChanged", {ScriptValue::makeString(pTable), ScriptValue::makeString(pType)}).get();
+        try {
+            script.second.execute("onTableChanged", {ScriptValue::makeString(pTable), ScriptValue::makeString(pType)}).get();
+        } catch(std::exception& e) {
+            LOG_ERROR << "Error executing script: " << e.what();
+        }
     }
 }
 

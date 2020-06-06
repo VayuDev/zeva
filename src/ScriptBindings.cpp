@@ -91,8 +91,18 @@ const std::string &ScriptBindings::getCode() {
     return mCode;
 }
 
+static void throwError(const char* msg) {
+    char buff[1024];
+    strerror_r(errno, buff, sizeof(buff));
+    std::string err{msg};
+    err += ": ";
+    err += buff;
+    throw std::runtime_error(err);
+}
+
 std::future<std::variant<std::string, Json::Value>> ScriptBindings::execute(const std::string &pFunctionName, const std::vector<ScriptValue>& params) {
     std::unique_lock<std::mutex> lock(mFdMutex);
+    //TODO check for errors and incomplete messages
     write(mOutputFd, "E", 1);
     Json::Value msg;
     msg["function"] = pFunctionName;
@@ -107,11 +117,23 @@ std::future<std::variant<std::string, Json::Value>> ScriptBindings::execute(cons
     write(mOutputFd, str.c_str(), str.size());
     return std::async(std::launch::deferred, [this, lock=std::move(lock)] () -> std::variant<std::string, Json::Value> {
         char cmd;
-        read(mInputFd, &cmd, 1);
+        if(read(mInputFd, &cmd, 1) == -1) {
+            throwError("read()");
+        }
         size_t length;
-        read(mInputFd, &length, sizeof(length));
+        if(read(mInputFd, &length, sizeof(length)) == -1) {
+            throwError("read()");
+        }
         char response[length + 1];
-        read(mInputFd, response, length);
+        size_t bytesRead = 0;
+        while(bytesRead < length) {
+            auto status = read(mInputFd, response + bytesRead, length - bytesRead);
+            if(status == -1) {
+                throwError("read()");
+            }
+            bytesRead += status;
+        }
+
         response[length] = '\0';
         switch(cmd) {
             case 'J': {
@@ -131,6 +153,7 @@ std::future<std::variant<std::string, Json::Value>> ScriptBindings::execute(cons
                 return responseJson;
             }
             case 'R': {
+                //printf("Received raw string of size: %i\n", (int)length);
                 std::string responseStr{response, length};
                 if(isValidAscii(reinterpret_cast<const signed char *>(responseStr.c_str()), responseStr.size())) {
                     LOG_INFO << "[Script] " << mModule << " return string: " << response;
