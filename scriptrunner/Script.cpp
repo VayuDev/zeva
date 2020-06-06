@@ -6,6 +6,7 @@
 #include <cassert>
 #include <Util.hpp>
 #include <iostream>
+#include <ScriptBindings.hpp>
 
 #define LOG_INFO std::cout
 #define LOG_ERROR std::cerr
@@ -90,7 +91,7 @@ class Script {
         throw std::runtime_error("Instantiation failed: " + popLastError());
     }
     mInstance = wrenGetSlotHandle(mVM, 0);
-    auto& thread = mExecuteThread.emplace([this] {
+    /*auto& thread = mExecuteThread.emplace([this] {
         while(mShouldRun) {
             std::unique_lock<std::mutex> lock(mQueueMutex);
             mQueueAwaitCV.wait(lock);
@@ -137,19 +138,19 @@ class Script {
     char threadNameBuff[16];
     snprintf(threadNameBuff, 16, "script_%s", mModuleName.c_str());
     threadNameBuff[15] = '\0';
-    pthread_setname_np(thread.native_handle(), threadNameBuff);
+    pthread_setname_np(thread.native_handle(), threadNameBuff);*/
 }
 Script::Script(const std::string& pModule, const std::string& pCode) {
     create(pModule, pCode);
 }
 
 Script::~Script() {
-    mShouldRun = false;
+    /*mShouldRun = false;
     mQueueAwaitCV.notify_all();
 
     if(mExecuteThread && mExecuteThread->joinable()) {
         mExecuteThread->join();
-    }
+    }*/
     for(auto& func: mFunctions) {
         wrenReleaseHandle(mVM, func.second);
     }
@@ -168,57 +169,37 @@ std::string Script::popLastError() {
     return ret;
 }
 
-std::future<ScriptReturn> Script::execute(const std::string& pFunctionName, const std::vector<ScriptValue>& pParamSetter) {
-    int this_id = mIdCounter++;
-    std::unique_lock<std::mutex> lock{mQueueMutex};
-    mWorkQueue.emplace(std::make_pair(this_id, [this, pFunctionName, pParamSetter] () -> ScriptReturn {
-        wrenEnsureSlots(mVM, 4);
-        wrenSetSlotHandle(mVM, 0, mInstance);
-        for(size_t i = 0; i < pParamSetter.size(); ++i) {
-            switch(pParamSetter.at(i).type) {
-                case WREN_TYPE_STRING:
-                    wrenSetSlotString(mVM, i + 1, pParamSetter.at(i).stringValue.c_str());
-                    break;
-                case WREN_TYPE_NUM:
-                    wrenSetSlotDouble(mVM, i + 1, pParamSetter.at(i).doubleValue);
-                    break;
-                case WREN_TYPE_BOOL:
-                    wrenSetSlotBool(mVM, i + 1, pParamSetter.at(i).boolValue);
-                    break;
-                case WREN_TYPE_NULL:
-                    wrenSetSlotNull(mVM, i + 1);
-                    break;
-                default:
-                    assert(false);
-            }
+ScriptBindingsReturn Script::execute(const std::string& pFunctionName, const Json::Value& pParamSetter) {
+    wrenEnsureSlots(mVM, 4);
+    wrenSetSlotHandle(mVM, 0, mInstance);
+    size_t i = 0;
+    for(const auto& val: pParamSetter) {
+        switch(val.type()) {
+            case Json::stringValue:
+                wrenSetSlotString(mVM, i + 1, val.asCString());
+                break;
+            case Json::intValue:
+                wrenSetSlotDouble(mVM, i + 1, val.asInt64());
+                break;
+            case Json::realValue:
+                wrenSetSlotDouble(mVM, i + 1, val.asDouble());
+                break;
+            case Json::nullValue:
+                wrenSetSlotNull(mVM, i + 1);
+                break;
+            default:
+                assert(false);
         }
-        auto interpretResult = wrenCall(mVM, mFunctions.at(pFunctionName));
-        if(interpretResult != WrenInterpretResult::WREN_RESULT_SUCCESS) {
-            throw std::runtime_error("Running script failed: " + popLastError());
-        }
-        ScriptReturn ret;
-        ret.value = wrenValueToScriptValue(mVM, 0);
-        struct timespec t;
-        clock_gettime(CLOCK_MONOTONIC_COARSE, &t);
-        ret.timestamp = t.tv_sec;
-        return ret;
-    }));
-    lock.unlock();
-    mQueueAwaitCV.notify_all();
-    return std::async(std::launch::deferred, [this, this_id] {
-        while(mShouldRun) {
-            std::unique_lock<std::mutex> lock{mQueueMutex};
-            for(auto it = mResultList.begin(); it != mResultList.end(); it++) {
-                if(it->first == this_id) {
-                    ScriptReturn ret = it->second;
-                    mResultList.erase(it);
-                    return ret;
-                }
-            }
-            lock.unlock();
-            using namespace std::chrono_literals;
-            std::this_thread::sleep_for(1ms);
-        }
-        return ScriptReturn{std::string{"Error"}};
-    });
+        ++i;
+    }
+    auto interpretResult = wrenCall(mVM, mFunctions.at(pFunctionName));
+    if(interpretResult != WrenInterpretResult::WREN_RESULT_SUCCESS) {
+        throw std::runtime_error("Running script failed: " + popLastError());
+    }
+    if(wrenGetSlotType(mVM, 0) == WREN_TYPE_STRING) {
+        int length;
+        auto str = wrenGetSlotBytes(mVM, 0, &length);
+        return std::string{str, (size_t)length};
+    }
+    return wrenValueToJsonValue(mVM, 0);
 }

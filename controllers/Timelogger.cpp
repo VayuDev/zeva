@@ -1,5 +1,6 @@
 #include "Timelogger.hpp"
 #include "Util.hpp"
+#include "DrogonUtil.hpp"
 
 void Api::Apps::Timelogger::getStatus(const drogon::HttpRequestPtr&,
                                       std::function<void(const drogon::HttpResponsePtr &)> &&callback,

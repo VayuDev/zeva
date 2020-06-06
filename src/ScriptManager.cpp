@@ -19,7 +19,7 @@ void ScriptManager::addScript(const std::string& pName, const std::string& pCode
                      std::forward_as_tuple(pName, pCode));
 }    
 
-std::future<ScriptReturn> ScriptManager::executeScript(const std::string& pName, const std::string& pFunction, const std::vector<ScriptValue>& pParamSetter) {
+std::future<ScriptBindingsReturn> ScriptManager::executeScript(const std::string& pName, const std::string& pFunction, const std::vector<ScriptValue>& pParamSetter) {
     std::shared_lock<std::shared_mutex> lock{mScriptsMutex};
     return mScripts.at(pName).execute(pFunction, pParamSetter);
 }
@@ -43,13 +43,13 @@ void ScriptManager::onTableChanged(const std::string& pTable, const std::string 
         lock.lock();
     }
     for(auto& script: mScripts) {
-        script.second.execute("onTableChanged", {ScriptValue::makeString(pTable), ScriptValue::makeString(pType)});
+        script.second.execute("onTableChanged", {ScriptValue::makeString(pTable), ScriptValue::makeString(pType)}).get();
     }
 }
 
 void ScriptManager::executeScriptWithCallback(const std::string &pName, const std::string &pFunction,
                                               const std::vector<ScriptValue> &pParamSetter,
-                                              std::function<void(ScriptReturn &&)> &&pCallback,
+                                              std::function<void(ScriptBindingsReturn &&)> &&pCallback,
                                               std::function<void(std::exception& e)>&& pErrorCallback) {
     std::thread t{[=] {
         try {

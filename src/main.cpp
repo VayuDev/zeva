@@ -1,7 +1,6 @@
 #include "wren.hpp"
 #include <cassert>
 #include <iostream>
-#include "Script.hpp"
 #include "ScriptManager.hpp"
 #include <cstring>
 #include <cstdlib>
@@ -17,6 +16,7 @@
 #include <regex>
 #include <drogon/HttpClient.h>
 #include "WallpaperDownloader.hpp"
+#include "DrogonUtil.hpp"
 
 static void sighandler(int) {
     drogon::app().quit();

@@ -1,6 +1,7 @@
 #include "Db.hpp"
 #include "Util.hpp"
 #include "PostgreSQLDatabase.hpp"
+#include "DrogonUtil.hpp"
 
 extern const char* CONFIG_FILE;
 

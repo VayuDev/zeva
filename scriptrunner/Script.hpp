@@ -9,6 +9,7 @@
 #include <queue>
 #include <filesystem>
 #include "ScriptValue.hpp"
+#include <json/json.h>
 
 class Script final {
 public:
@@ -20,7 +21,7 @@ public:
     ~Script();
     
     void setLastError(std::string pLastError);
-    std::future<ScriptReturn> execute(const std::string& pFunctionName, const std::vector<ScriptValue>&);
+    ScriptBindingsReturn execute(const std::string& pFunctionName, const Json::Value&);
 
     inline const std::string& getCode() {
         return mCode;
@@ -34,19 +35,5 @@ private:
     WrenHandle *mInstance;
     std::string mLastError;
     std::map<std::string, WrenHandle*> mFunctions;
-    
-    std::atomic<bool> mShouldRun = true;
-    std::atomic<int> mIdCounter = 0;
-    std::mutex mQueueMutex;
-    std::condition_variable mQueueAwaitCV;
-    std::optional<std::thread> mExecuteThread;
-    
-    std::queue<std::pair<int, std::function<ScriptReturn()>>> mWorkQueue;
-    std::list<std::pair<int, ScriptReturn>> mResultList;
-
     std::string mCode;
-
-    //void executeScriptWithCallback(const std::string &pName, const std::string &pFunction,
-    //                               const std::vector<ScriptValue> &pParamSetter,
-    //                               std::function<void(const ScriptReturn &)> &&pCallback);
 };

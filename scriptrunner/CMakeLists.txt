@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.2)
 project(ZeVaScript)
-set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_STANDARD 20)
 
 include_directories("${PROJECT_SOURCE_DIR}/../wren/src/include")
 include_directories("${PROJECT_SOURCE_DIR}/../wren/src/module")
@@ -31,3 +31,7 @@ include_directories(${JSONCPP_INCLUDE_DIRS})
 add_executable(ZeVaScript ${SOURCES} ${WREN_SOURCES})
 
 target_link_libraries(ZeVaScript pthread pq stdc++fs Jsoncpp_lib)
+
+add_custom_command(TARGET ZeVaScript
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ZeVaScript> ${PROJECT_SOURCE_DIR}/../assets/)

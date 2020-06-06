@@ -3,7 +3,37 @@
 #include "ScriptValue.hpp"
 #include <cassert>
 
-Json::Value scriptValueToJson(ScriptValue&& pVal) {
+Json::Value wrenValueToJsonValue(struct WrenVM* pVM, int pSlot) {
+    switch(wrenGetSlotType(pVM, pSlot)) {
+        case WrenType::WREN_TYPE_BOOL:
+            return wrenGetSlotBool(pVM, pSlot);
+        case WrenType::WREN_TYPE_NUM:
+            return wrenGetSlotDouble(pVM, pSlot);
+        case WrenType::WREN_TYPE_STRING: {
+            int length;
+            const char* bytes = wrenGetSlotBytes(pVM, pSlot, &length);
+            std::string str(bytes, length);
+            return str;
+        }
+        case WrenType::WREN_TYPE_FOREIGN:
+        case WrenType::WREN_TYPE_NULL:
+            return Json::nullValue;
+        case WrenType::WREN_TYPE_LIST: {
+            const size_t count = wrenGetListCount(pVM, pSlot);
+            wrenEnsureSlots(pVM, pSlot + 2);
+            Json::Value list;
+            for(size_t i = 0; i < count; ++i) {
+                wrenGetListElement(pVM, pSlot, i, pSlot + 1);
+                list.append(wrenValueToJsonValue(pVM, pSlot + 1));
+            }
+            return list;
+        }
+        default:
+            assert(false);
+    }
+}
+
+Json::Value scriptValueToJson(const ScriptValue& pVal) {
     switch(pVal.type) {
         case WREN_TYPE_STRING:
             if(!isValidAscii(reinterpret_cast<const signed char *>(pVal.stringValue.c_str()), pVal.stringValue.size()))
@@ -19,7 +49,7 @@ Json::Value scriptValueToJson(ScriptValue&& pVal) {
         case WREN_TYPE_LIST: {
             Json::Value list;
             for(auto & i : pVal.listValue) {
-                list.append(scriptValueToJson(std::move(i)));
+                list.append(scriptValueToJson(i));
             }
             return list;
         }

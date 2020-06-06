@@ -1,6 +1,6 @@
 #pragma once
 #include <map>
-#include "Script.hpp"
+#include "ScriptBindings.hpp"
 #include <thread>
 #include <future>
 #include <variant>
@@ -10,9 +10,9 @@ class ScriptManager {
 public:
     void addScript(const std::string& pName, const std::string& pCode, bool pCheckIfCodeChanged = false);
     void deleteScript(const std::string& pName);
-    std::future<ScriptReturn> executeScript(const std::string& pName, const std::string& pFunction, const std::vector<ScriptValue>& pParamSetter);
+    std::future<ScriptBindingsReturn> executeScript(const std::string& pName, const std::string& pFunction, const std::vector<ScriptValue>& pParamSetter);
     void executeScriptWithCallback(const std::string& pName, const std::string& pFunction, const std::vector<ScriptValue>& pParamSetter,
-            std::function<void(ScriptReturn&&)> &&pCallback, std::function<void(std::exception& e)>&& pErrorCallback);
+            std::function<void(ScriptBindingsReturn&&)> &&pCallback, std::function<void(std::exception& e)>&& pErrorCallback);
     void onTableChanged(const std::string& pTable, const std::string& pType);
 
     static ScriptManager& the() {
@@ -20,6 +20,6 @@ public:
         return scriptManager;
     }
 private:
-    std::map<std::string, Script> mScripts;
+    std::map<std::string, ScriptBindings> mScripts;
     std::shared_mutex mScriptsMutex;
 };

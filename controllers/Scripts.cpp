@@ -1,6 +1,7 @@
 #include "Scripts.hpp"
 #include "Util.hpp"
 #include "ScriptManager.hpp"
+#include "DrogonUtil.hpp"
 
 void Api::Scripts::getAllScripts(const drogon::HttpRequestPtr&, std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
     drogon::app().getDbClient()->execSqlAsync("SELECT * FROM scripts ORDER BY name",
@@ -65,25 +66,21 @@ void Api::Scripts::runScript(const drogon::HttpRequestPtr&,
             }
         }
         ScriptManager::the().executeScriptWithCallback(name, "onRunOnce", {std::move(scriptParameter)},
-                [callback=std::move(callback)](ScriptReturn&& ret) {
-            auto error = std::get_if<std::string>(&ret.value);
-            if(error) {
-                auto errResp = drogon::HttpResponse::newHttpResponse();
-                errResp->setStatusCode(drogon::k500InternalServerError);
-                errResp->setBody(*error);
-                callback(errResp);
-            } else {
-                auto val = std::get<ScriptValue>(ret.value);
-                Json::Value json;
-                try {
-                    json["return"] = scriptValueToJson(std::move(val));
-                } catch(std::runtime_error& e) {
-                    json["return"] = std::string{"("} + e.what() + ')';
-                }
+                [callback=std::move(callback)](ScriptBindingsReturn&& ret) {
+            auto returnString = std::get_if<std::string>(&ret);
 
-                json["type"] = "ok";
-                callback(drogon::HttpResponse::newHttpJsonResponse(std::move(json)));
+            Json::Value json;
+            json["type"] = "ok";
+            if(returnString) {
+                if(isValidAscii(reinterpret_cast<const signed char *>(returnString->c_str()), returnString->size())) {
+                    json["return"] = *returnString;
+                } else {
+                    json["return"] = "(invalid ascii)";
+                }
+            } else {
+                json["return"] = std::move(std::get<Json::Value>(ret));
             }
+            callback(drogon::HttpResponse::newHttpJsonResponse(std::move(json)));
         }, genDefErrorHandler(callback));
     }, genErrorHandler(callback), scriptid);
 }
@@ -91,23 +88,17 @@ void Api::Scripts::runScript(const drogon::HttpRequestPtr&,
 void Api::Scripts::drawScript(const drogon::HttpRequestPtr&,
                               std::function<void(const drogon::HttpResponsePtr &)> &&callback, int64_t scriptid) {
     drogon::app().getDbClient()->execSqlAsync("SELECT name FROM scripts WHERE id=$1",
-    [callback=std::move(callback)](const drogon::orm::Result& r) {
+    [callback=std::move(callback)](const drogon::orm::Result& r) mutable {
         auto name = r.at(0)["name"].as<std::string>();
         ScriptManager::the().executeScriptWithCallback(name, "drawImage", {},
-                [callback=std::move(callback)](ScriptReturn&& ret) {
-            auto error = std::get_if<std::string>(&ret.value);
-            if(error) {
-                callback(genError(*error));
+                [callback=std::move(callback)](ScriptBindingsReturn&& ret) {
+            auto string = std::get_if<std::string>(&ret);
+            if(string) {
+                auto resp = genResponse(*string);
+                resp->setContentTypeCode(drogon::CT_IMAGE_PNG);
+                callback(resp);
             } else {
-                auto val = std::get<ScriptValue>(ret.value);
-                if(val.type == WREN_TYPE_STRING) {
-                    auto resp = drogon::HttpResponse::newHttpResponse();
-                    resp->setBody(std::move(val.stringValue));
-                    resp->setContentTypeCode(drogon::CT_IMAGE_PNG);
-                    callback(resp);
-                } else {
-                    callback(genError("Script didn't return a string!"));
-                }
+                callback(genError("Script didn't return a string!"));
             }
         }, genDefErrorHandler(callback));
     }, genErrorHandler(callback), scriptid);

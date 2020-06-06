@@ -1,5 +1,6 @@
 #include "LogWebsocket.hpp"
 #include "Util.hpp"
+#include "DrogonUtil.hpp"
 
 static Json::Value formatJsonRow(const std::string& pMsg, int pLevel) {
     Json::Value jsonRow;

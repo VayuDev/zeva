@@ -8,6 +8,8 @@
 #include <list>
 #include <queue>
 #include <filesystem>
+#include <variant>
+#include <json/json.h>
 
 class ScriptValue {
 public:
@@ -44,10 +46,8 @@ public:
 class ScriptReturn {
 public:
     time_t timestamp = -1;
-    std::variant<ScriptValue, std::string> value;
+    ScriptValue value;
     ScriptReturn() = default;
-    explicit ScriptReturn(std::string pError)
-            : value(std::move(pError)) {
-
-    }
 };
+
+using ScriptBindingsReturn = std::variant<std::string, Json::Value>;

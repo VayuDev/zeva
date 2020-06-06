@@ -1,6 +1,7 @@
 #include "Hub.hpp"
 #include <filesystem>
 #include "Util.hpp"
+#include "DrogonUtil.hpp"
 
 void Api::Hub::getRandomWallpaper(const drogon::HttpRequestPtr&,
                                std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
@@ -12,7 +13,7 @@ void Api::Hub::getRandomWallpaper(const drogon::HttpRequestPtr&,
             filenames.push_back(image.path());
         }
     }
-    if(filenames.size() == 0) {
+    if(filenames.empty()) {
         callback(genError("No wallpapers!"));
     }
     auto file = filenames.at(rand()%filenames.size());

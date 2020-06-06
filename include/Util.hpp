@@ -4,7 +4,8 @@
 #include <optional>
 #include <json/json.h>
 
-Json::Value scriptValueToJson(class ScriptValue&&);
+Json::Value scriptValueToJson(const ScriptValue& pVal);
+Json::Value wrenValueToJsonValue(struct WrenVM* pVM, int pSlot);
 
 std::string readWholeFile(const std::filesystem::path& pPath);
 ScriptValue wrenValueToScriptValue(struct WrenVM* pVM, int pSlot);

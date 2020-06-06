@@ -1,5 +1,6 @@
 #include "Apps.hpp"
 #include "Util.hpp"
+#include "DrogonUtil.hpp"
 
 void Api::Apps::getCategories(const drogon::HttpRequestPtr &,
                               std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
