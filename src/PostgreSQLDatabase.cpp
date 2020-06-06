@@ -2,10 +2,8 @@
 #include <memory>
 #include <cassert>
 #include "libpq-fe.h"
-#include <drogon/HttpAppFramework.h>
 #include <Util.hpp>
 #include <fstream>
-
 
 std::unique_ptr<QueryResult> PostgreSQLDatabase::query(std::string pQuery, std::vector<QueryValue> pPlaceholders) {
     assert(mCConnection);

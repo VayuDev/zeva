@@ -5,8 +5,10 @@
 #include "ScriptLibs.hpp"
 #include <cassert>
 #include <Util.hpp>
-#include <nlohmann/json.hpp>
-#include <drogon/HttpAppFramework.h>
+#include <iostream>
+
+#define LOG_INFO std::cout
+#define LOG_ERROR std::cerr
 
 static std::string toFunctionSignature(const std::string& pName, size_t pArity) {
     bool first = true;

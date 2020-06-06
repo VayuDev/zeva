@@ -1,7 +1,7 @@
 #include <fstream>
 #include "Util.hpp"
-#include "Script.hpp"
-#include "Script.hpp"
+#include "ScriptValue.hpp"
+#include <cassert>
 
 Json::Value scriptValueToJson(ScriptValue&& pVal) {
     switch(pVal.type) {

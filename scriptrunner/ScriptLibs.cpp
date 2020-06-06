@@ -3,8 +3,9 @@
 #include <stdexcept>
 #include "PostgreSQLDatabase.hpp"
 #include <cassert>
-#include <TcpClient.hpp>
+#include "TcpClient.hpp"
 #include "Util.hpp"
+#include <iostream>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -15,10 +16,14 @@ struct ScriptStorage {
     bool inited = false;
 };
 
+#define LOG_INFO std::cout
+#define LOG_ERROR std::cerr
+#define LOG_WARN std::cout
+
 using DatabaseStorage = ScriptStorage<PostgreSQLDatabase>;
 using TcpClientStorage = ScriptStorage<TcpClient>;
 
-extern const char* CONFIG_FILE;
+const char* CONFIG_FILE = "assets/config.json";
 
 WrenForeignClassMethods bindForeignClass(WrenVM*, const char* module, const char* classname) {
     (void) module;
