@@ -118,7 +118,7 @@ void PostgreSQLQueryResult::log() const {
 }
 
 
-PostgreSQLDatabase::PostgreSQLDatabase(const std::filesystem::path &pConfigFile, bool connect) {
+PostgreSQLDatabase::PostgreSQLDatabase(const std::filesystem::path &pConfigFile) {
     std::ifstream instream{pConfigFile};
     Json::Value config;
     instream >> config;
@@ -128,10 +128,9 @@ PostgreSQLDatabase::PostgreSQLDatabase(const std::filesystem::path &pConfigFile,
                    " password = "     + dbconfig["passwd"].asString()  +
                    " hostaddr = "     + dbconfig["host"].asString() +
                    " port = "         + std::to_string(5432);
-    if(connect) {
-        mCConnection = PQconnectdb(mConnectString.c_str());
-        init();
-    }
+
+    mCConnection = PQconnectdb(mConnectString.c_str());
+    init();
 }
 
 PostgreSQLDatabase::PostgreSQLDatabase(std::string pDbName, std::string pUserName, std::string pPassword,

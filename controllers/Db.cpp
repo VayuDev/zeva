@@ -67,7 +67,7 @@ void Api::Db::getTableCsv(const drogon::HttpRequestPtr&req, std::function<void(c
                 }
             }
             try {
-                PostgreSQLDatabase db(CONFIG_FILE, false);
+                PostgreSQLDatabase db(CONFIG_FILE);
                 auto csvStr = db.performCopyToStdout("COPY (SELECT " + selection + " FROM " + tablename + " ORDER BY " + firstColumnName + " ASC)\n"" TO STDOUT WITH (DELIMITER ',', FORMAT CSV, HEADER);");
                 callback(genResponse(csvStr));
             } catch(std::exception& e) {
