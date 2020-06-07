@@ -2,6 +2,7 @@
 
 #include <utility>
 #include <drogon/HttpAppFramework.h>
+#include <csignal>
 
 void ScriptManager::addScript(const std::string& pName, const std::string& pCode, bool pCheckIfCodeChanged) {
     std::lock_guard<std::shared_mutex> lock{mScriptsMutex};
@@ -38,7 +39,12 @@ void ScriptManager::onTableChanged(const std::string& pTable, const std::string 
 
         lock.unlock();
         for(const auto& row: result) {
-            addScript(row["name"].as<std::string>(), row["code"].as<std::string>(), true);
+            try {
+                addScript(row["name"].as<std::string>(), row["code"].as<std::string>(), true);
+            } catch(std::exception& e) {
+                LOG_ERROR << "Error adding script " << e.what();
+            }
+
         }
         lock.lock();
     }

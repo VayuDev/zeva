@@ -12,82 +12,23 @@
 
 ScriptBindings::ScriptBindings(const std::string &pModule, const std::string &pCode)
 : mCode(pCode), mModule(pModule) {
-    std::array<int, 2> outputFd, inputFd;
-    if(pipe(outputFd.data()) != 0) {
-        perror("pipe()");
-    }
-    if(pipe(inputFd.data()) != 0) {
-        perror("pipe()");
-    }
-
-    auto inputStr = std::to_string(outputFd.at(0));
-    auto outputStr = std::to_string(inputFd.at(1));
-    setenv("INPUT_FD",  inputStr.c_str(), 1);
-    setenv("OUTPUT_FD", outputStr.c_str(), 1);
-    setenv("SCRIPT_NAME", pModule.c_str(), 1);
-    pid_t pid = fork();
-    if(pid == 0) {
-        //child
-        int fdlimit = (int)sysconf(_SC_OPEN_MAX);
-        for (int i = STDERR_FILENO + 1; i < fdlimit; i++) {
-            if(i != outputFd.at(0) && i != inputFd.at(1)) [[likely]] {
-                close(i);
-            }
-        }
-        char cwd[PATH_MAX];
-        if(getcwd(cwd, sizeof(cwd)) == nullptr) {
-            perror("getcwd()");
-        }
-        std::string path{cwd};
-        path += "/assets/ZeVaScript";
-        std::string name{"ZeVaScript: "};
-        name.append(pModule);
-        execl(path.c_str(), name.c_str(), "", nullptr);
-        perror("execl");
-        exit(1);
-    }
-    //parent
-    close(outputFd.at(0));
-    close(inputFd.at(1));
-    mOutputFd = outputFd.at(1);
-    mInputFd = inputFd.at(0);
-    unsetenv("INPUT_FD");
-    unsetenv("OUTPUT_FD");
-    unsetenv("SCRIPT_NAME");
-    mPid = pid;
-
-    //send code
-    safeWrite('C', mCode.c_str(), mCode.size());
-
-    char cmd;
-    auto err = safeRead(cmd);
-    if(cmd == 'O') {
-
-    } else if(cmd == 'E') {
-        throw std::runtime_error(err);
-    } else {
-        assert(false);
-    }
+    signal(SIGPIPE, SIG_IGN);
+    spawnChild();
 }
 
 ScriptBindings::~ScriptBindings() {
-    if(kill(mPid, SIGTERM)) {
-        perror("kill()");
-    }
-    int status;
-    waitpid(mPid, &status, 0);
-    close(mOutputFd);
-    close(mInputFd);
+    killChild();
 }
 
 const std::string &ScriptBindings::getCode() {
     return mCode;
 }
 
-std::future<std::variant<std::string, Json::Value>> ScriptBindings::execute(const std::string &pFunctionName, const std::vector<ScriptValue>& params) {
-    std::unique_lock<std::mutex> lock(mFdMutex);
-    //TODO check for errors and incomplete messages
-
+std::future<std::variant<std::string, Json::Value>> ScriptBindings::execute(const std::string &pFunctionName, const std::vector<ScriptValue>& params, size_t pDepth) {
+    if(pDepth > 10) {
+        throw std::runtime_error("Child fails to start in the constructor!");
+    }
+    std::unique_lock<std::recursive_mutex> lock(mFdMutex);
     Json::Value msg;
     msg["function"] = pFunctionName;
     Json::Value jsonParams;
@@ -96,12 +37,29 @@ std::future<std::variant<std::string, Json::Value>> ScriptBindings::execute(cons
     }
     msg["params"] = std::move(jsonParams);
     auto str = msg.toStyledString();
-    auto length = str.size();
-    safeWrite('E', str.c_str(), str.size());
-    return std::async(std::launch::deferred, [this, lock=std::move(lock)] () -> std::variant<std::string, Json::Value> {
-
+    try {
+        safeWrite('E', str.c_str(), str.size());
+    } catch(ProcessDiedException& e) {
+        LOG_WARN << "[Script] " << mModule << " died :c";
+        killChild();
+        spawnChild();
+        return execute(pFunctionName, params, pDepth + 1);
+    } catch(...) {
+        std::rethrow_exception(std::current_exception());
+    }
+    return std::async(std::launch::deferred, [this, lock=std::move(lock), pFunctionName, params, pDepth] () -> std::variant<std::string, Json::Value> {
         char cmd;
-        std::string response = safeRead(cmd);
+        std::string response;
+        try {
+            response = safeRead(cmd);
+        } catch(ProcessDiedException&) {
+            LOG_WARN << "[Script] " << mModule << " died :c";
+            killChild();
+            spawnChild();
+            return execute(pFunctionName, params, pDepth + 1).get();
+        } catch(...) {
+            std::rethrow_exception(std::current_exception());
+        }
         switch(cmd) {
             case 'J': {
                 std::stringstream reader{response};
@@ -161,6 +119,9 @@ void ScriptBindings::safeWrite(char cmd, const void *buffer, size_t length) {
         while(bytesWritten < length) {
             auto status = write(mOutputFd, (char*)data + bytesWritten, length - bytesWritten);
             if(status == -1) {
+                if(errno == EPIPE) {
+                    throw ProcessDiedException();
+                }
                 throwError("write()");
             }
             bytesWritten += status;
@@ -169,4 +130,74 @@ void ScriptBindings::safeWrite(char cmd, const void *buffer, size_t length) {
     safeWrite(&cmd, 1);
     safeWrite(&length, sizeof(size_t));
     safeWrite(buffer, length);
+}
+
+void ScriptBindings::spawnChild() {
+    LOG_INFO << "Spawning child " << mModule;
+    std::array<int, 2> outputFd, inputFd;
+    if(pipe(outputFd.data()) != 0) {
+        throwError("pipe()");
+    }
+    if(pipe(inputFd.data()) != 0) {
+        throwError("pipe()");
+    }
+
+    auto inputStr = std::to_string(outputFd.at(0));
+    auto outputStr = std::to_string(inputFd.at(1));
+    setenv("INPUT_FD",  inputStr.c_str(), 1);
+    setenv("OUTPUT_FD", outputStr.c_str(), 1);
+    setenv("SCRIPT_NAME", mModule.c_str(), 1);
+    pid_t pid = fork();
+    if(pid == 0) {
+        //child
+        int fdlimit = (int)sysconf(_SC_OPEN_MAX);
+        for (int i = STDERR_FILENO + 1; i < fdlimit; i++) {
+            if(i != outputFd.at(0) && i != inputFd.at(1)) [[likely]] {
+                close(i);
+            }
+        }
+        char cwd[PATH_MAX];
+        if(getcwd(cwd, sizeof(cwd)) == nullptr) {
+            throwError("getcwd()");
+        }
+        std::string path{cwd};
+        path += "/assets/ZeVaScript";
+        std::string name{"ZeVaScript: "};
+        name.append(mModule);
+        execl(path.c_str(), name.c_str(), "", nullptr);
+        perror("execl");
+        exit(1);
+    }
+    //parent
+    close(outputFd.at(0));
+    close(inputFd.at(1));
+    mOutputFd = outputFd.at(1);
+    mInputFd = inputFd.at(0);
+    unsetenv("INPUT_FD");
+    unsetenv("OUTPUT_FD");
+    unsetenv("SCRIPT_NAME");
+    mPid = pid;
+
+    //send code
+    safeWrite('C', mCode.c_str(), mCode.size());
+
+    char cmd;
+    auto err = safeRead(cmd);
+    if(cmd == 'O') {
+
+    } else if(cmd == 'E') {
+        throw std::runtime_error(err);
+    } else {
+        assert(false);
+    }
+}
+
+void ScriptBindings::killChild() {
+    if(kill(mPid, SIGTERM)) {
+        perror("kill()");
+    }
+    int status;
+    waitpid(mPid, &status, 0);
+    close(mOutputFd);
+    close(mInputFd);
 }
