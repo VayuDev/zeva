@@ -266,8 +266,14 @@ void ScriptBindings::checkForNewMessages() {
         LOG_WARN << "[Script] " << mModule << " died :c";
         killChild();
         spawnChild();
-        execute(functionName, params, std::move(callback), std::move(errorCallback));
-        mToCallWhenDone.pop();
+        //requeue everything that we are currently waiting for
+        auto copy = std::move(mToCallWhenDone);
+        mToCallWhenDone = {};
+        while(!copy.empty()) {
+            auto[functionName, params, callback, errorCallback] = copy.front();
+            execute(functionName, params, std::move(callback), std::move(errorCallback));
+            copy.pop();
+        }
         return;
     } catch(...) {
         std::rethrow_exception(std::current_exception());
