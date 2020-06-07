@@ -9,6 +9,41 @@
 #include "Util.hpp"
 #include <cassert>
 
+static std::string safeRead(int pInputFd, char& cmd) {
+    auto safeRead = [pInputFd](void* dest, size_t length) {
+        size_t bytesRead = 0;
+        while(bytesRead < length) {
+            auto status = read(pInputFd, (char*)dest + bytesRead, length - bytesRead);
+            if(status == -1) {
+                throwError("read()");
+            }
+            bytesRead += status;
+        }
+    };
+    safeRead(&cmd, 1);
+    size_t length;
+    safeRead(&length, sizeof(size_t));
+    char buffer[length];
+    safeRead(buffer, length);
+    return std::string{buffer, length};
+}
+
+void safeWrite(int pOutputFd, char cmd, const void *buffer, size_t length) {
+    auto safeWrite = [pOutputFd](const void* data, size_t length) {
+        size_t bytesWritten = 0;
+        while(bytesWritten < length) {
+            auto status = write(pOutputFd, (char*)data + bytesWritten, length - bytesWritten);
+            if(status == -1) {
+                throwError("write()");
+            }
+            bytesWritten += status;
+        }
+    };
+    safeWrite(&cmd, 1);
+    safeWrite(&length, sizeof(size_t));
+    safeWrite(buffer, length);
+}
+
 int main() {
     auto inputFdStr = getenv("INPUT_FD");
     auto outputFdStr = getenv("OUTPUT_FD");
@@ -19,28 +54,13 @@ int main() {
     }
     auto input = atoi(inputFdStr);
     auto output = atoi(outputFdStr);
-    size_t length;
-    read(input, &length, sizeof(length));
-    char code[length + 1];
-    read(input, code, length);
-    code[length] = '\0';
 
-    auto sendStr = [&] (char pType, const std::string& pStr) {
-        write(output, &pType, 1);
-        size_t length = pStr.size();
-        write(output, &length, sizeof(length));
-        size_t written = 0;
-        while(written < length) {
-            auto status = write(output, pStr.c_str() + written, length - written);
-            if(status == -1) {
-                std::string msg{name};
-                msg += " write()";
-                perror(msg.c_str());
-                return;
-            }
-            written += status;
-        }
+    char cmd;
+    auto code = safeRead(input, cmd);
+    assert(cmd == 'C');
 
+    auto sendStr = [&] (char cmd, std::string_view pStr) {
+        safeWrite(output, cmd, pStr.data(), pStr.size());
     };
 
     try {
@@ -48,16 +68,10 @@ int main() {
         sendStr('O', "ok");
         while(true) {
             char cmd;
-            read(input, &cmd, 1);
-            size_t length;
-            read(input, &length, sizeof(length));
-            char buffer[length + 1];
-            read(input, buffer, length);
-            buffer[length] = '\0';
+            auto buffer = safeRead(input, cmd);
             switch(cmd) {
                 case 'E': {
-                    std::stringstream inputStream;
-                    inputStream.write(buffer, length + 1);
+                    std::stringstream inputStream{buffer};
                     Json::Value msg;
                     inputStream >> msg;
                     auto params = msg["param"];

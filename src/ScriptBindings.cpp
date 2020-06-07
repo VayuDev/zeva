@@ -57,17 +57,10 @@ ScriptBindings::ScriptBindings(const std::string &pModule, const std::string &pC
     mPid = pid;
 
     //send code
-    size_t length = mCode.size();
-    write(mOutputFd, &length, sizeof(length));
-    write(mOutputFd, mCode.c_str(), length);
+    safeWrite('C', mCode.c_str(), mCode.size());
 
-    //check for errors
     char cmd;
-    read(mInputFd, &cmd, 1);
-    read(mInputFd, &length, sizeof(length));
-    char err[length + 1];
-    read(mInputFd, err, sizeof(err));
-    err[length] = '\0';
+    auto err = safeRead(cmd);
     if(cmd == 'O') {
 
     } else if(cmd == 'E') {
@@ -91,19 +84,10 @@ const std::string &ScriptBindings::getCode() {
     return mCode;
 }
 
-static void throwError(const char* msg) {
-    char buff[1024];
-    strerror_r(errno, buff, sizeof(buff));
-    std::string err{msg};
-    err += ": ";
-    err += buff;
-    throw std::runtime_error(err);
-}
-
 std::future<std::variant<std::string, Json::Value>> ScriptBindings::execute(const std::string &pFunctionName, const std::vector<ScriptValue>& params) {
     std::unique_lock<std::mutex> lock(mFdMutex);
     //TODO check for errors and incomplete messages
-    write(mOutputFd, "E", 1);
+
     Json::Value msg;
     msg["function"] = pFunctionName;
     Json::Value jsonParams;
@@ -113,63 +97,76 @@ std::future<std::variant<std::string, Json::Value>> ScriptBindings::execute(cons
     msg["params"] = std::move(jsonParams);
     auto str = msg.toStyledString();
     auto length = str.size();
-    write(mOutputFd, &length, sizeof(length));
-    write(mOutputFd, str.c_str(), str.size());
+    safeWrite('E', str.c_str(), str.size());
     return std::async(std::launch::deferred, [this, lock=std::move(lock)] () -> std::variant<std::string, Json::Value> {
-        char cmd;
-        if(read(mInputFd, &cmd, 1) == -1) {
-            throwError("read()");
-        }
-        size_t length;
-        if(read(mInputFd, &length, sizeof(length)) == -1) {
-            throwError("read()");
-        }
-        char response[length + 1];
-        size_t bytesRead = 0;
-        while(bytesRead < length) {
-            auto status = read(mInputFd, response + bytesRead, length - bytesRead);
-            if(status == -1) {
-                throwError("read()");
-            }
-            bytesRead += status;
-        }
 
-        response[length] = '\0';
+        char cmd;
+        std::string response = safeRead(cmd);
         switch(cmd) {
             case 'J': {
-                std::stringstream reader;
-                reader.write(response, length + 1);
+                std::stringstream reader{response};
                 Json::Value responseJson;
                 reader >> responseJson;
 
                 if(responseJson.type() != Json::nullValue) {
                     //remove the new line at the end
-                    //we can't just pass the buffer and replace the \n with \0
-                    //because this collides with the template-magic of trantor's log
-                    std::string responseStr{response, length - 1};
-                    LOG_INFO << "[Script] " << mModule << " return json: " << responseStr;
+                    response.at(response.size() - 1) = '\0';
+                    LOG_INFO << "[Script] " << mModule << " return json: " << response;
                 }
 
                 return responseJson;
             }
             case 'R': {
                 //printf("Received raw string of size: %i\n", (int)length);
-                std::string responseStr{response, length};
-                if(isValidAscii(reinterpret_cast<const signed char *>(responseStr.c_str()), responseStr.size())) {
+                if(isValidAscii(reinterpret_cast<const signed char *>(response.c_str()), response.size())) {
                     LOG_INFO << "[Script] " << mModule << " return string: " << response;
                 } else {
                     LOG_INFO << "[Script] " << mModule << " invalid ascii return";
                 }
 
-                return responseStr;
+                return response;
             }
             case 'E': {
-                std::string errorString{response, length};
-                LOG_INFO << "[Script] " << mModule << " error " << errorString;
-                throw std::runtime_error(errorString);
+                LOG_INFO << "[Script] " << mModule << " error " << response;
+                throw std::runtime_error(response);
             }
             default:
                 assert(false);
         }
     });
+}
+
+std::string ScriptBindings::safeRead(char& cmd) {
+    auto safeRead = [this](void* dest, size_t length) {
+        size_t bytesRead = 0;
+        while(bytesRead < length) {
+            auto status = read(mInputFd, (char*)dest + bytesRead, length - bytesRead);
+            if(status == -1) {
+                throwError("read()");
+            }
+            bytesRead += status;
+        }
+    };
+    safeRead(&cmd, 1);
+    size_t length;
+    safeRead(&length, sizeof(size_t));
+    char buffer[length];
+    safeRead(buffer, length);
+    return std::string{buffer, length};
+}
+
+void ScriptBindings::safeWrite(char cmd, const void *buffer, size_t length) {
+    auto safeWrite = [this](const void* data, size_t length) {
+        size_t bytesWritten = 0;
+        while(bytesWritten < length) {
+            auto status = write(mOutputFd, (char*)data + bytesWritten, length - bytesWritten);
+            if(status == -1) {
+                throwError("write()");
+            }
+            bytesWritten += status;
+        }
+    };
+    safeWrite(&cmd, 1);
+    safeWrite(&length, sizeof(size_t));
+    safeWrite(buffer, length);
 }

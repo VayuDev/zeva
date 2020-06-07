@@ -23,6 +23,8 @@ private:
     pid_t mPid;
     std::string mCode, mModule;
     std::mutex mFdMutex;
+    std::string safeRead(char& cmd);
+    void safeWrite(char cmd, const void* buffer, size_t length);
     /*
      *
 
