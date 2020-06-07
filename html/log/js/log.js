@@ -1,5 +1,3 @@
-let first = null;
-
 function logLevelToString(level) {
     if(level == 0)
         return "TRACE";
@@ -23,11 +21,9 @@ function appendLog(msg) {
 let socket = new ReconnectingSocket("/api/log/ws_log",
     () => {
         socket.send("DEBUG");
-        first = true;
     }, (msg) => {
         msg = JSON.parse(msg.data);
-        if (first) {
-            first = false;
+        if (msg.constructor === Array) {
             $("#logContainer").text("");
             for (let i = 0; i < msg.length; i++) {
                 appendLog(msg[i]);
