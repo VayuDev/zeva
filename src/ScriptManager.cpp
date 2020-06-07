@@ -3,6 +3,7 @@
 #include <utility>
 #include <drogon/HttpAppFramework.h>
 #include <csignal>
+#include <chrono>
 
 void ScriptManager::addScript(const std::string& pName, const std::string& pCode, bool pCheckIfCodeChanged) {
     std::lock_guard<std::shared_mutex> lock{mScriptsMutex};
@@ -19,11 +20,6 @@ void ScriptManager::addScript(const std::string& pName, const std::string& pCode
                      std::forward_as_tuple(pName),
                      std::forward_as_tuple(pName, pCode));
 }    
-
-std::future<ScriptBindingsReturn> ScriptManager::executeScript(const std::string& pName, const std::string& pFunction, const std::vector<ScriptValue>& pParamSetter) {
-    std::shared_lock<std::shared_mutex> lock{mScriptsMutex};
-    return mScripts.at(pName).execute(pFunction, pParamSetter);
-}
 
 void ScriptManager::deleteScript(const std::string &pName) {
     std::lock_guard<std::shared_mutex> lock{mScriptsMutex};
@@ -50,7 +46,11 @@ void ScriptManager::onTableChanged(const std::string& pTable, const std::string 
     }
     for(auto& script: mScripts) {
         try {
-            script.second.execute("onTableChanged", {ScriptValue::makeString(pTable), ScriptValue::makeString(pType)}).get();
+            script.second.execute(
+                    "onTableChanged",
+                    {ScriptValue::makeString(pTable), ScriptValue::makeString(pType)},
+                    IGNORE_SCRIPTCALLBACK,
+                    IGNORE_ERRORCALLBACK);
         } catch(std::exception& e) {
             LOG_ERROR << "Error executing script: " << e.what();
         }
@@ -59,18 +59,32 @@ void ScriptManager::onTableChanged(const std::string& pTable, const std::string 
 
 void ScriptManager::executeScriptWithCallback(const std::string &pName, const std::string &pFunction,
                                               const std::vector<ScriptValue> &pParamSetter,
-                                              std::function<void(ScriptBindingsReturn &&)> &&pCallback,
-                                              std::function<void(std::exception& e)>&& pErrorCallback) {
-    std::thread t{[=] {
-        try {
-            std::shared_lock<std::shared_mutex> lock{mScriptsMutex};
-            auto future = mScripts.at(pName).execute(pFunction, pParamSetter);
-            lock.unlock();
-            pCallback(future.get());
-        } catch(std::exception& e) {
-            pErrorCallback(e);
-        }
+                                              ScriptCallback &&pCallback,
+                                              ErrorCallback &&pErrorCallback) {
+    std::shared_lock<std::shared_mutex> lock{mScriptsMutex};
+    auto cpy = pErrorCallback;
+    try {
+        mScripts.at(pName).execute(pFunction, pParamSetter, std::move(pCallback), std::move(pErrorCallback));
+    } catch(std::exception& e) {
+        cpy(e);
+    }
+}
 
-    }};
-    t.detach();
+ScriptManager::~ScriptManager() {
+    mShouldRun = false;
+    mScriptReturnCallbackThread.join();
+}
+
+ScriptManager::ScriptManager()
+: mScriptReturnCallbackThread([this] {
+    while(mShouldRun) {
+        std::shared_lock<std::shared_mutex> lock{mScriptsMutex};
+        for(auto& script: mScripts) {
+            script.second.checkForNewMessages();
+        }
+        lock.unlock();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}) {
+
 }

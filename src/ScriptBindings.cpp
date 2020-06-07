@@ -11,6 +11,7 @@
 #include <drogon/HttpAppFramework.h>
 #include <linux/prctl.h>
 #include <sys/prctl.h>
+#include <sys/poll.h>
 
 ScriptBindings::ScriptBindings(const std::string &pModule, const std::string &pCode)
 : mCode(pCode), mModule(pModule) {
@@ -26,6 +27,7 @@ const std::string &ScriptBindings::getCode() {
     return mCode;
 }
 
+/*
 std::future<std::variant<std::string, Json::Value>> ScriptBindings::execute(const std::string &pFunctionName, const std::vector<ScriptValue>& params, size_t pDepth) {
     if(pDepth > 10) {
         throw std::runtime_error("Child fails to start in the constructor!");
@@ -94,7 +96,7 @@ std::future<std::variant<std::string, Json::Value>> ScriptBindings::execute(cons
                 assert(false);
         }
     });
-}
+}*/
 
 std::string ScriptBindings::safeRead(char& cmd) {
     auto safeRead = [this](void* dest, size_t length) {
@@ -211,4 +213,92 @@ void ScriptBindings::killChild() {
     waitpid(mPid, &status, 0);
     close(mOutputFd);
     close(mInputFd);
+}
+
+void ScriptBindings::execute(const std::string &pFunctionName, const std::vector<ScriptValue>& params,
+                             ScriptCallback &&pCallback, ErrorCallback&& pErrorCallback) {
+    std::unique_lock<std::recursive_mutex> lock(mFdMutex);
+    Json::Value msg;
+    msg["function"] = pFunctionName;
+    Json::Value jsonParams;
+    for(const auto& pVal: params) {
+        jsonParams.append(scriptValueToJson(pVal));
+    }
+    msg["params"] = std::move(jsonParams);
+    auto str = msg.toStyledString();
+    try {
+        safeWrite('E', str.c_str(), str.size());
+    } catch(ProcessDiedException& e) {
+        LOG_WARN << "[Script] " << mModule << " died :c";
+        killChild();
+        spawnChild();
+        return execute(pFunctionName, params, std::move(pCallback), std::move(pErrorCallback));
+    } catch(...) {
+        std::rethrow_exception(std::current_exception());
+    }
+    mToCallWhenDone.emplace(std::make_tuple(pFunctionName, params, std::move(pCallback), std::move(pErrorCallback)));
+}
+
+void ScriptBindings::checkForNewMessages() {
+    std::unique_lock<std::recursive_mutex> lock(mFdMutex);
+
+    struct pollfd poller = {.fd = mInputFd, .events = POLLIN};
+    if(!poll(&poller, 1, 0)) {
+        return;
+    }
+    if(mToCallWhenDone.empty())
+        return;
+    auto[functionName, params, callback, errorCallback] = mToCallWhenDone.front();
+
+    char cmd;
+    std::string response;
+    try {
+        response = safeRead(cmd);
+    } catch(ProcessDiedException&) {
+        LOG_WARN << "[Script] " << mModule << " died :c";
+        killChild();
+        spawnChild();
+        execute(functionName, params, std::move(callback), std::move(errorCallback));
+        mToCallWhenDone.pop();
+        return;
+    } catch(...) {
+        std::rethrow_exception(std::current_exception());
+    }
+    switch(cmd) {
+        case 'J': {
+            std::stringstream reader{response};
+            Json::Value responseJson;
+            reader >> responseJson;
+
+            if(responseJson.type() != Json::nullValue) {
+                //remove the new line at the end
+                response.at(response.size() - 1) = '\0';
+                LOG_INFO << "[Script] " << mModule << " return json: " << response;
+            }
+
+            callback(responseJson);
+            break;
+        }
+        case 'R': {
+            //printf("Received raw string of size: %i\n", (int)length);
+            if(isValidAscii(reinterpret_cast<const signed char *>(response.c_str()), response.size())) {
+                LOG_INFO << "[Script] " << mModule << " return string: " << response;
+            } else {
+                LOG_INFO << "[Script] " << mModule << " invalid ascii return";
+            }
+
+            callback(response);
+            break;
+        }
+        case 'E': {
+            LOG_INFO << "[Script] " << mModule << " error " << response;
+            std::runtime_error err{response};
+            errorCallback(err);
+            break;
+        }
+        default:
+            std::cerr << cmd << "n";
+            assert(false);
+    }
+    mToCallWhenDone.pop();
 }

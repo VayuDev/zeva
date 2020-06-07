@@ -9,6 +9,12 @@ class ProcessDiedException : public std::exception {
 
 };
 
+using ScriptCallback = std::function<void(ScriptBindingsReturn&&)>;
+using ErrorCallback = std::function<void(std::exception&)>;
+
+inline void IGNORE_SCRIPTCALLBACK(ScriptBindingsReturn&&) {}
+inline void IGNORE_ERRORCALLBACK(std::exception&) {}
+
 class ScriptBindings final {
 public:
     ScriptBindings(const std::string& pModule, const std::string& pCode);
@@ -20,7 +26,9 @@ public:
     void operator=(const ScriptBindings&) = delete;
     void operator=(const ScriptBindings&&) = delete;
 
-    std::future<ScriptBindingsReturn> execute(const std::string& pFunctionName, const std::vector<ScriptValue>&, size_t pDepth = 0);
+    void execute(const std::string& pFunctionName, const std::vector<ScriptValue>&, ScriptCallback&& pCallback, ErrorCallback&& pErrorCallback);
+    //std::future<ScriptBindingsReturn> execute(const std::string& pFunctionName, const std::vector<ScriptValue>&, size_t pDepth = 0);
+    void checkForNewMessages();
     const std::string& getCode();
 private:
     int mInputFd, mOutputFd;
@@ -32,17 +40,5 @@ private:
     void killChild();
     void spawnChild();
 
-    size_t mSpawns = 0;
-    /*
-     *
-
-    std::atomic<bool> mShouldRun = true;
-    std::atomic<int> mIdCounter = 0;
-    std::mutex mQueueMutex;
-    std::condition_variable mQueueAwaitCV;
-    std::optional<std::thread> mExecuteThread;
-
-    std::queue<std::pair<int, std::function<ScriptReturn()>>> mWorkQueue;
-    std::list<std::pair<int, ScriptReturn>> mResultList;
-     */
+    std::queue<std::tuple<std::string, std::vector<ScriptValue>, ScriptCallback, ErrorCallback>> mToCallWhenDone;
 };
