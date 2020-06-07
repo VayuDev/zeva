@@ -1,5 +1,5 @@
 #pragma once
 
 namespace WallpaperDownloader {
-    void downloadWallpapers();
+void downloadWallpapers();
 }
