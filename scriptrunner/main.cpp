@@ -8,6 +8,8 @@
 #include "Script.hpp"
 #include "Util.hpp"
 #include <cassert>
+#include <sys/prctl.h>
+#include <csignal>
 
 static std::string safeRead(int pInputFd, char& cmd) {
     auto safeRead = [pInputFd](void* dest, size_t length) {

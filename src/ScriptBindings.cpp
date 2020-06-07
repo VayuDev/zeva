@@ -9,6 +9,8 @@
 #include <limits.h>
 #include <iostream>
 #include <drogon/HttpAppFramework.h>
+#include <linux/prctl.h>
+#include <sys/prctl.h>
 
 ScriptBindings::ScriptBindings(const std::string &pModule, const std::string &pCode)
 : mCode(pCode), mModule(pModule) {
@@ -147,9 +149,18 @@ void ScriptBindings::spawnChild() {
     setenv("INPUT_FD",  inputStr.c_str(), 1);
     setenv("OUTPUT_FD", outputStr.c_str(), 1);
     setenv("SCRIPT_NAME", mModule.c_str(), 1);
+    pid_t ppid_before_fork = getpid();
     pid_t pid = fork();
     if(pid == 0) {
         //child
+        int r = prctl(PR_SET_PDEATHSIG, SIGTERM);
+        if (r == -1) {
+            perror("prctl()");
+            exit(1);
+        }
+        if (getppid() != ppid_before_fork)
+            exit(1);
+
         int fdlimit = (int)sysconf(_SC_OPEN_MAX);
         for (int i = STDERR_FILENO + 1; i < fdlimit; i++) {
             if(i != outputFd.at(0) && i != inputFd.at(1)) [[likely]] {
