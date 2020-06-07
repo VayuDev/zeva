@@ -46,7 +46,10 @@ void safeWrite(int pOutputFd, char cmd, const void *buffer, size_t length) {
     safeWrite(buffer, length);
 }
 
+int input, output;
+
 int main() {
+
     auto inputFdStr = getenv("INPUT_FD");
     auto outputFdStr = getenv("OUTPUT_FD");
     auto name = getenv("SCRIPT_NAME");
@@ -54,8 +57,21 @@ int main() {
         fprintf(stderr, "Missing env variables\n");
         exit(1);
     }
-    auto input = atoi(inputFdStr);
-    auto output = atoi(outputFdStr);
+    input = atoi(inputFdStr);
+    output = atoi(outputFdStr);
+
+    auto closePipes = [](int){
+        if(close(input)) {
+            perror("close()");
+        }
+        if(close(output)) {
+            perror("close()");
+        }
+        exit(0);
+    };
+
+    signal(SIGTERM, closePipes);
+    signal(SIGINT, closePipes);
 
     char cmd;
     auto code = safeRead(input, cmd);
@@ -103,7 +119,4 @@ int main() {
     } catch(std::exception& e) {
         sendStr('E', e.what());
     }
-
-
-
 }

@@ -103,9 +103,13 @@ std::string ScriptBindings::safeRead(char& cmd) {
         size_t bytesRead = 0;
         while(bytesRead < length) {
             auto status = read(mInputFd, (char*)dest + bytesRead, length - bytesRead);
-            if(status == -1) {
+            if(status <= 0) {
+                if(errno == EPIPE || status == 0) {
+                    throw ProcessDiedException();
+                }
                 throwError("read()");
             }
+
             bytesRead += status;
         }
     };
@@ -211,8 +215,12 @@ void ScriptBindings::killChild() {
     }
     int status;
     waitpid(mPid, &status, 0);
-    close(mOutputFd);
-    close(mInputFd);
+    if(close(mOutputFd)) {
+        perror("close()");
+    }
+    if(close(mInputFd)) {
+        perror("close()");
+    }
 }
 
 void ScriptBindings::execute(const std::string &pFunctionName, const std::vector<ScriptValue>& params,
