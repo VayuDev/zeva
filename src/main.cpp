@@ -79,13 +79,13 @@ int main() {
                 }
                 const std::string &logLevel = levelMatch[0];
                 int64_t level = stringToLogLevel(logLevel);
-                /*drogon::app().getDbClient()->execSqlAsync(
+                drogon::app().getDbClient()->execSqlAsync(
                         "INSERT INTO log (level, created, msg) VALUES ($1, CURRENT_TIMESTAMP, $2)",
                         [](const drogon::orm::Result &) {},
                         [](const drogon::orm::DrogonDbException &) {},
-                        level, std::move(msg));*/
-                conn->query("INSERT INTO log (level, created, msg) VALUES ($1::bigint, CURRENT_TIMESTAMP, $2::text)",
-                            {QueryValue::makeInt(level), QueryValue::makeString(std::move(msg))});
+                        level, std::move(msg));
+                /*conn->query("INSERT INTO log (level, created, msg) VALUES ($1::bigint, CURRENT_TIMESTAMP, $2::text)",
+                            {QueryValue::makeInt(level), QueryValue::makeString(std::move(msg))});*/
             }
         } else {
             std::cout << "INVALID ASCII\n";
