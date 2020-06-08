@@ -1,14 +1,12 @@
 #include "Script.hpp"
 #include "ScriptLibs.hpp"
 #include "wren.hpp"
-#include <ScriptBindings.hpp>
+#include <PostgreSQLDatabase.hpp>
 #include <Util.hpp>
 #include <cassert>
 #include <cstring>
 #include <iostream>
-
-#define LOG_INFO std::cout
-#define LOG_ERROR std::cerr
+#include <zconf.h>
 
 static std::string toFunctionSignature(const std::string &pName,
                                        size_t pArity) {
@@ -33,18 +31,24 @@ void Script::create(const std::string &pModule, const std::string &pCode) {
   wrenInitConfiguration(&config);
   config.errorFn = [](WrenVM *pVM, WrenErrorType, const char *module, int line,
                       const char *message) {
-    std::string msg = (module ? module : "(null)") + std::string{" ("} +
-                      std::to_string(line) + "): " + message;
     auto *self = (Script *)wrenGetUserData(pVM);
-
-    LOG_ERROR << self->mModuleName << ": " << msg;
+    std::string msg = self->mModuleName + ": " + (module ? module : "(null)") +
+                      std::string{" ("} + std::to_string(line) +
+                      "): " + message;
+    if (msg.at(msg.size() - 1) == '\n') {
+      msg.at(msg.size() - 1) = ' ';
+    }
+    self->log(LEVEL_ERROR, msg);
     self->setLastError(std::move(msg));
   };
   config.writeFn = [](WrenVM *pVM, const char *text) {
     std::string str{text};
     auto *self = (Script *)wrenGetUserData(pVM);
     if (!str.empty() && str != "\n") {
-      LOG_INFO << self->mModuleName.c_str() << ": " << str.c_str();
+      if (str.at(str.size() - 1) == '\n') {
+        str.at(str.size() - 1) = ' ';
+      }
+      self->log(LEVEL_INFO, self->mModuleName + ": " + str);
     }
   };
   config.bindForeignClassFn = bindForeignClass;
@@ -94,66 +98,13 @@ class Script {
     throw std::runtime_error("Instantiation failed: " + popLastError());
   }
   mInstance = wrenGetSlotHandle(mVM, 0);
-  /*auto& thread = mExecuteThread.emplace([this] {
-      while(mShouldRun) {
-          std::unique_lock<std::mutex> lock(mQueueMutex);
-          mQueueAwaitCV.wait(lock);
-          while(!mWorkQueue.empty()) {
-              auto& work = mWorkQueue.front();
-              ScriptReturn ret;
-              try {
-                  ret = work.second();
-              } catch(std::exception& e) {
-                  ret.value = std::string{e.what()};
-              }
-              auto *returnError = std::get_if<std::string>(&ret.value);
-              if(returnError) {
-                  LOG_ERROR << mModuleName << " failed with: " << *returnError;
-              } else {
-                  ScriptValue val = std::get<ScriptValue>(ret.value);
-                  if(val.type != WREN_TYPE_NULL) {
-                      std::string jsonStr;
-                      try {
-                          jsonStr =
-  scriptValueToJson(std::move(val)).asString(); } catch(...) { jsonStr =
-  "(unable to parse)";
-                      }
-
-                      LOG_INFO << mModuleName << " returned with: " << jsonStr;
-                  }
-              }
-
-              //delete old return values that haven't been taken out yet
-              const auto now = ret.timestamp;
-              for(auto it = mResultList.cbegin(); it != mResultList.cend();) {
-                  if(it->second.timestamp + 60 <= now) {
-                      it = mResultList.erase(it);
-                  } else {
-                      ++it;
-                  }
-              }
-
-              mResultList.emplace_front(std::make_pair(work.first, ret));
-              mWorkQueue.pop();
-          }
-      }
-  });
-  char threadNameBuff[16];
-  snprintf(threadNameBuff, 16, "script_%s", mModuleName.c_str());
-  threadNameBuff[15] = '\0';
-  pthread_setname_np(thread.native_handle(), threadNameBuff);*/
 }
-Script::Script(const std::string &pModule, const std::string &pCode) {
+Script::Script(const std::string &pModule, const std::string &pCode)
+    : mDbConnection(std::make_shared<PostgreSQLDatabase>()) {
   create(pModule, pCode);
 }
 
 Script::~Script() {
-  /*mShouldRun = false;
-  mQueueAwaitCV.notify_all();
-
-  if(mExecuteThread && mExecuteThread->joinable()) {
-      mExecuteThread->join();
-  }*/
   for (auto &func : mFunctions) {
     wrenReleaseHandle(mVM, func.second);
   }
@@ -204,4 +155,42 @@ ScriptBindingsReturn Script::execute(const std::string &pFunctionName,
     return std::string{str, (size_t)length};
   }
   return wrenValueToJsonValue(mVM, 0);
+}
+
+void Script::log(int pErr, const std::string &pMsg) const {
+  static pid_t sPid = getpid();
+
+  std::string toLog;
+  auto epoch = time(0);
+  struct tm tm_time;
+  gmtime_r(&epoch, &tm_time);
+  char buf[132] = {0};
+  snprintf(buf, sizeof(buf), "%4d%02d%02d %02d:%02d:%02d.%06d UTC %04d",
+           tm_time.tm_year + 1900, tm_time.tm_mon + 1, tm_time.tm_mday,
+           tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec, 0,
+           static_cast<int>(sPid));
+  toLog = buf;
+  switch (pErr) {
+  case LEVEL_INFO:
+    toLog += " INFO [ScriptLog] ";
+    break;
+  case LEVEL_WARNING:
+    toLog += " WARN [ScriptLog] ";
+    break;
+  case LEVEL_ERROR:
+    toLog += " ERROR [ScriptLog] ";
+    break;
+  default:
+    assert(false);
+  }
+  toLog += pMsg;
+  if (pErr >= LEVEL_WARNING) {
+    std::cerr << toLog << "\n";
+  } else {
+    std::cout << toLog << "\n";
+  };
+  mDbConnection->query(
+      "INSERT INTO log (level, created, msg) VALUES ($1, "
+      "CURRENT_TIMESTAMP, $2)",
+      {QueryValue::makeInt(pErr), QueryValue::makeString(toLog)});
 }

@@ -11,6 +11,10 @@
 #include <variant>
 #include <wren.hpp>
 
+#define LEVEL_INFO 2
+#define LEVEL_WARNING 3
+#define LEVEL_ERROR 4
+
 class Script final {
 public:
   Script(const std::string &pModule, const std::string &pCode);
@@ -26,6 +30,8 @@ public:
 
   inline const std::string &getCode() { return mCode; }
 
+  void log(int pLevel, const std::string &pMsg) const;
+
 private:
   void create(const std::string &pModule, const std::string &pCode);
 
@@ -36,4 +42,6 @@ private:
   std::string mLastError;
   std::map<std::string, WrenHandle *> mFunctions;
   std::string mCode;
+
+  std::shared_ptr<class DatabaseWrapper> mDbConnection;
 };

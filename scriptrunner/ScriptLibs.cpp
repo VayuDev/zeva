@@ -1,5 +1,6 @@
 #include "ScriptLibs.hpp"
 #include "PostgreSQLDatabase.hpp"
+#include "Script.hpp"
 #include "TcpClient.hpp"
 #include "Util.hpp"
 #include <cassert>
@@ -15,14 +16,8 @@ template <typename T> struct ScriptStorage {
   bool inited = false;
 };
 
-#define LOG_INFO std::cout
-#define LOG_ERROR std::cerr
-#define LOG_WARN std::cout
-
 using DatabaseStorage = ScriptStorage<PostgreSQLDatabase>;
 using TcpClientStorage = ScriptStorage<TcpClient>;
-
-const char *CONFIG_FILE = "assets/config.json";
 
 WrenForeignClassMethods bindForeignClass(WrenVM *, const char *module,
                                          const char *classname) {
@@ -31,6 +26,7 @@ WrenForeignClassMethods bindForeignClass(WrenVM *, const char *module,
     WrenForeignClassMethods methods = {
         .allocate =
             [](WrenVM *pVM) {
+              auto *self = (Script *)wrenGetUserData(pVM);
               auto *db = (DatabaseStorage *)wrenSetSlotNewForeign(
                   pVM, 0, 0, sizeof(DatabaseStorage));
               db->inited = false;
@@ -52,8 +48,9 @@ WrenForeignClassMethods bindForeignClass(WrenVM *, const char *module,
                   db->inited = false;
                 }
               } catch (std::exception &e) {
-                LOG_ERROR << "Script failed to connect to db: " << e.what()
-                          << "\n";
+                self->log(LEVEL_ERROR,
+                          std::string{"Script failed to connect to db: "} +
+                              e.what() + "\n");
                 db->inited = false;
               }
             },
@@ -71,29 +68,34 @@ WrenForeignClassMethods bindForeignClass(WrenVM *, const char *module,
     WrenForeignClassMethods methods = {
         .allocate =
             [](WrenVM *pVM) {
+              auto *self = (Script *)wrenGetUserData(pVM);
               wrenEnsureSlots(pVM, 3);
               auto *data = (TcpClientStorage *)wrenSetSlotNewForeign(
                   pVM, 0, 0, sizeof(TcpClientStorage));
               data->inited = false;
               if (wrenGetSlotType(pVM, 1) != WREN_TYPE_STRING &&
                   wrenGetSlotType(pVM, 2) != WREN_TYPE_NUM) {
-                LOG_ERROR << "ScriptLibs TcpClient: Invalid parameter types!";
+                self->log(LEVEL_ERROR,
+                          "ScriptLibs TcpClient: Invalid parameter types!");
                 return;
               }
               auto hostname = wrenGetSlotString(pVM, 1);
               auto port = wrenGetSlotDouble(pVM, 2);
 
               if (port <= 0 || port > std::numeric_limits<uint16_t>::max()) {
-                LOG_ERROR << "ScriptLibs TcpClient: Invalid port: " << port
-                          << "\n";
+                self->log(LEVEL_ERROR,
+                          std::string{"ScriptLibs TcpClient: Invalid port: "} +
+                              std::to_string(port));
                 return;
               }
               try {
                 new (&data->value) TcpClient(hostname, port);
                 data->inited = true;
               } catch (std::exception &e) {
-                LOG_ERROR << "ScriptLibs TcpClient instantiation failed: "
-                          << e.what();
+                self->log(
+                    LEVEL_ERROR,
+                    std::string{"ScriptLibs TcpClient instantiation failed: "} +
+                        e.what());
                 return;
               }
             },
@@ -261,11 +263,12 @@ static void tcpClientRecvString(WrenVM *pVM) {
 }
 
 static void hsvToRgb(WrenVM *pVM) {
+  auto *self = (Script *)wrenGetUserData(pVM);
   if (wrenGetSlotType(pVM, 1) != WREN_TYPE_NUM ||
       wrenGetSlotType(pVM, 2) != WREN_TYPE_NUM ||
       wrenGetSlotType(pVM, 3) != WREN_TYPE_NUM) {
     wrenSetSlotNull(pVM, 0);
-    LOG_WARN << "ScriptLibs: hsvToRgb invalid parameters";
+    self->log(LEVEL_ERROR, "ScriptLibs: hsvToRgb invalid parameters");
     return;
   }
   auto h = wrenGetSlotDouble(pVM, 1);
@@ -350,7 +353,7 @@ static void exportImage(WrenVM *pVM) {
 
   wrenEnsureSlots(pVM, 5);
   auto *data = (uint8_t *)malloc(width * height * 3);
-  for (size_t i = 0; i < width * height; ++i) {
+  for (size_t i = 0; i < static_cast<size_t>(width * height); ++i) {
     wrenGetListElement(pVM, 1, i, 2);
     wrenGetListElement(pVM, 2, 0, 3);
     wrenGetListElement(pVM, 2, 1, 4);

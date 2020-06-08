@@ -3,8 +3,6 @@
 #include "PostgreSQLDatabase.hpp"
 #include "Util.hpp"
 
-extern const char *CONFIG_FILE;
-
 void Api::Db::getAllTables(
     const drogon::HttpRequestPtr &,
     std::function<void(const drogon::HttpResponsePtr &)> &&callback) {

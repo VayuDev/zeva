@@ -20,11 +20,9 @@
 
 static void sighandler(int) { drogon::app().quit(); }
 
-const char *CONFIG_FILE = "assets/config.json";
-
 int main() {
   // init database
-  auto conn = std::make_shared<PostgreSQLDatabase>(CONFIG_FILE);
+  auto conn = std::make_shared<PostgreSQLDatabase>();
   DatabaseHelper::createDb(*conn);
 
   srand(time(0));

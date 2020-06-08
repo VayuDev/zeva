@@ -7,6 +7,8 @@
 #include <memory>
 #include <repl.h>
 
+#define CONFIG_FILE "assets/config.json"
+
 class PostgreSQLQueryResult : public QueryResult {
 public:
   virtual size_t getRowCount() const override;
@@ -24,7 +26,8 @@ private:
 
 class PostgreSQLDatabase : public DatabaseWrapper {
 public:
-  explicit PostgreSQLDatabase(const std::filesystem::path &pConfigFile);
+  explicit PostgreSQLDatabase(
+      const std::filesystem::path &pConfigFile = CONFIG_FILE);
   PostgreSQLDatabase(std::string pDbName, std::string pUserName,
                      std::string pPassword, std::string pHost, uint16_t pPort);
   ~PostgreSQLDatabase() override;
