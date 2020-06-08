@@ -1,6 +1,5 @@
 #pragma once
 #include <drogon/WebSocketController.h>
-#include <pqxx/pqxx>
 #include <shared_mutex>
 
 class LogWebsocket : public drogon::WebSocketController<LogWebsocket, false> {
