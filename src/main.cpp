@@ -71,15 +71,15 @@ int main() {
           if (drogon::app().isRunning()) {
             std::string msg{str, len - 1};
             std::smatch levelMatch;
-            if (!std::regex_search(msg, levelMatch, levelFinder)) {
-              assert(false);
+            int64_t level = trantor::Logger::kInfo;
+            if (std::regex_search(msg, levelMatch, levelFinder)) {
+                std::string restString = levelMatch.suffix();
+                if (std::regex_search(restString, levelMatch, levelFinder)) {
+                    const std::string &logLevel = levelMatch[0];
+                    level = stringToLogLevel(logLevel);
+                }
             }
-            std::string restString = levelMatch.suffix();
-            if (!std::regex_search(restString, levelMatch, levelFinder)) {
-              assert(false);
-            }
-            const std::string &logLevel = levelMatch[0];
-            int64_t level = stringToLogLevel(logLevel);
+
             drogon::app().getDbClient()->execSqlAsync(
                 "INSERT INTO log (level, created, msg) VALUES ($1, "
                 "CURRENT_TIMESTAMP, $2)",
