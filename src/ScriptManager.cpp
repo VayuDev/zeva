@@ -3,8 +3,8 @@
 #include <chrono>
 #include <csignal>
 #include <drogon/HttpAppFramework.h>
-#include <utility>
 #include <poll.h>
+#include <utility>
 
 void ScriptManager::addScript(const std::string &pName,
                               const std::string &pCode,
@@ -48,14 +48,17 @@ void ScriptManager::onTableChanged(const std::string &pTable,
     }
     lock.lock();
   }
-  for (auto &script : mScripts) {
-    try {
-      script.second.execute(
-          "onTableChanged",
-          {ScriptValue::makeString(pTable), ScriptValue::makeString(pType)},
-          IGNORE_SCRIPTCALLBACK, IGNORE_ERRORCALLBACK);
-    } catch (std::exception &e) {
-      LOG_ERROR << "Error executing script: " << e.what();
+  // running a log scripts would end in a endless loop of logging
+  if (pTable != "log") {
+    for (auto &script : mScripts) {
+      try {
+        script.second.execute(
+            "onTableChanged",
+            {ScriptValue::makeString(pTable), ScriptValue::makeString(pType)},
+            IGNORE_SCRIPTCALLBACK, IGNORE_ERRORCALLBACK);
+      } catch (std::exception &e) {
+        LOG_ERROR << "Error executing script: " << e.what();
+      }
     }
   }
 }
@@ -87,22 +90,22 @@ ScriptManager::ScriptManager()
           struct pollfd fds[mScripts.size()];
           size_t i = 0;
           for (auto &script : mScripts) {
-              fds[i].fd = script.second.getInputFd();
-              fds[i].events = POLLIN;
-              i++;
+            fds[i].fd = script.second.getInputFd();
+            fds[i].events = POLLIN;
+            i++;
           }
           lock.unlock();
           auto status = poll(fds, mScripts.size(), 1000);
-          if(status < 0) {
-              perror("poll()");
+          if (status < 0) {
+            perror("poll()");
           }
-          //some new data became available
-          if(status > 0) {
-              lock.lock();
-              for (auto &script : mScripts) {
-                  script.second.checkForNewMessages();
-              }
-              lock.unlock();
+          // some new data became available
+          if (status > 0) {
+            lock.lock();
+            for (auto &script : mScripts) {
+              script.second.checkForNewMessages();
+            }
+            lock.unlock();
           }
         }
       }) {

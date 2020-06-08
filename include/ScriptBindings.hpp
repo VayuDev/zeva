@@ -1,10 +1,10 @@
 #pragma once
 #include "ScriptValue.hpp"
+#include "Util.hpp"
 #include <array>
 #include <json/json.h>
 #include <string>
 #include <variant>
-#include "Util.hpp"
 
 class ProcessDiedException : public std::exception {};
 

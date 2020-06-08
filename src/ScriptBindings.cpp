@@ -1,5 +1,6 @@
 #include "ScriptBindings.hpp"
 #include "Util.hpp"
+#include <ScriptManager.hpp>
 #include <cassert>
 #include <drogon/HttpAppFramework.h>
 #include <iostream>
@@ -12,7 +13,6 @@
 #include <sys/prctl.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <ScriptManager.hpp>
 
 ScriptBindings::ScriptBindings(const std::string &pModule,
                                const std::string &pCode)
@@ -326,6 +326,4 @@ void ScriptBindings::checkForNewMessages() {
   mToCallWhenDone.pop();
 }
 
-int ScriptBindings::getInputFd(Badge<ScriptManager>) {
-    return mInputFd;
-}
+int ScriptBindings::getInputFd(Badge<ScriptManager>) { return mInputFd; }

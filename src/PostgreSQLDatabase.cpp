@@ -228,16 +228,16 @@ PostgreSQLDatabase::genOidVector(const std::vector<QueryValue> &pValues) const {
 }
 
 void PostgreSQLDatabase::checkForNewNotifications() {
-    pgNotify* notification;
-    do {
-        notification = PQnotifies(mCConnection);
-        if (notification) {
-            if (notification->extra) {
-                onNotification(notification->relname, notification->extra);
-            }
-            PQfreemem(notification);
-        }
-    } while(notification != nullptr);
+  pgNotify *notification;
+  do {
+    notification = PQnotifies(mCConnection);
+    if (notification) {
+      if (notification->extra) {
+        onNotification(notification->relname, notification->extra);
+      }
+      PQfreemem(notification);
+    }
+  } while (notification != nullptr);
 }
 
 void PostgreSQLDatabase::listenTo(const std::string &pChannel) {

@@ -73,11 +73,11 @@ int main() {
             std::smatch levelMatch;
             int64_t level = trantor::Logger::kInfo;
             if (std::regex_search(msg, levelMatch, levelFinder)) {
-                std::string restString = levelMatch.suffix();
-                if (std::regex_search(restString, levelMatch, levelFinder)) {
-                    const std::string &logLevel = levelMatch[0];
-                    level = stringToLogLevel(logLevel);
-                }
+              std::string restString = levelMatch.suffix();
+              if (std::regex_search(restString, levelMatch, levelFinder)) {
+                const std::string &logLevel = levelMatch[0];
+                level = stringToLogLevel(logLevel);
+              }
             }
 
             drogon::app().getDbClient()->execSqlAsync(

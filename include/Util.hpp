@@ -21,9 +21,8 @@ inline void throwError(const char *msg) {
   throw std::runtime_error(err);
 }
 
-template<typename T>
-class Badge {
+template <typename T> class Badge {
 private:
-    Badge() = default;
-    friend T;
+  Badge() = default;
+  friend T;
 };
