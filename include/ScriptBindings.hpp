@@ -4,6 +4,7 @@
 #include <json/json.h>
 #include <string>
 #include <variant>
+#include "Util.hpp"
 
 class ProcessDiedException : public std::exception {};
 
@@ -31,6 +32,8 @@ public:
   // const std::vector<ScriptValue>&, size_t pDepth = 0);
   void checkForNewMessages();
   const std::string &getCode();
+
+  int getInputFd(Badge<class ScriptManager> = {});
 
 private:
   int mInputFd, mOutputFd;

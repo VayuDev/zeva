@@ -4,6 +4,7 @@
 #include <csignal>
 #include <drogon/HttpAppFramework.h>
 #include <utility>
+#include <poll.h>
 
 void ScriptManager::addScript(const std::string &pName,
                               const std::string &pCode,
@@ -82,11 +83,27 @@ ScriptManager::ScriptManager()
     : mScriptReturnCallbackThread([this] {
         while (mShouldRun) {
           std::shared_lock<std::shared_mutex> lock{mScriptsMutex};
+
+          struct pollfd fds[mScripts.size()];
+          size_t i = 0;
           for (auto &script : mScripts) {
-            script.second.checkForNewMessages();
+              fds[i].fd = script.second.getInputFd();
+              fds[i].events = POLLIN;
+              i++;
           }
           lock.unlock();
-          std::this_thread::sleep_for(std::chrono::milliseconds(1));
+          auto status = poll(fds, mScripts.size(), 1000);
+          if(status < 0) {
+              perror("poll()");
+          }
+          //some new data became available
+          if(status > 0) {
+              lock.lock();
+              for (auto &script : mScripts) {
+                  script.second.checkForNewMessages();
+              }
+              lock.unlock();
+          }
         }
       }) {
   pthread_setname_np(mScriptReturnCallbackThread.native_handle(),

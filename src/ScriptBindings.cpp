@@ -12,6 +12,7 @@
 #include <sys/prctl.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <ScriptManager.hpp>
 
 ScriptBindings::ScriptBindings(const std::string &pModule,
                                const std::string &pCode)
@@ -323,4 +324,8 @@ void ScriptBindings::checkForNewMessages() {
     assert(false);
   }
   mToCallWhenDone.pop();
+}
+
+int ScriptBindings::getInputFd(Badge<ScriptManager>) {
+    return mInputFd;
 }

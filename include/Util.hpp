@@ -20,3 +20,10 @@ inline void throwError(const char *msg) {
   err += buff;
   throw std::runtime_error(err);
 }
+
+template<typename T>
+class Badge {
+private:
+    Badge() = default;
+    friend T;
+};
