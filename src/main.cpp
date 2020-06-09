@@ -43,10 +43,24 @@ int main() {
   auto logWebsocketController = std::make_shared<LogWebsocket>();
   conn->addListener(
       "newlog", [logWebsocketController](const std::string &payload) {
-        auto firstPercentageIndex = payload.find('%');
-        auto level = std::stoll(payload.substr(0, firstPercentageIndex));
-        auto msg = payload.substr(firstPercentageIndex + 1, std::string::npos);
-        logWebsocketController->newLogMessage(level, msg);
+        auto id = std::stoll(payload);
+        if (drogon::app().isRunning()) {
+          drogon::app().getDbClient()->execSqlAsync(
+              "SELECT level,msg FROM log WHERE id=$1",
+              [logWebsocketController](const drogon::orm::Result &r) {
+                if (r.empty()) {
+                  std::cerr << "Error while logging: return is empty\n";
+                  return;
+                }
+                logWebsocketController->newLogMessage(
+                    r.at(0)["level"].as<int64_t>(),
+                    r.at(0)["msg"].as<std::string>());
+              },
+              [](const drogon::orm::DrogonDbException &e) {
+                std::cerr << "Error while logging: " << e.base().what() << "\n";
+              },
+              id);
+        }
       });
 
   long passedTime = std::numeric_limits<long>::max();
@@ -67,9 +81,20 @@ int main() {
       [&levelFinder, conn, logWebsocketController](const char *str,
                                                    uint64_t len) {
         if (isValidAscii(reinterpret_cast<const signed char *>(str), len)) {
-          std::cout.write(str, len);
+          bool shortened = false;
+          if (len > 500) {
+            len = 500;
+            shortened = true;
+          }
+          // remove the newline
+          std::string msg{str, len - 1};
+          if (shortened) {
+            msg += "...";
+          }
+          std::cout << msg << "\n";
+
           if (drogon::app().isRunning()) {
-            std::string msg{str, len - 1};
+
             std::smatch levelMatch;
             int64_t level = trantor::Logger::kInfo;
             if (std::regex_search(msg, levelMatch, levelFinder)) {

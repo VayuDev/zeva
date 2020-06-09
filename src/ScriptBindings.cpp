@@ -176,12 +176,13 @@ void ScriptBindings::execute(const std::string &pFunctionName,
     std::rethrow_exception(std::current_exception());
   }
   auto id = pId == -1 ? mIdCounter++ : pId;
-  mToCallWhenDone.emplace(std::make_tuple(
-      pFunctionName, params, std::move(pCallback), std::move(pErrorCallback),
-      id));
+  mToCallWhenDone.emplace(std::make_tuple(pFunctionName, params,
+                                          std::move(pCallback),
+                                          std::move(pErrorCallback), id));
   drogon::app().getLoop()->runAfter(5, [this, id] {
     std::unique_lock<std::recursive_mutex> lock(mFdMutex);
-    if(!mToCallWhenDone.empty() && id == std::get<int64_t>(mToCallWhenDone.front())) {
+    if (!mToCallWhenDone.empty() &&
+        id == std::get<int64_t>(mToCallWhenDone.front())) {
       LOG_WARN << "[Script] " << mModule << " received a timeout!";
       auto [functionName, params, callback, errorCallback, id] =
           mToCallWhenDone.front();
@@ -268,8 +269,8 @@ void ScriptBindings::restartAndRequeue() {
   mToCallWhenDone = {};
   while (!copy.empty()) {
     auto [functionName, params, callback, errorCallback, id] = copy.front();
-    execute(functionName, params, std::move(callback),
-            std::move(errorCallback), id);
+    execute(functionName, params, std::move(callback), std::move(errorCallback),
+            id);
     copy.pop();
   }
 }

@@ -17,6 +17,7 @@ public:
   WS_PATH_LIST_END
 
   void init();
+
 private:
   std::shared_mutex mConnectionsMutex;
   std::map<drogon::WebSocketConnectionPtr, trantor::Logger::LogLevel>

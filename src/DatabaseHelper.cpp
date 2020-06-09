@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS log (
   pDb.query(R"(
 CREATE OR REPLACE FUNCTION new_log() RETURNS trigger AS $BODY$
     BEGIN
-        PERFORM pg_notify('newlog', NEW.level || '%' || NEW.msg);
+        PERFORM pg_notify('newlog', NEW.id :: TEXT);
         RETURN NULL;
     END;
     $BODY$ LANGUAGE plpgsql;

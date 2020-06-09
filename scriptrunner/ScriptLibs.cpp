@@ -137,7 +137,7 @@ static void databaseQuerySync(WrenVM *pVM) {
       // LOAD VALUES
       wrenSetSlotString(pVM, 1, "ok");
       wrenSetSlotNewList(pVM, 2);
-      if(ret) {
+      if (ret) {
         for (size_t r = 0; r < ret->getRowCount(); ++r) {
           wrenSetSlotNewList(pVM, 3);
           for (size_t c = 0; c < ret->getColumnCount(); ++c) {

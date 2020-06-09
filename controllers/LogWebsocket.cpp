@@ -23,7 +23,8 @@ void LogWebsocket::handleNewMessage(const drogon::WebSocketConnectionPtr &pConn,
     std::shared_lock<std::shared_mutex> lockShared(mConnectionsMutex);
     auto str = Json::writeString(wbuilder, mAllLog);
     auto end = std::chrono::high_resolution_clock::now();
-    std::cout << "Response preperation took " << (end - start).count() / 1'000'000.0f << "ms\n";
+    std::cout << "Response preperation took "
+              << (end - start).count() / 1'000'000.0f << "ms\n";
     pConn->send(str);
   } catch (...) {
   }
@@ -56,11 +57,12 @@ void LogWebsocket::newLogMessage(int pLevel, const std::string &pMsg) {
 }
 void LogWebsocket::init() {
   std::unique_lock<std::shared_mutex> lock(mConnectionsMutex);
-  auto result = drogon::app().getDbClient()->execSqlSync("SELECT * FROM log ORDER BY created");
+  auto result = drogon::app().getDbClient()->execSqlSync(
+      "SELECT * FROM log ORDER BY created");
   Json::Value response;
   for (const auto &row : result) {
-    response.append(formatJsonRow(row["msg"].as<std::string>(),
-                                  row["level"].as<int>()));
+    response.append(
+        formatJsonRow(row["msg"].as<std::string>(), row["level"].as<int>()));
   }
   mAllLog = std::move(response);
 }
