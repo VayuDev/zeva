@@ -26,33 +26,9 @@ WrenForeignClassMethods bindForeignClass(WrenVM *, const char *module,
     WrenForeignClassMethods methods = {
         .allocate =
             [](WrenVM *pVM) {
-              auto *self = (Script *)wrenGetUserData(pVM);
-              auto *db = (DatabaseStorage *)wrenSetSlotNewForeign(
+              auto *db = (DatabaseStorage *) wrenSetSlotNewForeign(
                   pVM, 0, 0, sizeof(DatabaseStorage));
               db->inited = false;
-              try {
-                if (wrenGetSlotType(pVM, 1) != WREN_TYPE_STRING) {
-                  new (&db->value) PostgreSQLDatabase(CONFIG_FILE);
-                  db->inited = true;
-                } else if (wrenGetSlotType(pVM, 1) == WREN_TYPE_STRING &&
-                           wrenGetSlotType(pVM, 2) == WREN_TYPE_STRING &&
-                           wrenGetSlotType(pVM, 3) == WREN_TYPE_STRING &&
-                           wrenGetSlotType(pVM, 4) == WREN_TYPE_STRING &&
-                           wrenGetSlotType(pVM, 5) == WREN_TYPE_NUM) {
-                  new (&db->value) PostgreSQLDatabase(
-                      wrenGetSlotString(pVM, 1), wrenGetSlotString(pVM, 2),
-                      wrenGetSlotString(pVM, 3), wrenGetSlotString(pVM, 4),
-                      wrenGetSlotDouble(pVM, 5));
-                  db->inited = true;
-                } else {
-                  db->inited = false;
-                }
-              } catch (std::exception &e) {
-                self->log(LEVEL_ERROR,
-                          std::string{"Script failed to connect to db: "} +
-                              e.what() + "\n");
-                db->inited = false;
-              }
             },
         .finalize =
             [](void *data) {
@@ -123,62 +99,115 @@ static void passToVM(WrenVM *pVM, int pSlot, const char *pType,
   wrenInsertInList(pVM, pSlot, 1, pSlot + 2);
 }
 
+static void databaseCreate(WrenVM* pVM) {
+  auto db = (DatabaseStorage *) wrenGetSlotForeign(pVM, 0);
+  auto *self = (Script *) wrenGetUserData(pVM);
+  try {
+    new (&db->value) PostgreSQLDatabase(CONFIG_FILE);
+    db->inited = true;
+  } catch (std::exception &e) {
+    self->log(LEVEL_ERROR,
+              std::string{"Script failed to connect to db: "} +
+                  e.what() + "\n");
+    db->inited = false;
+  }
+}
+
+void databaseCreateWithParams(WrenVM* pVM) {
+  auto db = (DatabaseStorage *) wrenGetSlotForeign(pVM, 0);
+  auto *self = (Script *) wrenGetUserData(pVM);
+  try {
+    if (wrenGetSlotType(pVM, 1) == WREN_TYPE_STRING &&
+        wrenGetSlotType(pVM, 2) == WREN_TYPE_STRING &&
+        wrenGetSlotType(pVM, 3) == WREN_TYPE_STRING &&
+        wrenGetSlotType(pVM, 4) == WREN_TYPE_STRING &&
+        wrenGetSlotType(pVM, 5) == WREN_TYPE_NUM) {
+      new (&db->value) PostgreSQLDatabase(
+          wrenGetSlotString(pVM, 1), wrenGetSlotString(pVM, 2),
+          wrenGetSlotString(pVM, 3), wrenGetSlotString(pVM, 4),
+          wrenGetSlotDouble(pVM, 5));
+      db->inited = true;
+    } else {
+      self->log(LEVEL_ERROR, "Script failed to connect to db: invalid parameters");
+      db->inited = false;
+    }
+  } catch (std::exception &e) {
+    self->log(LEVEL_ERROR,
+              std::string{"Script failed to connect to db: "} +
+                  e.what() + "\n");
+    db->inited = false;
+  }
+}
+
 static void databaseQuerySync(WrenVM *pVM) {
   if (wrenGetSlotType(pVM, 1) == WREN_TYPE_STRING) {
     auto *db = (DatabaseStorage *)wrenGetSlotForeign(pVM, 0);
     if (!db->inited) {
-      passToVM(pVM, 0, "error", "Database didn't connect!");
-      return;
-    }
-    const char *text = wrenGetSlotString(pVM, 1);
-    wrenEnsureSlots(pVM, 4);
-    try {
-      auto ret = db->value.query(text);
-      // LOAD VALUES
-      wrenSetSlotString(pVM, 1, "ok");
-      wrenSetSlotNewList(pVM, 2);
-      if (ret) {
-        for (size_t r = 0; r < ret->getRowCount(); ++r) {
+      wrenSetSlotString(pVM, 1, "error");
+      wrenSetSlotString(pVM, 2, "Database didn't connect!");
+      wrenSetSlotNull(pVM, 3);
+    } else {
+      const char *text = wrenGetSlotString(pVM, 1);
+      wrenEnsureSlots(pVM, 5);
+      try {
+        auto ret = db->value.query(text);
+        // LOAD VALUES
+        wrenSetSlotString(pVM, 1, "ok");
+        wrenSetSlotNewList(pVM, 2);
+        if (ret) {
+          for (size_t r = 0; r < ret->getRowCount(); ++r) {
+            wrenSetSlotNewList(pVM, 3);
+            for (size_t c = 0; c < ret->getColumnCount(); ++c) {
+              const auto &sv = ret->getValue(r, c);
+              switch (sv.type) {
+              case QueryValueType::INTEGER:
+                wrenSetSlotDouble(pVM, 4, sv.intValue);
+                break;
+              case QueryValueType::STRING:
+                wrenSetSlotString(pVM, 4, sv.stringValue.c_str());
+                break;
+              case QueryValueType::DOUBLE:
+                wrenSetSlotDouble(pVM, 4, sv.doubleValue);
+                break;
+              case QueryValueType::TNULL:
+                wrenSetSlotNull(pVM, 4);
+                break;
+              case QueryValueType::TIME:
+                wrenSetSlotDouble(pVM, 4,
+                                  sv.timeValue.tv_sec +
+                                      sv.timeValue.tv_usec / 1'000'000.0);
+                break;
+              default:
+                std::cerr << "[SCRIPT] Invalid query value!" << std::endl;
+                assert(false);
+              }
+              wrenInsertInList(pVM, 3, c, 4);
+            }
+            wrenInsertInList(pVM, 2, r, 3);
+          }
+          // COLUMNS
           wrenSetSlotNewList(pVM, 3);
           for (size_t c = 0; c < ret->getColumnCount(); ++c) {
-            const auto &sv = ret->getValue(r, c);
-            switch (sv.type) {
-            case QueryValueType::INTEGER:
-              wrenSetSlotDouble(pVM, 4, sv.intValue);
-              break;
-            case QueryValueType::STRING:
-              wrenSetSlotString(pVM, 4, sv.stringValue.c_str());
-              break;
-            case QueryValueType::DOUBLE:
-              wrenSetSlotDouble(pVM, 4, sv.doubleValue);
-              break;
-            case QueryValueType::TNULL:
-              wrenSetSlotNull(pVM, 4);
-              break;
-            case QueryValueType::TIME:
-              wrenSetSlotDouble(pVM, 4,
-                                sv.timeValue.tv_sec +
-                                    sv.timeValue.tv_usec / 1'000'000.0);
-              break;
-            default:
-              std::cerr << "[SCRIPT] Invalid query value!" << std::endl;
-              assert(false);
-            }
+            wrenSetSlotString(pVM, 4, ret->getColumnNames().at(c).c_str());
             wrenInsertInList(pVM, 3, c, 4);
           }
-          wrenInsertInList(pVM, 2, r, 3);
         }
-      }
 
-      wrenSetSlotNewList(pVM, 0);
-      wrenInsertInList(pVM, 0, 0, 1);
-      wrenInsertInList(pVM, 0, 1, 2);
-    } catch (std::exception &e) {
-      passToVM(pVM, 0, "error", e.what());
+      } catch (std::exception &e) {
+        wrenSetSlotString(pVM, 1, "error");
+        wrenSetSlotString(pVM, 2, e.what());
+        wrenSetSlotNull(pVM, 3);
+      }
     }
   } else {
-    passToVM(pVM, 0, "error", "Please pass a query string");
+    wrenSetSlotString(pVM, 1, "error");
+    wrenSetSlotString(pVM, 2, "Please pass a string");
+    wrenSetSlotNull(pVM, 3);
   }
+  wrenSetSlotNewList(pVM, 0);
+  wrenInsertInList(pVM, 0, 0, 1);
+  wrenInsertInList(pVM, 0, 1, 2);
+  wrenInsertInList(pVM, 0, 2, 3);
 }
 
 static void tcpClientIsConnected(WrenVM *pVM) {
@@ -386,8 +415,12 @@ WrenForeignMethodFn bindForeignMethod(WrenVM *vm, const char *module,
   (void)vm;
   (void)module;
   if (strcmp(className, "Database") == 0) {
-    if (!isStatic && strcmp(signature, "query(_)") == 0) {
+    if (!isStatic && strcmp(signature, "queryInternal(_)") == 0) {
       return databaseQuerySync;
+    } else if (strcmp(signature, "init new()") == 0) {
+      return databaseCreate;
+    } else if (strcmp(signature, "init new(_,_,_,_,_)") == 0) {
+      return databaseCreateWithParams;
     }
   } else if (strcmp(className, "TcpClient") == 0 && !isStatic) {
     if (strcmp("isConnected()", signature) == 0) {
@@ -414,16 +447,52 @@ WrenForeignMethodFn bindForeignMethod(WrenVM *vm, const char *module,
       return genRandomDouble;
     }
   }
+  std::cout << "Unknown class " << className << " and signature " << signature << "\n";
   assert(false);
 }
 
 const char *foreignClassesString() {
   return R"--(
 
+class QueryResult {
+    construct new(query, columns, data) {
+        _status = "ok"
+        _columns = columns
+        _data = data
+        _query = query
+    }
+    construct new(query, errormsg) {
+        _status = "error"
+        _error = errormsg
+        _query = query
+    }
+    status { _status }
+    hasData { _data == null }
+    data { _data }
+    columns { _columns }
+    query { _query }
+    error { _error }
+
+    toString {
+        return "QueryResult{ status=%(status) }"
+    }
+}
+
 foreign class Database {
-    construct new() {}
-    construct new(dbname, username, password, hostname, port) {}
-    foreign query(request)
+    foreign construct new()
+    foreign construct new(dbname, username, password, hostname, port)
+    foreign queryInternal(request)
+    query(request) {
+        var rawResult = queryInternal(request)
+        var status = rawResult[0]
+        if(status == "error") {
+          return QueryResult.new(request, rawResult[1])
+        } else {
+          var data = rawResult[1]
+          var columns = rawResult[2]
+          return QueryResult.new(request, columns, data)
+        }
+    }
 }
 
 foreign class TcpClient {
