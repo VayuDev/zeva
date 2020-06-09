@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <json/json.h>
 #include <optional>
+#include <string.h>
 
 Json::Value scriptValueToJson(const ScriptValue &pVal);
 Json::Value wrenValueToJsonValue(struct WrenVM *pVM, int pSlot);
