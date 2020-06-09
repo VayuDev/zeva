@@ -125,7 +125,7 @@ int main() {
       });
 
   // load scripts
-  drogon::app().getLoop()->queueInLoop([] {
+  drogon::app().getLoop()->queueInLoop([logWebsocketController] {
     auto client = std::make_shared<PostgreSQLDatabase>(CONFIG_FILE);
     auto res = client->query("SELECT name,code FROM scripts");
     for (size_t i = 0; i < res->getRowCount(); ++i) {
@@ -138,6 +138,7 @@ int main() {
                   << "' with exception: " << e.what();
       }
     }
+    logWebsocketController->init();
     LOG_WARN << "Server completely started";
   });
   drogon::app().getLoop()->runAfter(1, [] {
