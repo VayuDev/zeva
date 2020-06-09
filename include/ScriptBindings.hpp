@@ -27,7 +27,7 @@ public:
 
   void execute(const std::string &pFunctionName,
                const std::vector<ScriptValue> &, ScriptCallback &&pCallback,
-               ErrorCallback &&pErrorCallback);
+               ErrorCallback &&pErrorCallback, int64_t pId = -1);
   // std::future<ScriptBindingsReturn> execute(const std::string& pFunctionName,
   // const std::vector<ScriptValue>&, size_t pDepth = 0);
   void checkForNewMessages();
@@ -44,8 +44,11 @@ private:
   void safeWrite(char cmd, const void *buffer, size_t length);
   void killChild();
   void spawnChild();
+  int64_t mIdCounter = 0;
+
+  void restartAndRequeue();
 
   std::queue<std::tuple<std::string, std::vector<ScriptValue>, ScriptCallback,
-                        ErrorCallback>>
+                        ErrorCallback, int64_t>>
       mToCallWhenDone;
 };
