@@ -131,51 +131,53 @@ static void databaseQuerySync(WrenVM *pVM) {
       return;
     }
     const char *text = wrenGetSlotString(pVM, 1);
-    wrenEnsureSlots(pVM, 2);
+    wrenEnsureSlots(pVM, 4);
     try {
       auto ret = db->value.query(text);
       // LOAD VALUES
       wrenSetSlotString(pVM, 1, "ok");
-      wrenEnsureSlots(pVM, 4);
       wrenSetSlotNewList(pVM, 2);
-      for (size_t r = 0; r < ret->getRowCount(); ++r) {
-        wrenSetSlotNewList(pVM, 3);
-        for (size_t c = 0; c < ret->getColumnCount(); ++c) {
-          const auto &sv = ret->getValue(r, c);
-          switch (sv.type) {
-          case QueryValueType::INTEGER:
-            wrenSetSlotDouble(pVM, 4, sv.intValue);
-            break;
-          case QueryValueType::STRING:
-            wrenSetSlotString(pVM, 4, sv.stringValue.c_str());
-            break;
-          case QueryValueType::DOUBLE:
-            wrenSetSlotDouble(pVM, 4, sv.doubleValue);
-            break;
-          case QueryValueType::TNULL:
-            wrenSetSlotNull(pVM, 4);
-            break;
-          case QueryValueType::TIME:
-            wrenSetSlotDouble(pVM, 4,
-                              sv.timeValue.tv_sec +
-                                  sv.timeValue.tv_usec / 1'000'000.0);
-            break;
-          default:
-            assert(false);
+      if(ret) {
+        for (size_t r = 0; r < ret->getRowCount(); ++r) {
+          wrenSetSlotNewList(pVM, 3);
+          for (size_t c = 0; c < ret->getColumnCount(); ++c) {
+            const auto &sv = ret->getValue(r, c);
+            switch (sv.type) {
+            case QueryValueType::INTEGER:
+              wrenSetSlotDouble(pVM, 4, sv.intValue);
+              break;
+            case QueryValueType::STRING:
+              wrenSetSlotString(pVM, 4, sv.stringValue.c_str());
+              break;
+            case QueryValueType::DOUBLE:
+              wrenSetSlotDouble(pVM, 4, sv.doubleValue);
+              break;
+            case QueryValueType::TNULL:
+              wrenSetSlotNull(pVM, 4);
+              break;
+            case QueryValueType::TIME:
+              wrenSetSlotDouble(pVM, 4,
+                                sv.timeValue.tv_sec +
+                                    sv.timeValue.tv_usec / 1'000'000.0);
+              break;
+            default:
+              std::cerr << "[SCRIPT] Invalid query value!" << std::endl;
+              assert(false);
+            }
+            wrenInsertInList(pVM, 3, c, 4);
           }
-          wrenInsertInList(pVM, 3, c, 4);
+          wrenInsertInList(pVM, 2, r, 3);
         }
-        wrenInsertInList(pVM, 2, r, 3);
       }
+
+      wrenSetSlotNewList(pVM, 0);
+      wrenInsertInList(pVM, 0, 0, 1);
+      wrenInsertInList(pVM, 0, 1, 2);
     } catch (std::exception &e) {
-      wrenSetSlotString(pVM, 1, "error");
-      wrenSetSlotString(pVM, 2, e.what());
+      passToVM(pVM, 0, "error", e.what());
     }
-    wrenSetSlotNewList(pVM, 0);
-    wrenInsertInList(pVM, 0, 0, 1);
-    wrenInsertInList(pVM, 0, 1, 2);
   } else {
-    wrenSetSlotNull(pVM, 0);
+    passToVM(pVM, 0, "error", "Please pass a query string");
   }
 }
 

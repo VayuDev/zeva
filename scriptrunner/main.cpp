@@ -99,25 +99,28 @@ int main() {
           auto ret = script.execute(msg["function"].asString(), msg["params"]);
           auto *rawString = std::get_if<std::string>(&ret);
           if (rawString) {
-            // printf("Sending raw string off length %i\n",
+            //printf("Sending raw string off length %i\n",
             // (int)rawString->size());
             sendStr('R', *rawString);
           } else {
             const auto &json = std::get<Json::Value>(ret);
             auto formatted = json.toStyledString();
-            // printf("Received command %c with parameter %i", cmd, (int)
-            // length); printf("Sending json string: '%s'\n",
-            // formatted.c_str());
+            //printf("Received command %c with parameter %i", cmd, (int) );
+            //printf("Sending json string: '%s'\n", formatted.c_str());
             sendStr('J', formatted);
           }
         } catch (std::exception &e) {
+          //printf("Sending exception %s\n", e.what());
           sendStr('E', e.what());
         }
 
         break;
       }
-      default:
-        assert(false);
+      default: {
+        std::string str = "Invalid command: ";
+        str += cmd;
+        sendStr('E', str);
+      }
       }
     }
   } catch (std::exception &e) {
