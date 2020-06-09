@@ -26,7 +26,7 @@ WrenForeignClassMethods bindForeignClass(WrenVM *, const char *module,
     WrenForeignClassMethods methods = {
         .allocate =
             [](WrenVM *pVM) {
-              auto *db = (DatabaseStorage *) wrenSetSlotNewForeign(
+              auto *db = (DatabaseStorage *)wrenSetSlotNewForeign(
                   pVM, 0, 0, sizeof(DatabaseStorage));
               db->inited = false;
             },
@@ -99,23 +99,22 @@ static void passToVM(WrenVM *pVM, int pSlot, const char *pType,
   wrenInsertInList(pVM, pSlot, 1, pSlot + 2);
 }
 
-static void databaseCreate(WrenVM* pVM) {
-  auto db = (DatabaseStorage *) wrenGetSlotForeign(pVM, 0);
-  auto *self = (Script *) wrenGetUserData(pVM);
+static void databaseCreate(WrenVM *pVM) {
+  auto db = (DatabaseStorage *)wrenGetSlotForeign(pVM, 0);
+  auto *self = (Script *)wrenGetUserData(pVM);
   try {
     new (&db->value) PostgreSQLDatabase(CONFIG_FILE);
     db->inited = true;
   } catch (std::exception &e) {
-    self->log(LEVEL_ERROR,
-              std::string{"Script failed to connect to db: "} +
-                  e.what() + "\n");
+    self->log(LEVEL_ERROR, std::string{"Script failed to connect to db: "} +
+                               e.what() + "\n");
     db->inited = false;
   }
 }
 
-void databaseCreateWithParams(WrenVM* pVM) {
-  auto db = (DatabaseStorage *) wrenGetSlotForeign(pVM, 0);
-  auto *self = (Script *) wrenGetUserData(pVM);
+void databaseCreateWithParams(WrenVM *pVM) {
+  auto db = (DatabaseStorage *)wrenGetSlotForeign(pVM, 0);
+  auto *self = (Script *)wrenGetUserData(pVM);
   try {
     if (wrenGetSlotType(pVM, 1) == WREN_TYPE_STRING &&
         wrenGetSlotType(pVM, 2) == WREN_TYPE_STRING &&
@@ -128,13 +127,13 @@ void databaseCreateWithParams(WrenVM* pVM) {
           wrenGetSlotDouble(pVM, 5));
       db->inited = true;
     } else {
-      self->log(LEVEL_ERROR, "Script failed to connect to db: invalid parameters");
+      self->log(LEVEL_ERROR,
+                "Script failed to connect to db: invalid parameters");
       db->inited = false;
     }
   } catch (std::exception &e) {
-    self->log(LEVEL_ERROR,
-              std::string{"Script failed to connect to db: "} +
-                  e.what() + "\n");
+    self->log(LEVEL_ERROR, std::string{"Script failed to connect to db: "} +
+                               e.what() + "\n");
     db->inited = false;
   }
 }
@@ -447,7 +446,8 @@ WrenForeignMethodFn bindForeignMethod(WrenVM *vm, const char *module,
       return genRandomDouble;
     }
   }
-  std::cout << "Unknown class " << className << " and signature " << signature << "\n";
+  std::cout << "Unknown class " << className << " and signature " << signature
+            << "\n";
   assert(false);
 }
 

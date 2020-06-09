@@ -60,7 +60,7 @@ void Api::Scripts::updateScript(
         drogon::app().getDbClient()->execSqlAsync(
             "UPDATE scripts SET code=$1 WHERE id=$2",
             [callback = std::move(callback), response = std::move(response)](
-                const drogon::orm::Result &r) { callback(response); },
+                const drogon::orm::Result &) { callback(response); },
             genErrorHandler(callback), std::move(pCode), scriptid);
       },
       genErrorHandler(callback), scriptid);
@@ -83,6 +83,7 @@ void Api::Scripts::runScript(
             scriptParameter = ScriptValue::makeString(param);
           }
         }
+        auto callbackCpy = callback;
         ScriptManager::the().executeScriptWithCallback(
             name, "onRunOnce", {std::move(scriptParameter)},
             [callback = std::move(callback)](ScriptBindingsReturn &&ret) {
@@ -104,7 +105,7 @@ void Api::Scripts::runScript(
               callback(
                   drogon::HttpResponse::newHttpJsonResponse(std::move(json)));
             },
-            genDefErrorHandler(callback));
+            genDefErrorHandler(callbackCpy));
       },
       genErrorHandler(callback), scriptid);
 }
@@ -113,6 +114,7 @@ void Api::Scripts::drawScript(
     const drogon::HttpRequestPtr &,
     std::function<void(const drogon::HttpResponsePtr &)> &&callback,
     int64_t scriptid) {
+  auto callbackCpy = callback;
   drogon::app().getDbClient()->execSqlAsync(
       "SELECT name FROM scripts WHERE id=$1",
       [callback = std::move(callback)](const drogon::orm::Result &r) mutable {
@@ -131,7 +133,7 @@ void Api::Scripts::drawScript(
             },
             genDefErrorHandler(callback));
       },
-      genErrorHandler(callback), scriptid);
+      genErrorHandler(callbackCpy), scriptid);
 }
 
 void Api::Scripts::deleteScript(
