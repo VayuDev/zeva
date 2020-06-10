@@ -292,6 +292,20 @@ static void tcpClientRecvString(WrenVM *pVM) {
   }
 }
 
+static void tcpClientClose(WrenVM* pVM) {
+  auto *socket = (TcpClientStorage *)wrenGetSlotForeign(pVM, 0);
+  if (!socket->inited) {
+    passToVM(pVM, 0, "error", "TcpClient not initialized!");
+    return;
+  }
+  try {
+    socket->value.~TcpClient();
+    socket->inited = false;
+  } catch (std::exception &e) {
+    passToVM(pVM, 0, "error", e.what());
+  }
+}
+
 static void hsvToRgb(WrenVM *pVM) {
   auto *self = (Script *)wrenGetUserData(pVM);
   if (wrenGetSlotType(pVM, 1) != WREN_TYPE_NUM ||
@@ -432,6 +446,8 @@ WrenForeignMethodFn bindForeignMethod(WrenVM *vm, const char *module,
       return tcpClientSendString;
     } else if (strcmp("recvString()", signature) == 0) {
       return tcpClientRecvString;
+    } else if (strcmp("close()", signature) == 0) {
+      return tcpClientClose;
     }
   } else if (strcmp(className, "Image") == 0 && !isStatic) {
     if (strcmp("exportInternal(_,_,_)", signature) == 0) {
@@ -502,6 +518,7 @@ foreign class TcpClient {
     foreign recvByte()
     foreign sendString(str)
     foreign recvString()
+    foreign close()
 }
 
 class Image {
