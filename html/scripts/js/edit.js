@@ -10,7 +10,7 @@ function saveScript() {
             "code": editor.getValue()
         },
         error: function(err, textStatus, errorThrown) {
-            notifyError(err.responseText);
+            logToOutputAndMsg(err.responseText, true);
         },
         success: function(data, status, jqXHR) {
             notify("Successfully compiled script!");
