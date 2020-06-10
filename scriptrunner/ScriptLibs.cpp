@@ -292,7 +292,7 @@ static void tcpClientRecvString(WrenVM *pVM) {
   }
 }
 
-static void tcpClientClose(WrenVM* pVM) {
+static void tcpClientClose(WrenVM *pVM) {
   auto *socket = (TcpClientStorage *)wrenGetSlotForeign(pVM, 0);
   if (!socket->inited) {
     passToVM(pVM, 0, "error", "TcpClient not initialized!");

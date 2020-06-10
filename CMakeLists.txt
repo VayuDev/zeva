@@ -43,13 +43,15 @@ file(GLOB_RECURSE WREN_SOURCES
 add_definitions(-D_LINUX_)
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(PQ REQUIRED libpq)
 
+pkg_check_modules(PQ REQUIRED libpq)
 find_package(PostgreSQL REQUIRED)
 include_directories(${PostgreSQL_INCLUDE_DIRS})
+pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0)
+include_directories(${GSTREAMER_INCLUDE_DIRS})
 
 add_executable(ZeVa2_0 ${SOURCES} ${WREN_SOURCES})
 
-target_link_libraries(ZeVa2_0 pthread zstd drogon nlohmann_json::nlohmann_json pq stdc++fs)
+target_link_libraries(ZeVa2_0 pthread zstd drogon nlohmann_json::nlohmann_json pq stdc++fs ${GSTREAMER_LIBRARIES})
 
 add_subdirectory(scriptrunner)

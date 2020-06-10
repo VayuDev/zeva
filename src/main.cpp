@@ -18,9 +18,30 @@
 #include <drogon/HttpClient.h>
 #include <regex>
 
+#include "AudioPlayer.hpp"
+
 static void sighandler(int) { drogon::app().quit(); }
 
 int main() {
+  /*AudioPlayer player;
+  player.play("david.mp3", [](int64_t pDuration) {
+    std::cout << "The song is " << pDuration / 1'000'000'000 << "s long\n";
+  });
+
+  bool seeked = false;
+  while (player.isPlaying()) {
+    if (player.ready()) {
+      // std::cout << "Position: " << player.getPosition() / 1'000'000 << "ms/"
+      // << player.getDuration() / 1'000'000 << "ms\n";
+      if (!seeked && player.getPosition() > 2'000'000'000) {
+        player.seekTo(10 * 1'000'000'000UL);
+        seeked = true;
+      }
+    }
+    player.poll();
+  }
+  return 0;*/
+
   // init database
   auto conn = std::make_shared<PostgreSQLDatabase>();
   DatabaseHelper::createDb(*conn);
@@ -41,34 +62,33 @@ int main() {
   });
 
   auto logWebsocketController = std::make_shared<LogWebsocket>();
-  conn->addListener(
-      "newlog", [logWebsocketController](const std::string &payload) {
-        auto percentIndex = payload.find('%');
-        auto eventType = payload.substr(0, percentIndex);
-        if(eventType == "INSERT") {
-          auto id = std::stoll(payload.substr(percentIndex + 1));
-          if (drogon::app().isRunning()) {
-            drogon::app().getDbClient()->execSqlAsync(
-                "SELECT level,msg FROM log WHERE id=$1",
-                [logWebsocketController](const drogon::orm::Result &r) {
-                  if (r.empty()) {
-                    std::cerr << "Error while logging: return is empty\n";
-                    return;
-                  }
-                  logWebsocketController->newLogMessage(
-                      r.at(0)["level"].as<int64_t>(),
-                      r.at(0)["msg"].as<std::string>());
-                },
-                [](const drogon::orm::DrogonDbException &e) {
-                  std::cerr << "Error while logging: " << e.base().what() << "\n";
-                },
-                id);
-          }
-        } else {
-          logWebsocketController->init();
-        }
-
-      });
+  conn->addListener("newlog", [logWebsocketController](
+                                  const std::string &payload) {
+    auto percentIndex = payload.find('%');
+    auto eventType = payload.substr(0, percentIndex);
+    if (eventType == "INSERT") {
+      auto id = std::stoll(payload.substr(percentIndex + 1));
+      if (drogon::app().isRunning()) {
+        drogon::app().getDbClient()->execSqlAsync(
+            "SELECT level,msg FROM log WHERE id=$1",
+            [logWebsocketController](const drogon::orm::Result &r) {
+              if (r.empty()) {
+                std::cerr << "Error while logging: return is empty\n";
+                return;
+              }
+              logWebsocketController->newLogMessage(
+                  r.at(0)["level"].as<int64_t>(),
+                  r.at(0)["msg"].as<std::string>());
+            },
+            [](const drogon::orm::DrogonDbException &e) {
+              std::cerr << "Error while logging: " << e.base().what() << "\n";
+            },
+            id);
+      }
+    } else {
+      logWebsocketController->init();
+    }
+  });
 
   long passedTime = std::numeric_limits<long>::max();
   // handle notifications

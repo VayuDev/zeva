@@ -109,7 +109,8 @@ CREATE OR REPLACE FUNCTION new_log() RETURNS trigger AS $BODY$
   } catch (...) {
   }
   try {
-    pDb.query("CREATE TRIGGER newLogTrigger AFTER INSERT OR UPDATE OR DELETE ON log FOR EACH ROW "
+    pDb.query("CREATE TRIGGER newLogTrigger AFTER INSERT OR UPDATE OR DELETE "
+              "ON log FOR EACH ROW "
               "EXECUTE FUNCTION new_log()");
   } catch (...) {
   }
