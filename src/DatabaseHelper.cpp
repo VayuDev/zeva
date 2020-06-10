@@ -95,7 +95,11 @@ CREATE TABLE IF NOT EXISTS log (
   pDb.query(R"(
 CREATE OR REPLACE FUNCTION new_log() RETURNS trigger AS $BODY$
     BEGIN
-        PERFORM pg_notify('newlog', NEW.id :: TEXT);
+        IF TG_OP = 'INSERT' THEN
+          PERFORM pg_notify('newlog', TG_OP || '%' || NEW.id :: TEXT);
+        ELSE
+          PERFORM pg_notify('newlog', TG_OP || '%');
+        END IF;
         RETURN NULL;
     END;
     $BODY$ LANGUAGE plpgsql;
@@ -105,7 +109,7 @@ CREATE OR REPLACE FUNCTION new_log() RETURNS trigger AS $BODY$
   } catch (...) {
   }
   try {
-    pDb.query("CREATE TRIGGER newLogTrigger AFTER INSERT ON log FOR EACH ROW "
+    pDb.query("CREATE TRIGGER newLogTrigger AFTER INSERT OR UPDATE OR DELETE ON log FOR EACH ROW "
               "EXECUTE FUNCTION new_log()");
   } catch (...) {
   }

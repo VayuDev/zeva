@@ -12,7 +12,6 @@ static Json::Value formatJsonRow(const std::string &pMsg, int pLevel) {
 void LogWebsocket::handleNewMessage(const drogon::WebSocketConnectionPtr &pConn,
                                     std::string &&pMsg,
                                     const drogon::WebSocketMessageType &) {
-  auto start = std::chrono::high_resolution_clock::now();
   std::unique_lock<std::shared_mutex> lock(mConnectionsMutex);
   try {
     mConnections.emplace(pConn, stringToLogLevel(pMsg));
@@ -22,9 +21,6 @@ void LogWebsocket::handleNewMessage(const drogon::WebSocketConnectionPtr &pConn,
     wbuilder["indentation"] = "\t";
     std::shared_lock<std::shared_mutex> lockShared(mConnectionsMutex);
     auto str = Json::writeString(wbuilder, mAllLog);
-    auto end = std::chrono::high_resolution_clock::now();
-    std::cout << "Response preperation took "
-              << (end - start).count() / 1'000'000.0f << "ms\n";
     pConn->send(str);
   } catch (...) {
   }
