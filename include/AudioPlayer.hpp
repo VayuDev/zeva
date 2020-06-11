@@ -19,8 +19,10 @@ public:
   void seekTo(gint64 pNs);
 
 private:
+  void destruct();
+
   bool running = false, asyncDone = false;
-  GstBus *bus;
-  GstElement *pipeline, *audio;
+  GstBus *bus = nullptr;
+  GstElement *pipeline = nullptr, *audio = nullptr;
   std::optional<DurationCallback> mDurationCallback;
 };

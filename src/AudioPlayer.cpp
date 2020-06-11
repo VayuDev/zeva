@@ -2,6 +2,9 @@
 #include <gst/gst.h>
 #include <limits>
 #include <cassert>
+#include <atomic>
+
+static std::atomic<size_t> gInstances = 0;
 
 static void cb_newpad(GstElement *decodebin, GstPad *pad, gpointer data) {
   GstCaps *caps;
@@ -31,10 +34,14 @@ static void cb_newpad(GstElement *decodebin, GstPad *pad, gpointer data) {
   g_object_unref(audiopad);
 }
 
-AudioPlayer::AudioPlayer() { gst_init(nullptr, nullptr); }
+AudioPlayer::AudioPlayer() {
+  if(gInstances++ == 0)
+    gst_init(nullptr, nullptr);
+}
 
 void AudioPlayer::play(const std::string &pFile,
                        std::optional<DurationCallback> &&pDurationCallback) {
+  destruct();
   mDurationCallback = std::move(pDurationCallback);
   GstElement *src, *dec, *conv, *sink;
   GstPad *audiopad;
@@ -71,12 +78,14 @@ void AudioPlayer::play(const std::string &pFile,
   gst_element_set_state(pipeline, GST_STATE_PLAYING);
   running = true;
   asyncDone = false;
+
 }
 
 AudioPlayer::~AudioPlayer() {
-  gst_object_unref(bus);
-  gst_element_set_state(pipeline, GST_STATE_NULL);
-  gst_object_unref(GST_OBJECT(pipeline));
+  destruct();
+  if(--gInstances == 0) {
+    gst_deinit();
+  }
 }
 
 void AudioPlayer::poll() {
@@ -143,4 +152,15 @@ void AudioPlayer::seekTo(gint64 pNs) {
     throw std::runtime_error("Seeking failed!");
   }
   asyncDone = false;
+}
+void AudioPlayer::destruct() {
+  if(bus) {
+    gst_object_unref(bus);
+    bus = nullptr;
+  }
+  if(pipeline) {
+    gst_element_set_state(pipeline, GST_STATE_NULL);
+    gst_object_unref(GST_OBJECT(pipeline));
+    pipeline = nullptr;
+  }
 }

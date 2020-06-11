@@ -24,25 +24,6 @@
 static void sighandler(int) { drogon::app().quit(); }
 
 int main() {
-  /*AudioPlayer player;
-  player.play("/dev/shm/zeva.mp3", [](int64_t pDuration) {
-    std::cout << "The song is " << pDuration / 1'000'000'000 << "s long\n";
-  });
-
-  bool seeked = false;
-  while (player.isPlaying()) {
-    if (player.ready()) {
-      // std::cout << "Position: " << player.getPosition() / 1'000'000 << "ms/"
-      // << player.getDuration() / 1'000'000 << "ms\n";
-      if (!seeked && player.getPosition() > 2'000'000'000) {
-        player.seekTo(10 * 1'000'000'000UL);
-        seeked = true;
-      }
-    }
-    player.poll();
-  }
-  return 0;*/
-
   // init database
   auto conn = std::make_shared<PostgreSQLDatabase>();
   DatabaseHelper::createDb(*conn);
