@@ -12,6 +12,7 @@
 #include <drogon/HttpAppFramework.h>
 
 #include "DrogonUtil.hpp"
+#include "SftpClient.hpp"
 #include "Util.hpp"
 #include "WallpaperDownloader.hpp"
 #include <csignal>
@@ -24,7 +25,7 @@ static void sighandler(int) { drogon::app().quit(); }
 
 int main() {
   /*AudioPlayer player;
-  player.play("david.mp3", [](int64_t pDuration) {
+  player.play("/dev/shm/zeva.mp3", [](int64_t pDuration) {
     std::cout << "The song is " << pDuration / 1'000'000'000 << "s long\n";
   });
 

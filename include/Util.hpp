@@ -27,3 +27,12 @@ private:
   Badge() = default;
   friend T;
 };
+
+class DestructWrapper {
+public:
+  DestructWrapper(std::function<void()> &&pFunc) : mFunc(std::move(pFunc)) {}
+  ~DestructWrapper() { mFunc(); }
+  // TODO copy etc.
+private:
+  std::function<void()> mFunc;
+};

@@ -1,6 +1,7 @@
 #include "AudioPlayer.hpp"
 #include <gst/gst.h>
 #include <limits>
+#include <cassert>
 
 static void cb_newpad(GstElement *decodebin, GstPad *pad, gpointer data) {
   GstCaps *caps;
@@ -56,8 +57,9 @@ void AudioPlayer::play(const std::string &pFile,
   conv = gst_element_factory_make("audioconvert", "aconv");
   audiopad = gst_element_get_static_pad(conv, "sink");
   sink = gst_element_factory_make("pulsesink", "sink");
-  if(!sink) {
-    throw std::runtime_error("Unable to connect to output sink");
+  if (!sink) {
+    std::cerr << "AudioPlayer: Unable to connect to output sink\n";
+    assert(false);
   }
   gst_bin_add_many(GST_BIN(audio), conv, sink, NULL);
   gst_element_link(conv, sink);
