@@ -40,30 +40,36 @@
             text-align: center;
             font-size: 40px;
         }
+        .spaceCenterWideContainer {
+            width: min-content;
+        }
 
     </style>
 </head>
 <body>
 <div class="main-grid">
     <div id="header"></div>
-    <div class="spaceCenter">
-        <div id="timer">
-            00:00:00
+    <div>
+        <div class="spaceCenter">
+            <div id="timer">
+                00:00:00
+            </div>
+            <div class="hSpan">
+                <button onclick="startActivity()" class="startButtons">Start activity</button>
+                <button onclick="stopActivity()" class="stopButtons">Stop activity</button>
+                <button onclick="abortActivity()" class="stopButtons">Abort activity</button>
+            </div>
         </div>
-        <div class="hSpan">
-            <button onclick="startActivity()" class="startButtons">Start activity</button>
-            <button onclick="stopActivity()" class="stopButtons">Stop activity</button>
-            <button onclick="abortActivity()" class="stopButtons">Abort activity</button>
+        <div class="spaceCenterWideContainer">
+            <div class="spaceCenterWide">
+            </div>
+        </div>
+        <div class="spaceCenter hSpan">
+            <button onclick="addNewActivity()">Add new activity</button>
+            <button onclick="deleteActivity()">Delete activity</button>
         </div>
     </div>
-    <div class="spaceCenterWideContainer">
-        <div class="spaceCenterWide">
-        </div>
-    </div>
-    <div class="spaceCenter hSpan">
-        <button onclick="addNewActivity()">Add new activity</button>
-        <button onclick="deleteActivity()">Delete activity</button>
-    </div>
+
 </div>
 </body>
 </html>

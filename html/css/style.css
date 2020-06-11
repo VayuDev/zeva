@@ -22,11 +22,9 @@ input, button {
     background-color: rgb(48, 48, 48);
     color: white;
     border-radius: 50px;
-    padding-left: 10%;
-    padding-right: 10%;
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
+    justify-content: space-around;
     margin: 5px;
 }
 .main-grid nav .item {
