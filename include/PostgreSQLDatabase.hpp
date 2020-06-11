@@ -1,13 +1,12 @@
 #pragma once
 #include "DatabaseWrapper.hpp"
+#include "DrogonUtil.hpp"
 #include <filesystem>
 #include <json/value.h>
 #include <libpq-fe.h>
 #include <map>
 #include <memory>
 #include <repl.h>
-
-#define CONFIG_FILE "assets/config.json"
 
 class PostgreSQLQueryResult : public QueryResult {
 public:
@@ -27,7 +26,7 @@ private:
 class PostgreSQLDatabase : public DatabaseWrapper {
 public:
   explicit PostgreSQLDatabase(
-      const std::filesystem::path &pConfigFile = CONFIG_FILE);
+      const std::filesystem::path &pConfigFile = getConfigFileLocation());
   PostgreSQLDatabase(std::string pDbName, std::string pUserName,
                      std::string pPassword, std::string pHost, uint16_t pPort);
   ~PostgreSQLDatabase() override;

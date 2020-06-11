@@ -39,7 +39,11 @@ void MusicPlayer::resume() {
     mAudio->resume();
 }
 int64_t MusicPlayer::getCurrentMusicDuration() { return mAudio->getDuration(); }
+
 int64_t MusicPlayer::getCurrentMusicPosition() { return mAudio->getPosition(); }
-void MusicPlayer::playPrevSong() {
-  playSong(--mIndex);
+
+void MusicPlayer::playPrevSong() { playSong(--mIndex); }
+
+std::vector<SftpFile> MusicPlayer::ls(const std::string& pPath) {
+  return mSftp->ls(pPath);
 }

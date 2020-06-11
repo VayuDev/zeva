@@ -58,3 +58,9 @@ inline trantor::Logger::LogLevel stringToLogLevel(const std::string &logLevel) {
   }
   throw std::runtime_error("Unknown log level '" + logLevel + "'");
 }
+
+inline const char *getConfigFileLocation() {
+  if (std::filesystem::exists("assets/local.json"))
+    return "assets/local.json";
+  return "assets/config.json";
+}

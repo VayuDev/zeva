@@ -1,13 +1,15 @@
 #pragma once
 
 #include "AudioPlayer.hpp"
+#include "DrogonUtil.hpp"
 #include "SftpClient.hpp"
 #include <string>
 #include <vector>
 
 class MusicPlayer {
 public:
-  explicit MusicPlayer(const std::string &pConfigPath);
+  explicit MusicPlayer(
+      const std::string &pConfigPath = getConfigFileLocation());
   void setPlaylist(std::vector<std::string> &&pPlaylist);
   void playPrevSong();
   void playNextSong();
@@ -16,6 +18,7 @@ public:
   void resume();
   int64_t getCurrentMusicDuration();
   int64_t getCurrentMusicPosition();
+  std::vector<SftpFile> ls(const std::string& pPath);
 
 private:
   std::optional<AudioPlayer> mAudio;

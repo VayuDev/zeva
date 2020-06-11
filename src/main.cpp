@@ -135,7 +135,7 @@ int main() {
   signal(SIGINT, sighandler);
   signal(SIGABRT, sighandler);
   drogon::app().addListener("0.0.0.0", 8080);
-  drogon::app().loadConfigFile(CONFIG_FILE);
+  drogon::app().loadConfigFile(getConfigFileLocation());
   drogon::app().setLogLevel(trantor::Logger::LogLevel::kDebug);
   drogon::app().registerController(logWebsocketController);
 
@@ -159,7 +159,7 @@ int main() {
 
   // load scripts
   drogon::app().getLoop()->queueInLoop([logWebsocketController] {
-    auto client = std::make_shared<PostgreSQLDatabase>(CONFIG_FILE);
+    auto client = std::make_shared<PostgreSQLDatabase>();
     auto res = client->query("SELECT name,code FROM scripts");
     for (size_t i = 0; i < res->getRowCount(); ++i) {
       auto name = res->getValue(i, 0).stringValue;

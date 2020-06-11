@@ -75,7 +75,7 @@ void Api::Db::getTableCsv(
           }
         }
         try {
-          PostgreSQLDatabase db(CONFIG_FILE);
+          PostgreSQLDatabase db;
           auto csvStr = db.performCopyToStdout(
               "COPY (SELECT " + selection + " FROM " + tablename +
               " ORDER BY " + firstColumnName +

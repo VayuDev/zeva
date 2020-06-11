@@ -145,6 +145,7 @@ std::vector<SftpFile> SftpClient::ls(const std::string &pPath) {
       file.fileSize = attrs.filesize;
       file.name.append(mem, rc);
       file.isDirectory = LIBSSH2_SFTP_S_ISDIR(attrs.permissions);
+      ret.emplace_back(std::move(file));
     } else {
       break;
     }

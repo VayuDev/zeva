@@ -7,7 +7,7 @@ class SftpFile {
 public:
   std::string name;
   bool isDirectory = false;
-  uint64_t fileSize;
+  uint64_t fileSize = 0;
 };
 
 class SftpClient {
