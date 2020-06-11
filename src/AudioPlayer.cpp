@@ -1,8 +1,8 @@
 #include "AudioPlayer.hpp"
+#include <atomic>
+#include <cassert>
 #include <gst/gst.h>
 #include <limits>
-#include <cassert>
-#include <atomic>
 
 static std::atomic<size_t> gInstances = 0;
 
@@ -35,7 +35,7 @@ static void cb_newpad(GstElement *decodebin, GstPad *pad, gpointer data) {
 }
 
 AudioPlayer::AudioPlayer() {
-  if(gInstances++ == 0)
+  if (gInstances++ == 0)
     gst_init(nullptr, nullptr);
 }
 
@@ -78,12 +78,11 @@ void AudioPlayer::play(const std::string &pFile,
   gst_element_set_state(pipeline, GST_STATE_PLAYING);
   running = true;
   asyncDone = false;
-
 }
 
 AudioPlayer::~AudioPlayer() {
   destruct();
-  if(--gInstances == 0) {
+  if (--gInstances == 0) {
     gst_deinit();
   }
 }
@@ -154,13 +153,23 @@ void AudioPlayer::seekTo(gint64 pNs) {
   asyncDone = false;
 }
 void AudioPlayer::destruct() {
-  if(bus) {
+  if (bus) {
     gst_object_unref(bus);
     bus = nullptr;
   }
-  if(pipeline) {
+  if (pipeline) {
     gst_element_set_state(pipeline, GST_STATE_NULL);
     gst_object_unref(GST_OBJECT(pipeline));
     pipeline = nullptr;
+  }
+}
+void AudioPlayer::pause() {
+  if (pipeline) {
+    gst_element_set_state(pipeline, GST_STATE_PAUSED);
+  }
+}
+void AudioPlayer::resume() {
+  if (pipeline) {
+    gst_element_set_state(pipeline, GST_STATE_PLAYING);
   }
 }

@@ -18,6 +18,9 @@ public:
   gint64 getPosition();
   void seekTo(gint64 pNs);
 
+  void pause();
+  void resume();
+
 private:
   void destruct();
 

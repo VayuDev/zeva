@@ -152,22 +152,26 @@ std::vector<SftpFile> SftpClient::ls(const std::string &pPath) {
   libssh2_sftp_close_handle(handle);
   return ret;
 }
-std::string SftpClient::download(const std::string& pPath) {
-  auto handle = libssh2_sftp_open_ex(sftp_session, pPath.c_str(), pPath.size(), LIBSSH2_FXF_READ, 0, LIBSSH2_SFTP_OPENFILE);
-  if(!handle) {
+std::string SftpClient::download(const std::string &pPath) {
+  auto handle =
+      libssh2_sftp_open_ex(sftp_session, pPath.c_str(), pPath.size(),
+                           LIBSSH2_FXF_READ, 0, LIBSSH2_SFTP_OPENFILE);
+  if (!handle) {
     throw std::runtime_error("Unable to download: " + pPath);
   }
   LIBSSH2_SFTP_ATTRIBUTES attrs;
-  if(libssh2_sftp_stat_ex(sftp_session, pPath.c_str(), pPath.size(), 0, &attrs) < 0) {
+  if (libssh2_sftp_stat_ex(sftp_session, pPath.c_str(), pPath.size(), 0,
+                           &attrs) < 0) {
     libssh2_sftp_close_handle(handle);
     throw std::runtime_error("Unable to stat: " + pPath);
   }
 
-  char *buffer = (char*)malloc(attrs.filesize);
+  char *buffer = (char *)malloc(attrs.filesize);
   uint64_t read = 0;
-  while(read < attrs.filesize) {
-    auto status = libssh2_sftp_read(handle, buffer + read, attrs.filesize - read);
-    if(status < 0) {
+  while (read < attrs.filesize) {
+    auto status =
+        libssh2_sftp_read(handle, buffer + read, attrs.filesize - read);
+    if (status < 0) {
       free(buffer);
       libssh2_sftp_close_handle(handle);
       throw std::runtime_error("Read failed");

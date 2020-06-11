@@ -16,7 +16,8 @@ public:
              const std::string &pHostname = "127.0.0.1", int port = 22);
   ~SftpClient();
   std::vector<SftpFile> ls(const std::string &pPath);
-  std::string download(const std::string& pPath);
+  std::string download(const std::string &pPath);
+
 private:
   int sock;
   LIBSSH2_SFTP *sftp_session;
