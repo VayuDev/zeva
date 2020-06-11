@@ -14,7 +14,12 @@
     }
   ],
   "app": {
-
     "document_root": "html"
+  },
+  "nas": {
+    "host": "127.0.0.1",
+    "user": "user",
+    "port": 22,
+    "passwd": "password"
   }
 }

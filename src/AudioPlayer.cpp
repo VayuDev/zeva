@@ -34,15 +34,17 @@ static void cb_newpad(GstElement *decodebin, GstPad *pad, gpointer data) {
   g_object_unref(audiopad);
 }
 
-AudioPlayer::AudioPlayer() {
+AudioPlayer::AudioPlayer(std::optional<DoneCallback> &&pDoneCallback,
+                         std::optional<DurationCallback> &&pDurationCallback) {
   if (gInstances++ == 0)
     gst_init(nullptr, nullptr);
+  mDurationCallback = std::move(pDurationCallback);
+  mDoneCallback = std::move(pDoneCallback);
 }
 
-void AudioPlayer::play(const std::string &pFile,
-                       std::optional<DurationCallback> &&pDurationCallback) {
+void AudioPlayer::play(const std::string &pFile) {
   destruct();
-  mDurationCallback = std::move(pDurationCallback);
+
   GstElement *src, *dec, *conv, *sink;
   GstPad *audiopad;
 
@@ -88,10 +90,12 @@ AudioPlayer::~AudioPlayer() {
 }
 
 void AudioPlayer::poll() {
-  auto message = gst_bus_timed_pop(bus, 1000 * 1000);
-  if (message) {
-    g_print("Got %s message\n", GST_MESSAGE_TYPE_NAME(message));
+  while (GST_IS_BUS(bus)) {
+    auto message = gst_bus_timed_pop(bus, 1000 * 1000);
+    if (!message)
+      break;
 
+    g_print("Got %s message\n", GST_MESSAGE_TYPE_NAME(message));
     switch (GST_MESSAGE_TYPE(message)) {
     case GST_MESSAGE_ERROR: {
       GError *err;
@@ -107,6 +111,7 @@ void AudioPlayer::poll() {
     case GST_MESSAGE_EOS:
       /* end-of-stream */
       running = false;
+      mDoneCallback->operator()();
       break;
     case GST_MESSAGE_ASYNC_DONE:
       asyncDone = true;

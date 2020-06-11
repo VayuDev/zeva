@@ -4,13 +4,14 @@
 #include <iostream>
 
 using DurationCallback = std::function<void(int64_t)>;
+using DoneCallback = std::function<void(void)>;
 
 class AudioPlayer {
 public:
-  AudioPlayer();
+  explicit AudioPlayer(std::optional<DoneCallback> && = {},
+                       std::optional<DurationCallback> && = {});
   ~AudioPlayer();
-  void play(const std::string &pFilename,
-            std::optional<DurationCallback> && = {});
+  void play(const std::string &pFilename);
   void poll();
   [[nodiscard]] inline bool isPlaying() const { return running; }
   bool ready();
@@ -28,4 +29,5 @@ private:
   GstBus *bus = nullptr;
   GstElement *pipeline = nullptr, *audio = nullptr;
   std::optional<DurationCallback> mDurationCallback;
+  std::optional<DoneCallback> mDoneCallback;
 };

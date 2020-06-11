@@ -12,14 +12,13 @@
 #include <drogon/HttpAppFramework.h>
 
 #include "DrogonUtil.hpp"
-#include "SftpClient.hpp"
 #include "Util.hpp"
 #include "WallpaperDownloader.hpp"
 #include <csignal>
 #include <drogon/HttpClient.h>
 #include <regex>
 
-#include "AudioPlayer.hpp"
+#include "MusicPlayer.hpp"
 
 static void sighandler(int) { drogon::app().quit(); }
 

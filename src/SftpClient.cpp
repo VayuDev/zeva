@@ -22,7 +22,7 @@ static std::atomic<size_t> clients = 0;
 SftpClient::SftpClient(const std::string &pUsername,
                        const std::string &pPassword,
                        const std::string &pHostname, int port) {
-
+  LOG_DEBUG << "SftpClient: Connecting to " << pHostname << " on port " << port;
   int rc;
   struct sockaddr_in sin;
   const char *fingerprint;
