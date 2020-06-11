@@ -103,7 +103,7 @@ static void databaseCreate(WrenVM *pVM) {
   auto db = (DatabaseStorage *)wrenGetSlotForeign(pVM, 0);
   auto *self = (Script *)wrenGetUserData(pVM);
   try {
-    new (&db->value) PostgreSQLDatabase(CONFIG_FILE);
+    new (&db->value) PostgreSQLDatabase();
     db->inited = true;
   } catch (std::exception &e) {
     self->log(LEVEL_ERROR, std::string{"Script failed to connect to db: "} +

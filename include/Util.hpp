@@ -36,3 +36,9 @@ public:
 private:
   std::function<void()> mFunc;
 };
+
+inline const char *getConfigFileLocation() {
+  if (std::filesystem::exists("assets/local.json"))
+    return "assets/local.json";
+  return "assets/config.json";
+}
