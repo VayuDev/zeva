@@ -39,7 +39,6 @@ SftpClient::SftpClient(const std::string &pUsername,
   }
 
   sock = socket(AF_INET, SOCK_STREAM, 0);
-
   sin.sin_family = AF_INET;
   sin.sin_port = htons(port);
   sin.sin_addr.s_addr = hostaddr;
@@ -55,7 +54,6 @@ SftpClient::SftpClient(const std::string &pUsername,
     close(sock);
     throw std::runtime_error("Unable to create session");
   }
-
   /* ... start it up. This will trade welcome banners, exchange keys,
    * and setup crypto, compression, and MAC layers
    */
@@ -79,10 +77,10 @@ SftpClient::SftpClient(const std::string &pUsername,
   char buffer[128];
   memset(buffer, 0, sizeof(buffer));
   for (int i = 0; i < 20; i++) {
-    snprintf(buffer + i * 3, 128 - i * 3 - 1, "%02X ", (unsigned char)fingerprint[i]);
+    snprintf(buffer + i * 3, 128 - i * 3 - 1, "%02X ",
+             (unsigned char)fingerprint[i]);
   }
   LOG_INFO << "[SftpClient] Remote fingerprint is " << buffer;
-
 
   /* check what authentication methods are available */
   userauthlist =

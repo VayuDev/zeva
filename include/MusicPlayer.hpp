@@ -1,8 +1,8 @@
 #pragma once
 
 #include "AudioPlayer.hpp"
-#include "Util.hpp"
 #include "SftpClient.hpp"
+#include "Util.hpp"
 #include <string>
 #include <vector>
 
@@ -18,12 +18,16 @@ public:
   void resume();
   int64_t getCurrentMusicDuration();
   int64_t getCurrentMusicPosition();
-  std::vector<SftpFile> ls(const std::string& pPath);
+  std::vector<SftpFile> ls(const std::string &pPath);
 
 private:
+  void initialize();
+  void playSong(size_t pNum);
+
   std::optional<AudioPlayer> mAudio;
   std::optional<SftpClient> mSftp;
   std::vector<std::string> mPlaylist;
   int64_t mIndex = -1;
-  void playSong(size_t pNum);
+  std::string mConfigFileLocation;
+  bool mConnected = false;
 };

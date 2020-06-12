@@ -15,7 +15,7 @@ void Api::Apps::Player::getLs(
   Json::Value resp = Json::arrayValue;
   try {
     auto vec = mPlayer.ls(pPath);
-    for(const auto& str: vec) {
+    for (const auto &str : vec) {
       Json::Value file;
       file["name"] = str.name;
       file["size"] = str.fileSize;
@@ -23,7 +23,7 @@ void Api::Apps::Player::getLs(
       resp.append(std::move(file));
     }
     callback(drogon::HttpResponse::newHttpJsonResponse(std::move(resp)));
-  } catch(std::exception& e) {
+  } catch (std::exception &e) {
     callback(genError(e.what()));
   }
 }
