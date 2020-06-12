@@ -76,17 +76,19 @@ SftpClient::SftpClient(const std::string &pUsername,
    */
   fingerprint = libssh2_hostkey_hash(session, LIBSSH2_HOSTKEY_HASH_SHA1);
 
-  fprintf(stderr, "Fingerprint: ");
+  char buffer[128];
+  memset(buffer, 0, sizeof(buffer));
   for (int i = 0; i < 20; i++) {
-    fprintf(stderr, "%02X ", (unsigned char)fingerprint[i]);
+    snprintf(buffer + i * 3, 128 - i * 3 - 1, "%02X ", (unsigned char)fingerprint[i]);
   }
-  fprintf(stderr, "\n");
+  LOG_INFO << "[SftpClient] Remote fingerprint is " << buffer;
+
 
   /* check what authentication methods are available */
   userauthlist =
       libssh2_userauth_list(session, pUsername.c_str(), pUsername.size());
 
-  LOG_INFO << "SftpClient: Authentication methods:" << userauthlist;
+  LOG_DEBUG << "SftpClient: Authentication methods: " << userauthlist;
   if (strstr(userauthlist, "password") == NULL) {
     libssh2_session_disconnect(session, "Normal Shutdown");
     libssh2_session_free(session);
