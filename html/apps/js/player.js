@@ -45,10 +45,15 @@ function ls(path, record = true) {
 }
 
 document.addEventListener("DOMContentLoaded", function() {
-    $.getJSON("/api/apps/player/status", "", function(data) {
-        let path = data["path"];
-        ls(path);
-    });
+    let path = getUrlParam("path");
+    if(path) {
+        ls(path)
+    } else {
+        $.getJSON("/api/apps/player/status", "", function(data) {
+            let path = data["path"];
+            ls(path);
+        });
+    }
     window.onpopstate = function(event) {
         ls(event.state["path"], false);
     }
