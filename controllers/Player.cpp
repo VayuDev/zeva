@@ -4,7 +4,9 @@
 void Api::Apps::Player::getStatus(
     const drogon::HttpRequestPtr &,
     std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
-  callback(genResponse("lol"));
+  Json::Value resp;
+  resp["path"] = ".";
+  callback(drogon::HttpResponse::newHttpJsonResponse(std::move(resp)));
 }
 void Api::Apps::Player::getLs(
     const drogon::HttpRequestPtr &,
