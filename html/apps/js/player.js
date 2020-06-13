@@ -1,5 +1,8 @@
 function navigateBack(path) {
-    ls(path.substr(0, path.lastIndexOf("/")));
+    path = path.substr(0, path.lastIndexOf("/"));
+    if(path === "")
+        path = "."
+    ls(path);
 }
 let currentPath = ".";
 let first = true;
@@ -16,14 +19,9 @@ function ls(path, record = true) {
             songs.text("");
 
             //delete .-Folder
-            let index = -1;
-            for(let i = 0; i < data.length; ++i) {
-                if(data[i]["name"] === ".") {
-                    index = i;
-                    break;
-                }
-            }
-            data.splice(index, 1);
+            let index = data.findIndex((e) => e["name"].endsWith("/."));
+            if(index >= 0)
+                data.splice(index, 1);
 
             data = data.sort((a, b) => {
                 return a["name"].toLowerCase().localeCompare(b["name"].toLowerCase())
@@ -35,10 +33,10 @@ function ls(path, record = true) {
                 row.append($("<span></span>").text(data[i].name.replace(/^.*[\\\/]/, '')));
                 row.click(() => {
                     if(data[i].directory) {
-                        if(data[i].name === "..") {
+                        if(data[i].name.endsWith("..")) {
                             navigateBack(path);
                         } else {
-                            ls(path + "/" + data[i].name);
+                            ls(data[i].name);
                         }
                     } else if(data[i].musicfile) {
                         let queue = data.filter((e) => e.musicfile).map((e) => e.name);
