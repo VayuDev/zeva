@@ -40,6 +40,24 @@ function ls(path, record = true) {
                         } else {
                             ls(path + "/" + data[i].name);
                         }
+                    } else if(data[i].musicfile) {
+                        let queue = data.filter((e) => e.musicfile).map((e) => e.name);
+                        let startIndex = queue.findIndex((element) => element === data[i]["name"]);
+                        $.ajax({
+                            url: "/api/apps/player/setQueue",
+                            type: "POST",
+                            data: {
+                                queue: JSON.stringify(queue),
+                                startIndex: startIndex
+                            },
+                            success: function(data) {
+                                notify("Success!");
+                            },
+                            error: function(err) {
+                                notifyError(err.responseText);
+                            }
+                        })
+                        console.log(queue);
                     }
                 });
                 songs.append(row);

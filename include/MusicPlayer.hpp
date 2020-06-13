@@ -13,6 +13,7 @@ public:
   void setPlaylist(std::vector<std::string> &&pPlaylist);
   void playPrevSong();
   void playNextSong();
+  void playSong(size_t pNum);
   void poll();
   void pause();
   void resume();
@@ -22,12 +23,11 @@ public:
 
 private:
   void initialize();
-  void playSong(size_t pNum);
-
   std::optional<AudioPlayer> mAudio;
   std::optional<SftpClient> mSftp;
   std::vector<std::string> mPlaylist;
   int64_t mIndex = -1;
   std::string mConfigFileLocation;
   bool mConnected = false;
+  std::recursive_mutex mMutex;
 };

@@ -54,14 +54,15 @@ SftpClient::SftpClient(const std::string &pUsername,
     close(sock);
     throw std::runtime_error("Unable to create session");
   }
+  /* Since we have not set non-blocking, tell libssh2 we are blocking */
+  libssh2_session_set_blocking(session, true);
   /* ... start it up. This will trade welcome banners, exchange keys,
    * and setup crypto, compression, and MAC layers
    */
   rc = libssh2_session_handshake(session, sock);
 
   if (rc) {
-    libssh2_session_disconnect(session, "Normal Shutdown");
-    libssh2_session_free(session);
+    session = nullptr;
     close(sock);
     throw std::runtime_error("Failure establishing SSH session: " +
                              std::to_string(rc));
@@ -90,17 +91,19 @@ SftpClient::SftpClient(const std::string &pUsername,
   if (strstr(userauthlist, "password") == NULL) {
     libssh2_session_disconnect(session, "Normal Shutdown");
     libssh2_session_free(session);
+    session = nullptr;
     close(sock);
     throw std::runtime_error("Password authentication is disabled!");
   }
 
   /* We could authenticate via password */
-  if (libssh2_userauth_password(session, pUsername.c_str(),
-                                pPassword.c_str())) {
+  rc = libssh2_userauth_password(session, pUsername.c_str(), pPassword.c_str());
+  if (rc < 0) {
     libssh2_session_disconnect(session, "Normal Shutdown");
     libssh2_session_free(session);
+    session = nullptr;
     close(sock);
-    throw std::runtime_error{"Authentication by password failed!\n"};
+    throw std::runtime_error{"Authentication by password failed!"};
   }
 
   sftp_session = libssh2_sftp_init(session);
@@ -108,12 +111,12 @@ SftpClient::SftpClient(const std::string &pUsername,
   if (!sftp_session) {
     libssh2_session_disconnect(session, "Normal Shutdown");
     libssh2_session_free(session);
+    session = nullptr;
     close(sock);
-    throw std::runtime_error{"Unable to init SFTP session\n"};
+    throw std::runtime_error{"Unable to init SFTP session"};
   }
 
-  /* Since we have not set non-blocking, tell libssh2 we are blocking */
-  libssh2_session_set_blocking(session, 1);
+
   clients++;
 }
 
@@ -121,6 +124,7 @@ SftpClient::~SftpClient() {
   libssh2_sftp_shutdown(sftp_session);
   libssh2_session_disconnect(session, "Normal Shutdown");
   libssh2_session_free(session);
+  session = nullptr;
   close(sock);
   if (--clients == 0) {
     libssh2_exit();

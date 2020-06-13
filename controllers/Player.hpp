@@ -12,7 +12,11 @@ public:
   METHOD_LIST_BEGIN
   METHOD_ADD(Player::getStatus, "status", drogon::Get);
   METHOD_ADD(Player::getLs, "ls?path={}", drogon::Get);
+  METHOD_ADD(Player::setQueue, "setQueue?queue={}&startIndex={}", drogon::Post);
   METHOD_LIST_END
+
+  Player();
+  ~Player() override;
 
   void
   getStatus(const drogon::HttpRequestPtr &req,
@@ -20,9 +24,13 @@ public:
   void getLs(const drogon::HttpRequestPtr &req,
              std::function<void(const drogon::HttpResponsePtr &)> &&callback,
              std::string &&pPath);
+  void setQueue(const drogon::HttpRequestPtr &req,
+                std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+                std::string &&pQueueJson, int64_t pStartindex);
 
 private:
   MusicPlayer mPlayer;
+  trantor::TimerId mTimerId;
 };
 
 } // namespace Api::Apps

@@ -42,3 +42,11 @@ inline const char *getConfigFileLocation() {
     return "assets/local.json";
   return "assets/config.json";
 }
+
+inline bool isMusicFile(const std::string &pPath) {
+  static constexpr std::array<const char *, 3> extensions = {".mp3", ".ogg",
+                                                             ".wav"};
+  auto extension = std::filesystem::path(pPath).extension();
+  return std::find(extensions.cbegin(), extensions.cend(), extension) !=
+         extensions.cend();
+}
