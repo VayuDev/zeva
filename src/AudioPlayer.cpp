@@ -3,6 +3,7 @@
 #include <cassert>
 #include <gst/gst.h>
 #include <limits>
+#include <trantor/utils/Logger.h>
 
 static std::atomic<size_t> gInstances = 0;
 
@@ -102,7 +103,7 @@ void AudioPlayer::poll() {
       gchar *debug;
 
       gst_message_parse_error(message, &err, &debug);
-      g_print("Error: %s\n", err->message);
+      LOG_ERROR <<"AudioPlayer: Error:" << err->message;
       g_error_free(err);
       g_free(debug);
       running = false;
