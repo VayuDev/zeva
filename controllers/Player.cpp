@@ -26,12 +26,15 @@ void Api::Apps::Player::getLs(
     const drogon::HttpRequestPtr &,
     std::function<void(const drogon::HttpResponsePtr &)> &&callback,
     std::string &&pPath) {
+  while(pPath.find("./") == 0) {
+    pPath = pPath.substr(2);
+  }
   Json::Value resp = Json::arrayValue;
   try {
     auto vec = mPlayer.ls(pPath);
     for (const auto &str : vec) {
       Json::Value file;
-      file["name"] = str.name;
+      file["name"] = pPath + "/" + str.name;
       file["size"] = str.fileSize;
       file["directory"] = str.isDirectory;
       file["musicfile"] = isMusicFile(str.name);

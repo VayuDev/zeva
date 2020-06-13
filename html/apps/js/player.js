@@ -32,7 +32,7 @@ function ls(path, record = true) {
             for(let i = 0; i < data.length; ++i) {
                 let row = $("<div></div>").addClass("song");
                 row.append($("<img>").addClass("icon").attr("src", data[i].directory ? "/icons/directory.svg" : "/icons/file.svg"));
-                row.append($("<span></span>").text(data[i].name));
+                row.append($("<span></span>").text(data[i].name.replace(/^.*[\\\/]/, '')));
                 row.click(() => {
                     if(data[i].directory) {
                         if(data[i].name === "..") {
