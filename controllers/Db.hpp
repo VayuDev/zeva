@@ -9,6 +9,7 @@ public:
   METHOD_LIST_BEGIN
   METHOD_ADD(Db::getAllTables, "all", drogon::Get);
   METHOD_ADD(Db::getTableCsv, "csv/{tablename}", drogon::Get);
+  METHOD_ADD(Db::insertRow, "insertRow?json={}&tablename={}", drogon::Post);
   METHOD_LIST_END
 
   void
@@ -18,5 +19,9 @@ public:
   getTableCsv(const drogon::HttpRequestPtr &req,
               std::function<void(const drogon::HttpResponsePtr &)> &&callback,
               std::string &&pName);
+  void insertRow(const drogon::HttpRequestPtr &req,
+      std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+      std::string &&pJsonRow,
+      std::string &&pTableName);
 };
 } // namespace Api

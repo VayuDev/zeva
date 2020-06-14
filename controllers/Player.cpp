@@ -26,7 +26,7 @@ void Api::Apps::Player::getLs(
     const drogon::HttpRequestPtr &,
     std::function<void(const drogon::HttpResponsePtr &)> &&callback,
     std::string &&pPath) {
-  while(pPath.find("./") == 0) {
+  while (pPath.find("./") == 0) {
     pPath = pPath.substr(2);
   }
   Json::Value resp = Json::arrayValue;
@@ -45,27 +45,31 @@ void Api::Apps::Player::getLs(
     callback(genError(e.what()));
   }
 }
+
 void Api::Apps::Player::setQueue(const drogon::HttpRequestPtr &req,
                                  std::function<void(const drogon::HttpResponsePtr &)> &&callback,
                                  std::string &&pQueueJson,
                                  int64_t pStartindex) {
-
-  std::stringstream inputStream{pQueueJson};
-  Json::Value val;
-  inputStream >> val;
-  std::vector<std::string> songs;
-  for(auto& song: val) {
-    if(!song.isString()) {
-      callback(genError("Please pass an array of strings!"));
+  try {
+    std::stringstream inputStream{pQueueJson};
+    Json::Value val;
+    inputStream >> val;
+    std::vector<std::string> songs;
+    for(auto& song: val) {
+      if(!song.isString()) {
+        callback(genError("Please pass an array of strings!"));
+        return;
+      }
+      songs.emplace_back(song.asString());
+    }
+    if(pStartindex < 0 || pStartindex >= songs.size()) {
+      callback(genError("Invalid startindex!"));
       return;
     }
-    songs.emplace_back(song.asString());
+    mPlayer.setPlaylist(std::move(songs));
+    mPlayer.playSong(pStartindex);
+    callback(genResponse("ok"));
+  } catch(std::exception& e) {
+    callback(genError(e.what()));
   }
-  if(pStartindex < 0 || pStartindex >= songs.size()) {
-    callback(genError("Invalid startindex!"));
-    return;
-  }
-  mPlayer.setPlaylist(std::move(songs));
-  mPlayer.playSong(pStartindex);
-  callback(genResponse("ok"));
 }

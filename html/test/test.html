@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ZeVa 2.0</title>
+    <script src="/js/jquery-3.5.1.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/style.css">
+    <script src="../js/index.js"></script>
+</head>
+<body>
+<div class="main-grid">
+    <div id="header"></div>
+    <script>
+        $.ajax({
+            type: "POST",
+            url: "/api/db/insertRow",
+            data: {
+                "tablename": "ii_env",
+                "json": JSON.stringify({
+                    "time": "CURRENT_TIMESTAMP",
+                    "temp": 10,
+                    "hum": 10,
+                })
+            },
+            error: function(err, textStatus, errorThrown) {
+                notifyError(err.responseText);
+            },
+            success: function(data, status, jqXHR) {
+                notify(data.responseText);
+            }
+        })
+    </script>
+</div>
+</body>
+</html>
