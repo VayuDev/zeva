@@ -5,15 +5,13 @@ Api::Apps::Player::Player() {
   mTimerId = drogon::app().getLoop()->runEvery(0.01, [this] {
     try {
       mPlayer.poll();
-    } catch(...) {
-
+    } catch (...) {
     }
   });
 }
 Api::Apps::Player::~Player() {
   drogon::app().getLoop()->invalidateTimer(mTimerId);
 }
-
 
 void Api::Apps::Player::getStatus(
     const drogon::HttpRequestPtr &,
@@ -46,30 +44,48 @@ void Api::Apps::Player::getLs(
   }
 }
 
-void Api::Apps::Player::setQueue(const drogon::HttpRequestPtr &req,
-                                 std::function<void(const drogon::HttpResponsePtr &)> &&callback,
-                                 std::string &&pQueueJson,
-                                 int64_t pStartindex) {
+void Api::Apps::Player::setQueue(
+    const drogon::HttpRequestPtr &req,
+    std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+    std::string &&pQueueJson, int64_t pStartindex) {
   try {
     std::stringstream inputStream{pQueueJson};
     Json::Value val;
     inputStream >> val;
     std::vector<std::string> songs;
-    for(auto& song: val) {
-      if(!song.isString()) {
+    for (auto &song : val) {
+      if (!song.isString()) {
         callback(genError("Please pass an array of strings!"));
         return;
       }
       songs.emplace_back(song.asString());
     }
-    if(pStartindex < 0 || pStartindex >= songs.size()) {
+    if (pStartindex < 0 || pStartindex >= songs.size()) {
       callback(genError("Invalid startindex!"));
       return;
     }
     mPlayer.setPlaylist(std::move(songs));
     mPlayer.playSong(pStartindex);
     callback(genResponse("ok"));
-  } catch(std::exception& e) {
+  } catch (std::exception &e) {
+    callback(genError(e.what()));
+  }
+}
+void Api::Apps::Player::resume(const drogon::HttpRequestPtr &req,
+                               std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+  try {
+    mPlayer.resume();
+    callback(genResponse("ok"));
+  } catch (std::exception &e) {
+    callback(genError(e.what()));
+  }
+}
+void Api::Apps::Player::pause(const drogon::HttpRequestPtr &req,
+                              std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+  try {
+    mPlayer.pause();
+    callback(genResponse("ok"));
+  } catch (std::exception &e) {
     callback(genError(e.what()));
   }
 }

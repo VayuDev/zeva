@@ -19,9 +19,9 @@ public:
   getTableCsv(const drogon::HttpRequestPtr &req,
               std::function<void(const drogon::HttpResponsePtr &)> &&callback,
               std::string &&pName);
-  void insertRow(const drogon::HttpRequestPtr &req,
-      std::function<void(const drogon::HttpResponsePtr &)> &&callback,
-      std::string &&pJsonRow,
-      std::string &&pTableName);
+  void
+  insertRow(const drogon::HttpRequestPtr &req,
+            std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+            std::string &&pJsonRow, std::string &&pTableName);
 };
 } // namespace Api

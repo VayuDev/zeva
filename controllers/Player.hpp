@@ -13,6 +13,8 @@ public:
   METHOD_ADD(Player::getStatus, "status", drogon::Get);
   METHOD_ADD(Player::getLs, "ls?path={}", drogon::Get);
   METHOD_ADD(Player::setQueue, "setQueue?queue={}&startIndex={}", drogon::Post);
+  METHOD_ADD(Player::resume, "resume", drogon::Post);
+  METHOD_ADD(Player::pause, "pause", drogon::Post);
   METHOD_LIST_END
 
   Player();
@@ -27,6 +29,10 @@ public:
   void setQueue(const drogon::HttpRequestPtr &req,
                 std::function<void(const drogon::HttpResponsePtr &)> &&callback,
                 std::string &&pQueueJson, int64_t pStartindex);
+  void resume(const drogon::HttpRequestPtr &req,
+              std::function<void(const drogon::HttpResponsePtr &)> &&callback);
+  void pause(const drogon::HttpRequestPtr &req,
+             std::function<void(const drogon::HttpResponsePtr &)> &&callback);
 
 private:
   MusicPlayer mPlayer;

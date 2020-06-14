@@ -116,7 +116,6 @@ SftpClient::SftpClient(const std::string &pUsername,
     throw std::runtime_error{"Unable to init SFTP session"};
   }
 
-
   clients++;
 }
 

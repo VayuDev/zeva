@@ -89,23 +89,23 @@ void Api::Db::getTableCsv(
       },
       genErrorHandler(callback), pName);
 }
-void Api::Db::insertRow(const drogon::HttpRequestPtr &,
-                        std::function<void(const drogon::HttpResponsePtr &)> &&callback,
-                        std::string &&pJsonRow,
-                        std::string &&pTableName) {
+void Api::Db::insertRow(
+    const drogon::HttpRequestPtr &,
+    std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+    std::string &&pJsonRow, std::string &&pTableName) {
   LOG_DEBUG << "Inserting row into table: '" << pTableName << "'";
   try {
     std::stringstream inputJsonStringStream{pJsonRow};
     Json::Value inputJson;
     inputJsonStringStream >> inputJson;
 
-    const auto& data = inputJson;
+    const auto &data = inputJson;
 
     std::vector<std::string> keys;
     std::vector<QueryValue> values;
-    for(auto it = data.begin(); it != data.end(); ++it) {
+    for (auto it = data.begin(); it != data.end(); ++it) {
       keys.push_back(it.key().asString());
-      switch(it->type()) {
+      switch (it->type()) {
       case Json::ValueType::stringValue:
         values.push_back(QueryValue::makeString(it->asString()));
         break;
@@ -122,8 +122,8 @@ void Api::Db::insertRow(const drogon::HttpRequestPtr &,
     queryString << pTableName;
     queryString << " (";
     bool first = true;
-    for(const auto& column: keys) {
-      if(!first) {
+    for (const auto &column : keys) {
+      if (!first) {
         queryString << ',';
       } else {
         first = false;
@@ -131,25 +131,23 @@ void Api::Db::insertRow(const drogon::HttpRequestPtr &,
       queryString << column;
     }
     queryString << ") VALUES (";
-    for(size_t i = 0; i < values.size(); ++i) {
-      if(values.at(i).stringValue != "CURRENT_TIMESTAMP") {
-        queryString << '$' << (i+1);
+    for (size_t i = 0; i < values.size(); ++i) {
+      if (values.at(i).stringValue != "CURRENT_TIMESTAMP") {
+        queryString << '$' << (i + 1);
       } else {
         values.erase(values.cbegin() + i);
         i -= 1;
         queryString << "CURRENT_TIMESTAMP";
       }
-      if(i < values.size() - 1) {
+      if (i < values.size() - 1) {
         queryString << ',';
       }
-
     }
     queryString << ')';
     auto db = std::make_shared<PostgreSQLDatabase>();
     db->query(queryString.str(), values);
     callback(genResponse("ok"));
-  } catch(std::exception& e) {
+  } catch (std::exception &e) {
     callback(genError(e.what()));
   }
-
 }

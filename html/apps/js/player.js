@@ -88,3 +88,29 @@ document.addEventListener("DOMContentLoaded", function() {
         ls(event.state["path"], false);
     }
 });
+
+function pause() {
+    $.ajax({
+        type: "POST",
+        url: "/api/apps/player/pause",
+        success: function(data) {
+            notify("Paused!");
+        },
+        error: function(err) {
+            notifyError(err.responseText);
+        },
+    });
+}
+
+function resume() {
+    $.ajax({
+        type: "POST",
+        url: "/api/apps/player/resume",
+        success: function(data) {
+            notify("Resumed!");
+        },
+        error: function(err) {
+            notifyError(err.responseText);
+        },
+    });
+}

@@ -10,6 +10,7 @@
         #songs {
             margin: 10px;
             border-left: 2px solid rgb(177, 177, 177);
+            padding-bottom: 50px;
         }
         .song {
             width: 100%;
@@ -25,6 +26,18 @@
             padding-right: 10px;
         }
 
+        #controls {
+            position: fixed;
+            bottom: 0;
+            height: 50px;
+            width: 100%;
+            border-top: 3px solid rgb(130, 130, 130);
+            padding-top: 5px;
+            padding-right: 10px;
+            padding-left: 10px;
+            background-color: white;
+        }
+
     </style>
 </head>
 <body>
@@ -33,6 +46,13 @@
     <div>
         <div id="songs">
 
+        </div>
+        <div id="controls">
+            <button onclicK="resume()">Play</button>
+            <button onclicK="pause()">Pause</button>
+            <button onclicK="next()">Next</button>
+            <button onclicK="prev()">Prev</button>
+            <button onclicK="reverse()">Reverse</button>
         </div>
     </div>
 </div>

@@ -103,7 +103,7 @@ void AudioPlayer::poll() {
       gchar *debug;
 
       gst_message_parse_error(message, &err, &debug);
-      LOG_ERROR <<"AudioPlayer: Error:" << err->message;
+      LOG_ERROR << "AudioPlayer: Error:" << err->message;
       g_error_free(err);
       g_free(debug);
       running = false;
