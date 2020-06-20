@@ -31,6 +31,7 @@ $(function() {
     $.getJSON("/api/scripts/get", "scriptid=" + SCRIPTID, function(json) {
         $("#editor").text(json["code"])
         editor = ace.edit("editor");
+        editor.session.setMode("ace/mode/lua");
         editor.commands.addCommand({
             name: 'save',
             bindKey: {win: "Ctrl-S", "mac": "Cmd-S"},

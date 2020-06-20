@@ -65,6 +65,7 @@ void Script::create(const std::string &pModule, const std::string &pCode) {
   append("onRunOnce", 1);
   append("drawImage", 2);
   append("new", 0);
+  append("gc", 0);
 
   // compile parent script
   auto compileRes = wrenInterpret(mVM, pModule.c_str(),
@@ -149,12 +150,23 @@ ScriptBindingsReturn Script::execute(const std::string &pFunctionName,
   if (interpretResult != WrenInterpretResult::WREN_RESULT_SUCCESS) {
     throw std::runtime_error("Running script failed: " + popLastError());
   }
+
+  ScriptBindingsReturn ret;
   if (wrenGetSlotType(mVM, 0) == WREN_TYPE_STRING) {
     int length;
     auto str = wrenGetSlotBytes(mVM, 0, &length);
-    return std::string{str, (size_t)length};
+    ret = std::string{str, (size_t)length};
+  } else {
+    ret = wrenValueToJsonValue(mVM, 0);
   }
-  return wrenValueToJsonValue(mVM, 0);
+  //perform gc
+  wrenGetVariable(mVM, mModuleName.c_str(), "System", 0);
+  auto interpretRes = wrenCall(mVM, mFunctions["gc"]);
+  if (interpretRes != WrenInterpretResult::WREN_RESULT_SUCCESS) {
+    throw std::runtime_error("GC failed: " + popLastError());
+  }
+
+  return ret;
 }
 
 void Script::log(int pErr, const std::string &pMsg) const {
