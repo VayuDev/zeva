@@ -3,6 +3,7 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/HttpController.h>
 #include <drogon/drogon.h>
+
 namespace Api {
 class Db : public drogon::HttpController<Db> {
 public:

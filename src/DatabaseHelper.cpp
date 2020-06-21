@@ -114,6 +114,33 @@ CREATE OR REPLACE FUNCTION new_log() RETURNS trigger AS $BODY$
               "EXECUTE FUNCTION new_log()");
   } catch (...) {
   }
+  // system monitor
+  pDb.query(R"(
+CREATE TABLE IF NOT EXISTS system_monitor_device (
+  id BIGSERIAL PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE
+))");
+  pDb.query(R"(
+CREATE TABLE IF NOT EXISTS system_monitor_entry (
+  id BIGSERIAL PRIMARY KEY,
+  deviceid BIGINT NOT NULL REFERENCES system_monitor_device(id) ON DELETE CASCADE,
+  time TIMESTAMP WITHOUT TIME ZONE,
+  total_cpu_usage REAL,
+  cpu_core_count INT,
+  uptime BIGINT,
+  load_1 REAL,
+  load_5 REAL,
+  load_15 REAL,
+  total_ram INT,
+  free_ram INT,
+  shared_ram INT,
+  buffer_ram INT,
+  total_swap INT,
+  free_swap INT,
+  proc_count INT,
+  total_high INT,
+  free_high INT
+))");
   DatabaseHelper::attachNotifyTriggerToAllTables(pDb);
 }
 

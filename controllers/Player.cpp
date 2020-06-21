@@ -71,8 +71,9 @@ void Api::Apps::Player::setQueue(
     callback(genError(e.what()));
   }
 }
-void Api::Apps::Player::resume(const drogon::HttpRequestPtr &req,
-                               std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+void Api::Apps::Player::resume(
+    const drogon::HttpRequestPtr &req,
+    std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
   try {
     mPlayer.resume();
     callback(genResponse("ok"));
@@ -80,8 +81,9 @@ void Api::Apps::Player::resume(const drogon::HttpRequestPtr &req,
     callback(genError(e.what()));
   }
 }
-void Api::Apps::Player::pause(const drogon::HttpRequestPtr &req,
-                              std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+void Api::Apps::Player::pause(
+    const drogon::HttpRequestPtr &req,
+    std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
   try {
     mPlayer.pause();
     callback(genResponse("ok"));

@@ -159,7 +159,7 @@ ScriptBindingsReturn Script::execute(const std::string &pFunctionName,
   } else {
     ret = wrenValueToJsonValue(mVM, 0);
   }
-  //perform gc
+  // perform gc
   wrenGetVariable(mVM, mModuleName.c_str(), "System", 0);
   auto interpretRes = wrenCall(mVM, mFunctions["gc"]);
   if (interpretRes != WrenInterpretResult::WREN_RESULT_SUCCESS) {
