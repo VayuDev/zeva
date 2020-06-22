@@ -6,7 +6,6 @@
 #include <libpq-fe.h>
 #include <map>
 #include <memory>
-#include <repl.h>
 
 class PostgreSQLQueryResult : public QueryResult {
 public:
