@@ -24,6 +24,33 @@ static std::string toFunctionSignature(const std::string &pName,
   return ret;
 }
 
+static char* loadModule(WrenVM* pVM, const char* name) {
+  auto *self = (Script *)wrenGetUserData(pVM);
+  std::string path = "assets/wren_libs/";
+  path.append(name);
+  path.append(".wren");
+  self->log(LEVEL_INFO, "Loading module: " + path);
+  FILE* file = fopen(path.c_str(), "r");
+  if(!file) {
+    self->log(LEVEL_ERROR, "Unable to open: " + path);
+    return nullptr;
+  }
+  fseek(file, 0, SEEK_END);
+  size_t length = ftell(file);
+  fseek(file, 0, SEEK_SET);
+  char* data = (char*)malloc(length+1);
+  fread(data, 1, length, file);
+
+  if(memmem(data, length, "\0", 1) != NULL) {
+    free(data);
+    self->log(LEVEL_ERROR, "Trying to import a file that contains zero bytes: " + path);
+    return nullptr;
+  }
+  data[length] = '\0';
+  fclose(file);
+  return data;
+}
+
 void Script::create(const std::string &pModule, const std::string &pCode) {
   mModuleName = pModule;
   mCode = pCode;
@@ -53,8 +80,9 @@ void Script::create(const std::string &pModule, const std::string &pCode) {
   };
   config.bindForeignClassFn = bindForeignClass;
   config.bindForeignMethodFn = bindForeignMethod;
+  config.loadModuleFn = loadModule;
+  config.userData = this;
   mVM = wrenNewVM(&config);
-  wrenSetUserData(mVM, this);
 
   // setup functions
   auto append = [this](std::string pFuncName, size_t pArity) {
@@ -197,9 +225,9 @@ void Script::log(int pErr, const std::string &pMsg) const {
   }
   toLog += pMsg;
   if (pErr >= LEVEL_WARNING) {
-    std::cerr << toLog << "\n";
+    std::cerr << toLog << std::endl;
   } else {
-    std::cout << toLog << "\n";
+    std::cout << toLog << std::endl;
   };
   mDbConnection->query(
       "INSERT INTO log (level, created, msg) VALUES ($1, "
