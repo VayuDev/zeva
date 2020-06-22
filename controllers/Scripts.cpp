@@ -145,6 +145,7 @@ void Api::Scripts::deleteScript(
       [callback = std::move(callback)](const drogon::orm::Result &r) {
         auto name = r.at(0)["name"].as<std::string>();
         ScriptManager::the().deleteScript(name);
+        LOG_INFO << "[Script] " << name << " deleted";
         callback(genResponse("Deleted script"));
       },
       genErrorHandler(callback), scriptid);
