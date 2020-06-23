@@ -26,6 +26,7 @@ include_directories("${PROJECT_SOURCE_DIR}/wren/src/cli")
 include_directories("${PROJECT_SOURCE_DIR}/wren/src/optional")
 include_directories("${PROJECT_SOURCE_DIR}/wren/src/vm")
 include_directories("${PROJECT_SOURCE_DIR}/include")
+include_directories("${PROJECT_SOURCE_DIR}/scriptrunner")
 
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -fno-strict-aliasing")

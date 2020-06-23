@@ -422,6 +422,16 @@ static void genRandomDouble(WrenVM *pVM) {
   wrenSetSlotDouble(pVM, 0, (rand() % 1'000'000) / 1'000'000.0);
 }
 
+static void getConfigString(WrenVM *pVM) {
+  char* data = readWholeFileCString(getConfigFileLocation(), false);
+  if(data) {
+    wrenSetSlotString(pVM, 0, data);
+    free(data);
+  } else {
+    wrenSetSlotNull(pVM, 0);
+  }
+}
+
 WrenForeignMethodFn bindForeignMethod(WrenVM *vm, const char *module,
                                       const char *className, bool isStatic,
                                       const char *signature) {
@@ -461,6 +471,10 @@ WrenForeignMethodFn bindForeignMethod(WrenVM *vm, const char *module,
     if (strcmp("random()", signature) == 0) {
       return genRandomDouble;
     }
+  } else if (strcmp(className, "Config") == 0 && isStatic) {
+    if (strcmp("getConfigStringInternal()", signature) == 0) {
+      return getConfigString;
+    }
   }
   std::cout << "Unknown class " << className << " and signature " << signature
             << "\n";
@@ -469,6 +483,7 @@ WrenForeignMethodFn bindForeignMethod(WrenVM *vm, const char *module,
 
 const char *foreignClassesString() {
   return R"--(
+import "json" for JSON
 
 class QueryResult {
     construct new(query, columns, data) {
@@ -520,7 +535,17 @@ foreign class TcpClient {
     foreign recvString()
     foreign close()
 }
-/*
+
+class Config {
+    foreign static getConfigStringInternal()
+    static get() {
+        if(__json == null) {
+            __json = JSON.parse(getConfigStringInternal())
+        }
+        return __json
+    }
+}
+
 class HttpResponse {
     construct new(type, body) {
         _type = type
@@ -540,7 +565,7 @@ class HttpResponse {
         }
     }
 }
-
+/*
 foreign class HttpClient {
     foreign construct new(hostname)
     foreign sendInternal(type, url, body)
@@ -553,16 +578,6 @@ foreign class HttpClient {
         } else {
             return HttpResponse.new(type)
         }
-    }
-}
-
-class Config {
-    static foreign getConfigStringInternal()
-    static get() {
-        if(__json == null) {
-            __json = JSON.parse(getConfigStringInternal())
-        }
-        return __json
     }
 }
 

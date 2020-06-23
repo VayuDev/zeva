@@ -50,3 +50,23 @@ inline bool isMusicFile(const std::string &pPath) {
   return std::find(extensions.cbegin(), extensions.cend(), extension) !=
          extensions.cend();
 }
+
+inline char* readWholeFileCString(const char* pPath, bool pAllowZeroes = true) {
+  FILE* file = fopen(pPath, "r");
+  if(!file) {
+    return nullptr;
+  }
+  fseek(file, 0, SEEK_END);
+  size_t length = ftell(file);
+  fseek(file, 0, SEEK_SET);
+  char* data = (char*)malloc(length+1);
+  fread(data, 1, length, file);
+
+  if(!pAllowZeroes && memmem(data, length, "\0", 1) != nullptr) {
+    free(data);
+    return nullptr;
+  }
+  data[length] = '\0';
+  fclose(file);
+  return data;
+}

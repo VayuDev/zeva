@@ -25,30 +25,12 @@ static std::string toFunctionSignature(const std::string &pName,
 }
 
 static char* loadModule(WrenVM* pVM, const char* name) {
-  auto *self = (Script *)wrenGetUserData(pVM);
+  auto self = (Script*) wrenGetUserData(pVM);
   std::string path = "assets/wren_libs/";
   path.append(name);
   path.append(".wren");
   self->log(LEVEL_INFO, "Loading module: " + path);
-  FILE* file = fopen(path.c_str(), "r");
-  if(!file) {
-    self->log(LEVEL_ERROR, "Unable to open: " + path);
-    return nullptr;
-  }
-  fseek(file, 0, SEEK_END);
-  size_t length = ftell(file);
-  fseek(file, 0, SEEK_SET);
-  char* data = (char*)malloc(length+1);
-  fread(data, 1, length, file);
-
-  if(memmem(data, length, "\0", 1) != NULL) {
-    free(data);
-    self->log(LEVEL_ERROR, "Trying to import a file that contains zero bytes: " + path);
-    return nullptr;
-  }
-  data[length] = '\0';
-  fclose(file);
-  return data;
+  return readWholeFileCString(path.c_str(), false);
 }
 
 void Script::create(const std::string &pModule, const std::string &pCode) {
