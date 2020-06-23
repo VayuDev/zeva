@@ -15,8 +15,15 @@ Json::Value wrenValueToJsonValue(struct WrenVM *pVM, int pSlot) {
     std::string str(bytes, length);
     return str;
   }
+  //call toString
   case WrenType::WREN_TYPE_UNKNOWN:
   case WrenType::WREN_TYPE_FOREIGN:
+  case WrenType::WREN_TYPE_MAP: {
+    auto handle = wrenMakeCallHandle(pVM, "toString");
+    wrenCall(pVM, handle);
+    wrenReleaseHandle(pVM, handle);
+    return wrenValueToJsonValue(pVM, pSlot);
+  }
   case WrenType::WREN_TYPE_NULL:
     return Json::nullValue;
   case WrenType::WREN_TYPE_LIST: {
@@ -29,9 +36,8 @@ Json::Value wrenValueToJsonValue(struct WrenVM *pVM, int pSlot) {
     }
     return list;
   }
-  default:
-    assert(false);
   }
+  assert(false);
 }
 
 Json::Value scriptValueToJson(const ScriptValue &pVal) {
