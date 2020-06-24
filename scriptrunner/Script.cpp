@@ -8,6 +8,15 @@
 #include <iostream>
 #include <zconf.h>
 
+constexpr const char* PARENT_SCRIPT = R"(
+class Script {
+    construct new() {}
+    onRunOnce(a) {}
+    onTableChanged(a, b) {}
+    drawImage(width, height) {}
+}
+)";
+
 static std::string toFunctionSignature(const std::string &pName,
                                        size_t pArity) {
   bool first = true;
@@ -25,12 +34,27 @@ static std::string toFunctionSignature(const std::string &pName,
 }
 
 static char *loadModule(WrenVM *pVM, const char *name) {
+  // try to load from a file
   auto self = (Script *)wrenGetUserData(pVM);
   std::string path = "assets/wren_libs/";
   path.append(name);
   path.append(".wren");
   self->log(LEVEL_INFO, "Loading module: " + path);
-  return readWholeFileCString(path.c_str(), false);
+  auto data = readWholeFileCString(path.c_str(), false);
+  if(data)
+    return data;
+
+  // try to load from another script
+  auto db = self->getDbConnection();
+  auto ret = db->query("SELECT code FROM scripts WHERE name=$1", {QueryValue::makeString(name)});
+  if(!ret || ret->getRowCount() == 0) {
+    return nullptr;
+  }
+  auto code = ret->getValue(0, 0).stringValue;
+  char *codeCpy = (char*)malloc(strlen(PARENT_SCRIPT) + code.size() + 1);
+  strcpy(codeCpy, PARENT_SCRIPT);
+  strcpy(codeCpy + strlen(PARENT_SCRIPT), code.c_str());
+  return codeCpy;
 }
 
 void Script::create(const std::string &pModule, const std::string &pCode) {
@@ -78,14 +102,7 @@ void Script::create(const std::string &pModule, const std::string &pCode) {
   append("gc", 0);
 
   // compile parent script
-  auto compileRes = wrenInterpret(mVM, pModule.c_str(),
-                                  R"(
-class Script {
-    construct new() {}
-    onRunOnce(a) {}
-    onTableChanged(a, b) {}
-    drawImage(width, height) {}
-})");
+  auto compileRes = wrenInterpret(mVM, pModule.c_str(), PARENT_SCRIPT);
 
   if (compileRes != WrenInterpretResult::WREN_RESULT_SUCCESS) {
     throw std::runtime_error("Base Script compilation failed: " +

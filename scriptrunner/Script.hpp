@@ -32,6 +32,10 @@ public:
 
   void log(int pLevel, const std::string &pMsg) const;
 
+  [[nodiscard]] inline std::shared_ptr<class DatabaseWrapper> getDbConnection() const {
+    return mDbConnection;
+  }
+
 private:
   void create(const std::string &pModule, const std::string &pCode);
 
