@@ -91,11 +91,6 @@ class Script {
     throw std::runtime_error("Base Script compilation failed: " +
                              popLastError());
   }
-  auto compileDbModuleRes =
-      wrenInterpret(mVM, pModule.c_str(), foreignClassesString());
-  if (compileDbModuleRes != WrenInterpretResult::WREN_RESULT_SUCCESS) {
-    throw std::runtime_error("Db module compilation failed: " + popLastError());
-  }
 
   // compile module
   compileRes = wrenInterpret(mVM, pModule.c_str(), pCode.c_str());
