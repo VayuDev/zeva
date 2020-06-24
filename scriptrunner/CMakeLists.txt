@@ -8,6 +8,9 @@ include_directories("${PROJECT_SOURCE_DIR}/../wren/src/cli")
 include_directories("${PROJECT_SOURCE_DIR}/../wren/src/optional")
 include_directories("${PROJECT_SOURCE_DIR}/../wren/src/vm")
 include_directories("${PROJECT_SOURCE_DIR}/../include")
+include_directories("${PROJECT_SOURCE_DIR}/../include_thirdparty")
+
+add_compile_definitions(CPPHTTPLIB_OPENSSL_SUPPORT)
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -fno-strict-aliasing")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -fno-strict-aliasing")
@@ -17,6 +20,7 @@ set(CMAKE_C_FLAGS_RELEASE "-O3 -march=native -mtune=native -fno-strict-aliasing"
 file(GLOB_RECURSE SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../src_thirdparty/*.cc"
         "${CMAKE_CURRENT_SOURCE_DIR}/../src/Util.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../src/PostgreSQLDatabase.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/../src/DatabaseWrapper.cpp")
@@ -30,7 +34,7 @@ include_directories(${JSONCPP_INCLUDE_DIRS})
 
 add_executable(ZeVaScript ${SOURCES} ${WREN_SOURCES})
 
-target_link_libraries(ZeVaScript pthread pq stdc++fs Jsoncpp_lib)
+target_link_libraries(ZeVaScript pthread pq stdc++fs Jsoncpp_lib ssl crypto)
 
 add_custom_command(TARGET ZeVaScript
         POST_BUILD

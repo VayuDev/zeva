@@ -19,6 +19,7 @@ include_directories("${PROJECT_SOURCE_DIR}/drogon/lib/inc")
 
 
 include_directories("${PROJECT_SOURCE_DIR}/controllers")
+include_directories("${PROJECT_SOURCE_DIR}/include_thirdparty")
 
 include_directories("${PROJECT_SOURCE_DIR}/wren/src/include")
 include_directories("${PROJECT_SOURCE_DIR}/wren/src/module")
@@ -26,7 +27,6 @@ include_directories("${PROJECT_SOURCE_DIR}/wren/src/cli")
 include_directories("${PROJECT_SOURCE_DIR}/wren/src/optional")
 include_directories("${PROJECT_SOURCE_DIR}/wren/src/vm")
 include_directories("${PROJECT_SOURCE_DIR}/include")
-include_directories("${PROJECT_SOURCE_DIR}/scriptrunner")
 
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -fno-strict-aliasing")

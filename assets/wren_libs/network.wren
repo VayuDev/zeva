@@ -13,38 +13,23 @@ class HttpResponse {
         _type = type
         _body = body
     }
-    construct new(error) {
-        _error = error
-    }
-    error { _error }
+    status { _type }
     type { _type }
     body { _body }
     toString {
-        if(_error == null) {
-            return "HttpResponse{ type=%(_type), body=%(_body) }"
-        } else {
-            return "HttpResponse{ error=%(_error) }"
-        }
-    }
-}
-/*
-class HttpClient {
-    construct new(hostname) {
-        _hostname = hostname
-    }
-    foreign sendInternal(hostname, url, type, body)
-    send(type, url, body) {
-        var resp = sendInternal(_hostname, type, url, body)
-        var type = resp[0]
-        if(type == "ok") {
-            var body = resp[1]
-            return HttpResponse.new(type, body)
-        } else {
-            return HttpResponse.new(type)
-        }
+        return "HttpResponse{ type=%(_type), body=%(_body) }"
     }
 }
 
+class HttpClient {
+    foreign static sendInternal(hostname, port, url, type, params)
+    static send(hostname, port, url, type, params) {
+        var resp = HttpClient.sendInternal(hostname, port, url, type, params)
+        return HttpResponse.new(resp[0], resp[1])
+    }
+}
+
+/*
 class NotificationClient {
     construct new(type) {
         if(type != "gotify") {

@@ -7,6 +7,7 @@
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
+#include "httplib.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -432,6 +433,52 @@ static void getConfigString(WrenVM *pVM) {
   }
 }
 
+static void httpClientSend(WrenVM *pVM) {
+  auto *self = (Script *)wrenGetUserData(pVM);
+  if(wrenGetSlotType(pVM, 1) != WREN_TYPE_STRING
+  || wrenGetSlotType(pVM, 2) != WREN_TYPE_NUM
+  || wrenGetSlotType(pVM, 3) != WREN_TYPE_STRING
+  || wrenGetSlotType(pVM, 4) != WREN_TYPE_STRING
+  || wrenGetSlotType(pVM, 5) != WREN_TYPE_STRING) {
+    wrenSetSlotString(pVM, 0, "Invalid parameters types");
+    wrenAbortFiber(pVM, 0);
+  }
+  auto hostname = wrenGetSlotString(pVM, 1);
+  auto port = (int64_t)wrenGetSlotDouble(pVM, 2);
+  auto url = wrenGetSlotString(pVM, 3);
+  std::string type = wrenGetSlotString(pVM, 4);
+  auto body = wrenGetSlotString(pVM, 5);
+
+  try {
+    std::unique_ptr<httplib::Client> httpClient;
+    if(port == 443)
+      httpClient.reset(new httplib::SSLClient(hostname, port));
+    else
+      httpClient.reset(new httplib::Client(hostname, port));
+    std::shared_ptr<httplib::Response> resp;
+    if(type == "GET") {
+      resp = httpClient->Get(url);
+    } else if(type == "POST") {
+      resp = httpClient->Post(url, body, "application/x-www-form-urlencoded");
+    } else {
+      throw std::runtime_error("Unknown request type");
+    }
+    if(!resp) {
+      throw std::runtime_error("Unable to make request");
+    }
+    wrenEnsureSlots(pVM, 2);
+    wrenSetSlotNewList(pVM, 0);
+    wrenSetSlotDouble(pVM, 1, resp->status);
+    wrenInsertInList(pVM, 0, 0, 1);
+    wrenSetSlotString(pVM, 1, resp->body.c_str());
+    wrenInsertInList(pVM, 0, 1, 1);
+  } catch(std::exception& e) {
+    wrenSetSlotString(pVM, 0, e.what());
+    wrenAbortFiber(pVM, 0);
+  }
+
+}
+
 WrenForeignMethodFn bindForeignMethod(WrenVM *vm, const char *module,
                                       const char *className, bool isStatic,
                                       const char *signature) {
@@ -474,6 +521,10 @@ WrenForeignMethodFn bindForeignMethod(WrenVM *vm, const char *module,
   } else if (strcmp(className, "Config") == 0 && isStatic) {
     if (strcmp("getConfigStringInternal()", signature) == 0) {
       return getConfigString;
+    }
+  } else if (strcmp(className, "HttpClient") == 0 && isStatic) {
+    if (strcmp("sendInternal(_,_,_,_,_)", signature) == 0) {
+      return httpClientSend;
     }
   }
   std::cout << "Unknown class " << className << " and signature " << signature
