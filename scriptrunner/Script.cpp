@@ -119,7 +119,11 @@ Script::~Script() {
   wrenFreeVM(mVM);
 }
 
-void Script::setLastError(std::string pLastError) { mLastError += pLastError; }
+void Script::setLastError(std::string pLastError) {
+  if(!mLastError.empty())
+    mLastError += "\n";
+  mLastError += pLastError;
+}
 
 std::string Script::popLastError() {
   std::string ret = std::move(mLastError);
