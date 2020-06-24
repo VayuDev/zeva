@@ -43,28 +43,21 @@ int main() {
   });
 
   auto logWebsocketController = std::make_shared<LogWebsocket>();
-  conn->addListener("newlog", [logWebsocketController](
+  conn->addListener("newlog", [conn, logWebsocketController](
                                   const std::string &payload) {
     auto percentIndex = payload.find('%');
     auto eventType = payload.substr(0, percentIndex);
     if (eventType == "INSERT") {
       auto id = std::stoll(payload.substr(percentIndex + 1));
-      if (drogon::app().isRunning()) {
-        drogon::app().getDbClient()->execSqlAsync(
-            "SELECT level,msg FROM log WHERE id=$1",
-            [logWebsocketController](const drogon::orm::Result &r) {
-              if (r.empty()) {
-                std::cerr << "Error while logging: return is empty\n";
-                return;
-              }
-              logWebsocketController->newLogMessage(
-                  r.at(0)["level"].as<int64_t>(),
-                  r.at(0)["msg"].as<std::string>());
-            },
-            [](const drogon::orm::DrogonDbException &e) {
-              std::cerr << "Error while logging: " << e.base().what() << "\n";
-            },
-            id);
+      try {
+        auto resp = conn->query("SELECT level,msg FROM log WHERE id=$1", {QueryValue::makeInt(id)});
+        if (!resp)
+          return;
+        logWebsocketController->newLogMessage(
+            resp->getValue(0, 0).intValue,
+            resp->getValue(0, 1).stringValue);
+      } catch(std::exception& e) {
+        std::cerr << "Error requesting log: " << e.what() << "\n";
       }
     } else {
       logWebsocketController->init();
@@ -77,8 +70,13 @@ int main() {
     conn->awaitNotifications(1);
     // delete the old log about every hour
     if (passedTime++ > 60 * 600) {
-      conn->query("DELETE FROM log WHERE created < (CURRENT_TIMESTAMP - '7 "
-                  "days' :: interval)");
+      try {
+        conn->query("DELETE FROM log WHERE created < (CURRENT_TIMESTAMP - '7 "
+                    "days' :: interval)");
+      } catch(std::exception& e) {
+        LOG_ERROR << "Error awaiting notification: " << e.what();
+      }
+
       passedTime = 0;
     }
   });
