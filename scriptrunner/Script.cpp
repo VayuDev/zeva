@@ -97,8 +97,9 @@ class Script {
   if (compileRes != WrenInterpretResult::WREN_RESULT_SUCCESS) {
     throw std::runtime_error("Compilation failed: " + popLastError());
   }
+  auto scriptClassName = getScriptClassNameFromScriptName(mModuleName);
   wrenEnsureSlots(mVM, 1);
-  wrenGetVariable(mVM, pModule.c_str(), "ScriptModule", 0);
+  wrenGetVariable(mVM, pModule.c_str(), scriptClassName.c_str(), 0);
   auto interpretRes = wrenCall(mVM, mFunctions["new"]);
   if (interpretRes != WrenInterpretResult::WREN_RESULT_SUCCESS) {
     throw std::runtime_error("Instantiation failed: " + popLastError());

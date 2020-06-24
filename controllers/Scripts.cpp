@@ -166,17 +166,23 @@ void Api::Scripts::createScript(
     }
   }
   auto code = readWholeFile("assets/template.wren");
+  code.replace(code.find("$ScriptModule$"), strlen("$ScriptModule$"), getScriptClassNameFromScriptName(pName));
   std::string name = pName;
   drogon::app().getDbClient()->execSqlAsync(
       "INSERT INTO scripts (name, code) VALUES ($1, $2) RETURNING id",
       [callback = std::move(callback), name,
        code](const drogon::orm::Result &r) {
-        ScriptManager::the().addScript(name, code);
-        Json::Value response;
-        response["name"] = name;
-        response["id"] = r.at(0)["id"].as<int64_t>();
-        callback(
-            drogon::HttpResponse::newHttpJsonResponse(std::move(response)));
+        try {
+          ScriptManager::the().addScript(name, code);
+          Json::Value response;
+          response["name"] = name;
+          response["id"] = r.at(0)["id"].as<int64_t>();
+          callback(
+              drogon::HttpResponse::newHttpJsonResponse(std::move(response)));
+        } catch(std::exception& e) {
+          callback(genError(e.what()));
+        }
+
       },
       genErrorHandler(callback), pName, code);
 }

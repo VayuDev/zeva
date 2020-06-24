@@ -1,4 +1,4 @@
-class ScriptModule is Script {
+class $ScriptModule$ is Script {
     construct new() {
     }
 
@@ -6,10 +6,8 @@ class ScriptModule is Script {
     }
 
     onTableChanged(filename, event) {
-
     }
 
     onAudio(event, song) {
-
     }
 }

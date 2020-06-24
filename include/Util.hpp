@@ -70,3 +70,18 @@ inline char* readWholeFileCString(const char* pPath, bool pAllowZeroes = true) {
   fclose(file);
   return data;
 }
+
+inline std::string getScriptClassNameFromScriptName(const std::string& pScriptName) {
+  std::stringstream ret;
+  bool printedChar = false;
+  for(auto c: pScriptName) {
+    if(isalnum(c)) {
+      ret << c;
+      printedChar = true;
+    }
+    else if(printedChar) {
+      ret << '_';
+    }
+  }
+  return ret.str();
+}
