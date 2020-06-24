@@ -77,7 +77,11 @@ getScriptClassNameFromScriptName(const std::string &pScriptName) {
   bool printedChar = false;
   for (auto c : pScriptName) {
     if (isalnum(c)) {
-      ret << c;
+      if(!printedChar) {
+        ret << (char)toupper(c);
+      } else {
+        ret << c;
+      }
       printedChar = true;
     } else if (printedChar) {
       ret << '_';
