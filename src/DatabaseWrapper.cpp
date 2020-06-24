@@ -33,6 +33,7 @@ DatabaseWrapper::DatabaseWrapper()
 DatabaseWrapper::~DatabaseWrapper() {
   std::unique_lock<std::mutex> lock(mNotificationMutex);
   mShouldRun = false;
+  mNotificationQueue = {};
   mNotifier.notify_all();
   lock.unlock();
 
