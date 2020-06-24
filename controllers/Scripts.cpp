@@ -155,6 +155,16 @@ void Api::Scripts::createScript(
     const drogon::HttpRequestPtr &,
     std::function<void(const drogon::HttpResponsePtr &)> &&callback,
     std::string &&pName) {
+  const auto libname = pName + ".wren";
+  std::filesystem::directory_iterator wrenLibs("assets/wren_libs");
+  for(const auto& file: wrenLibs) {
+    if(file.is_regular_file() && file.path().extension() == ".wren") {
+      if(file.path().filename() == libname) {
+        callback(genError("Name conflict: A library with this name already exists"));
+        return;
+      }
+    }
+  }
   auto code = readWholeFile("assets/template.wren");
   std::string name = pName;
   drogon::app().getDbClient()->execSqlAsync(
