@@ -17,12 +17,14 @@ void Api::Db::SystemMonitor::getConfig(
               "id;",
               [callback, config](const drogon::orm::Result &res) mutable {
                 config["id"] = res.at(0)["id"].as<int64_t>();
-                callback(drogon::HttpResponse::newHttpJsonResponse(std::move(config)));
+                callback(drogon::HttpResponse::newHttpJsonResponse(
+                    std::move(config)));
               },
               genErrorHandler(callback), deviceName);
         } else {
           config["id"] = res.at(0)["id"].as<int64_t>();
-          callback(drogon::HttpResponse::newHttpJsonResponse(std::move(config)));
+          callback(
+              drogon::HttpResponse::newHttpJsonResponse(std::move(config)));
         }
       },
       genErrorHandler(callback), deviceName);

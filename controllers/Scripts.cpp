@@ -157,16 +157,18 @@ void Api::Scripts::createScript(
     std::string &&pName) {
   const auto libname = pName + ".wren";
   std::filesystem::directory_iterator wrenLibs("assets/wren_libs");
-  for(const auto& file: wrenLibs) {
-    if(file.is_regular_file() && file.path().extension() == ".wren") {
-      if(file.path().filename() == libname) {
-        callback(genError("Name conflict: A library with this name already exists"));
+  for (const auto &file : wrenLibs) {
+    if (file.is_regular_file() && file.path().extension() == ".wren") {
+      if (file.path().filename() == libname) {
+        callback(
+            genError("Name conflict: A library with this name already exists"));
         return;
       }
     }
   }
   auto code = readWholeFile("assets/template.wren");
-  code.replace(code.find("$ScriptModule$"), strlen("$ScriptModule$"), getScriptClassNameFromScriptName(pName));
+  code.replace(code.find("$ScriptModule$"), strlen("$ScriptModule$"),
+               getScriptClassNameFromScriptName(pName));
   std::string name = pName;
   drogon::app().getDbClient()->execSqlAsync(
       "INSERT INTO scripts (name, code) VALUES ($1, $2) RETURNING id",
@@ -179,10 +181,9 @@ void Api::Scripts::createScript(
           response["id"] = r.at(0)["id"].as<int64_t>();
           callback(
               drogon::HttpResponse::newHttpJsonResponse(std::move(response)));
-        } catch(std::exception& e) {
+        } catch (std::exception &e) {
           callback(genError(e.what()));
         }
-
       },
       genErrorHandler(callback), pName, code);
 }

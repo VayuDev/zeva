@@ -24,8 +24,8 @@ static std::string toFunctionSignature(const std::string &pName,
   return ret;
 }
 
-static char* loadModule(WrenVM* pVM, const char* name) {
-  auto self = (Script*) wrenGetUserData(pVM);
+static char *loadModule(WrenVM *pVM, const char *name) {
+  auto self = (Script *)wrenGetUserData(pVM);
   std::string path = "assets/wren_libs/";
   path.append(name);
   path.append(".wren");
@@ -121,7 +121,7 @@ Script::~Script() {
 }
 
 void Script::setLastError(std::string pLastError) {
-  if(!mLastError.empty())
+  if (!mLastError.empty())
     mLastError += "\n";
   mLastError += pLastError;
 }

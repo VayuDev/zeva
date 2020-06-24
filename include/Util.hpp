@@ -51,18 +51,18 @@ inline bool isMusicFile(const std::string &pPath) {
          extensions.cend();
 }
 
-inline char* readWholeFileCString(const char* pPath, bool pAllowZeroes = true) {
-  FILE* file = fopen(pPath, "r");
-  if(!file) {
+inline char *readWholeFileCString(const char *pPath, bool pAllowZeroes = true) {
+  FILE *file = fopen(pPath, "r");
+  if (!file) {
     return nullptr;
   }
   fseek(file, 0, SEEK_END);
   size_t length = ftell(file);
   fseek(file, 0, SEEK_SET);
-  char* data = (char*)malloc(length+1);
+  char *data = (char *)malloc(length + 1);
   fread(data, 1, length, file);
 
-  if(!pAllowZeroes && memmem(data, length, "\0", 1) != nullptr) {
+  if (!pAllowZeroes && memmem(data, length, "\0", 1) != nullptr) {
     free(data);
     return nullptr;
   }
@@ -71,15 +71,15 @@ inline char* readWholeFileCString(const char* pPath, bool pAllowZeroes = true) {
   return data;
 }
 
-inline std::string getScriptClassNameFromScriptName(const std::string& pScriptName) {
+inline std::string
+getScriptClassNameFromScriptName(const std::string &pScriptName) {
   std::stringstream ret;
   bool printedChar = false;
-  for(auto c: pScriptName) {
-    if(isalnum(c)) {
+  for (auto c : pScriptName) {
+    if (isalnum(c)) {
       ret << c;
       printedChar = true;
-    }
-    else if(printedChar) {
+    } else if (printedChar) {
       ret << '_';
     }
   }

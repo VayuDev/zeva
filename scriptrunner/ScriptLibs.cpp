@@ -3,11 +3,11 @@
 #include "Script.hpp"
 #include "TcpClient.hpp"
 #include "Util.hpp"
+#include "httplib.h"
 #include <cassert>
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
-#include "httplib.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -424,8 +424,8 @@ static void genRandomDouble(WrenVM *pVM) {
 }
 
 static void getConfigString(WrenVM *pVM) {
-  char* data = readWholeFileCString(getConfigFileLocation(), false);
-  if(data) {
+  char *data = readWholeFileCString(getConfigFileLocation(), false);
+  if (data) {
     wrenSetSlotString(pVM, 0, data);
     free(data);
   } else {
@@ -435,11 +435,11 @@ static void getConfigString(WrenVM *pVM) {
 
 static void httpClientSend(WrenVM *pVM) {
   auto *self = (Script *)wrenGetUserData(pVM);
-  if(wrenGetSlotType(pVM, 1) != WREN_TYPE_STRING
-  || wrenGetSlotType(pVM, 2) != WREN_TYPE_NUM
-  || wrenGetSlotType(pVM, 3) != WREN_TYPE_STRING
-  || wrenGetSlotType(pVM, 4) != WREN_TYPE_STRING
-  || wrenGetSlotType(pVM, 5) != WREN_TYPE_STRING) {
+  if (wrenGetSlotType(pVM, 1) != WREN_TYPE_STRING ||
+      wrenGetSlotType(pVM, 2) != WREN_TYPE_NUM ||
+      wrenGetSlotType(pVM, 3) != WREN_TYPE_STRING ||
+      wrenGetSlotType(pVM, 4) != WREN_TYPE_STRING ||
+      wrenGetSlotType(pVM, 5) != WREN_TYPE_STRING) {
     wrenSetSlotString(pVM, 0, "Invalid parameters types");
     wrenAbortFiber(pVM, 0);
   }
@@ -451,19 +451,19 @@ static void httpClientSend(WrenVM *pVM) {
 
   try {
     std::unique_ptr<httplib::Client> httpClient;
-    if(port == 443)
+    if (port == 443)
       httpClient.reset(new httplib::SSLClient(hostname, port));
     else
       httpClient.reset(new httplib::Client(hostname, port));
     std::shared_ptr<httplib::Response> resp;
-    if(type == "GET") {
+    if (type == "GET") {
       resp = httpClient->Get(url);
-    } else if(type == "POST") {
+    } else if (type == "POST") {
       resp = httpClient->Post(url, body, "application/x-www-form-urlencoded");
     } else {
       throw std::runtime_error("Unknown request type");
     }
-    if(!resp) {
+    if (!resp) {
       throw std::runtime_error("Unable to make request");
     }
     wrenEnsureSlots(pVM, 2);
@@ -472,11 +472,10 @@ static void httpClientSend(WrenVM *pVM) {
     wrenInsertInList(pVM, 0, 0, 1);
     wrenSetSlotString(pVM, 1, resp->body.c_str());
     wrenInsertInList(pVM, 0, 1, 1);
-  } catch(std::exception& e) {
+  } catch (std::exception &e) {
     wrenSetSlotString(pVM, 0, e.what());
     wrenAbortFiber(pVM, 0);
   }
-
 }
 
 WrenForeignMethodFn bindForeignMethod(WrenVM *vm, const char *module,
