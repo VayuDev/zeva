@@ -61,7 +61,7 @@ int main() {
   }
   input = atoi(inputFdStr);
   output = atoi(outputFdStr);
-
+/*
   auto closePipes = [](int) {
     if (close(input)) {
       perror("close()");
@@ -73,7 +73,7 @@ int main() {
   };
 
   signal(SIGTERM, closePipes);
-  signal(SIGINT, closePipes);
+  signal(SIGINT, closePipes);*/
 
   char cmd;
   auto code = safeRead(input, cmd);
