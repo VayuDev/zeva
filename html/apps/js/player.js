@@ -7,6 +7,8 @@ function navigateBack(path) {
 let currentPath = ".";
 let first = true;
 let reversePlaylist = false;
+let queue = []
+let queueCurrentPlayingIndex = null;
 function ls(path, record = true) {
     $.ajax({
         dataType: "json",
@@ -31,6 +33,7 @@ function ls(path, record = true) {
             for(let i = 0; i < data.length; ++i) {
                 let row = $("<div></div>").addClass("song");
                 row.append($("<img>").addClass("icon").attr("src", data[i].directory ? "/icons/directory.svg" : "/icons/file.svg"));
+                row.attr("songname", data[i].name);
                 row.append($("<span></span>").text(data[i].name.replace(/^.*[\\\/]/, '')));
                 row.click(() => {
                     if(data[i].directory) {
@@ -40,19 +43,21 @@ function ls(path, record = true) {
                             ls(data[i].name);
                         }
                     } else if(data[i].musicfile) {
-                        let queue = data.filter((e) => e.musicfile).map((e) => e.name);
+                        queue = data.filter((e) => e.musicfile).map((e) => e.name);
                         if(reversePlaylist)
                             queue.reverse()
-                        let startIndex = queue.findIndex((element) => element === data[i]["name"]);
+                        queueCurrentPlayingIndex = queue.findIndex((element) => element === data[i]["name"]);
+
                         $.ajax({
                             url: "/api/apps/player/setQueue",
                             type: "POST",
                             data: {
                                 queue: JSON.stringify(queue),
-                                startIndex: startIndex
+                                startIndex: queueCurrentPlayingIndex
                             },
                             success: function(data) {
                                 notify("Success!");
+                                highlightPlayingSong();
                             },
                             error: function(err) {
                                 notifyError(err.responseText);
@@ -66,6 +71,37 @@ function ls(path, record = true) {
         },
         error: function(err) {
             notifyError(err.responseText);
+        },
+    });
+}
+
+function highlightPlayingSong() {
+    let row = $("[songname='" + queue[queueCurrentPlayingIndex] + "']");
+    console.log(row);
+    $(".playing").removeClass("playing");
+    row.addClass("playing");
+    $.ajax({
+        dataType: "json",
+        url: "/api/apps/player/duration",
+        data: {
+            songname: queue[queueCurrentPlayingIndex]
+        },
+        success: function(data) {
+            //values in ns
+            let duration = data["duration"];
+            let position = data["position"];
+            let remaining = (duration - position) / 1000.0 / 1000.0
+            setTimeout(async function() {
+                queueCurrentPlayingIndex += 1;
+                highlightPlayingSong();
+            }, remaining);
+        },
+        error: function(err) {
+            if(queueCurrentPlayingIndex >= queue.length)
+                return;
+            notifyError(err.responseText);
+            // try again
+            setTimeout(() => highlightPlayingSong(), 100);
         },
     });
 }

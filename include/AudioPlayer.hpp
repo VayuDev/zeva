@@ -3,7 +3,7 @@
 #include <gst/gst.h>
 #include <iostream>
 
-using DurationCallback = std::function<void(int64_t)>;
+using DurationCallback = std::function<void(int64_t, int64_t)>;
 using DoneCallback = std::function<void(void)>;
 
 class AudioPlayer {

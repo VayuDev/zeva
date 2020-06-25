@@ -119,7 +119,7 @@ void AudioPlayer::poll() {
       break;
     case GST_MESSAGE_DURATION_CHANGED:
       if (asyncDone && mDurationCallback)
-        mDurationCallback->operator()(getDuration());
+        mDurationCallback->operator()(getPosition(), getDuration());
       break;
     default:
       /* unhandled message */

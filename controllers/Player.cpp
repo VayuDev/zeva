@@ -91,3 +91,23 @@ void Api::Apps::Player::pause(
     callback(genError(e.what()));
   }
 }
+void Api::Apps::Player::getDuration(const drogon::HttpRequestPtr &req,
+                                    std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+                                    std::string &&pSongname) {
+  auto currentlyPlayingSong = mPlayer.getCurrentSong();
+  if(!currentlyPlayingSong) {
+    callback(genError("No song currently playing"));
+    return;
+  }
+  if(*currentlyPlayingSong != pSongname) {
+    callback(genError("This song isn't currently being played"));
+    return;
+  }
+  mPlayer.callWhenDurationIsAvailable([callback=std::move(callback)] (auto position, auto duration) mutable {
+
+    Json::Value response;
+    response["position"] = position;
+    response["duration"] = duration;
+    callback(drogon::HttpResponse::newHttpJsonResponse(std::move(response)));
+  });
+}

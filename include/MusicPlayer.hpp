@@ -5,6 +5,7 @@
 #include "Util.hpp"
 #include <string>
 #include <vector>
+#include <forward_list>
 
 class MusicPlayer {
 public:
@@ -20,7 +21,8 @@ public:
   int64_t getCurrentMusicDuration();
   int64_t getCurrentMusicPosition();
   std::vector<SftpFile> ls(const std::string &pPath);
-
+  std::optional<std::string> getCurrentSong() noexcept;
+  void callWhenDurationIsAvailable(std::function<void(int64_t, int64_t)>&&);
 private:
   void initialize();
   std::optional<AudioPlayer> mAudio;
@@ -30,4 +32,5 @@ private:
   std::string mConfigFileLocation;
   bool mConnected = false;
   std::recursive_mutex mMutex;
+  std::forward_list<std::function<void(int64_t, int64_t)>> mDurationCallbacks;
 };

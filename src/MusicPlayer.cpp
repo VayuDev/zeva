@@ -80,7 +80,30 @@ void MusicPlayer::initialize() {
     const auto nasConfig = config["nas"];
     mSftp.emplace(nasConfig["user"].asString(), nasConfig["passwd"].asString(),
                   nasConfig["host"].asString(), nasConfig["port"].asInt());
-    mAudio.emplace([this] { playNextSong(); });
+    mAudio.emplace([this] { playNextSong(); }, [this] (int64_t position, int64_t duration) {
+      std::lock_guard<std::recursive_mutex> lock{mMutex};
+      for(auto& callback: mDurationCallbacks) {
+        callback(position, duration);
+      }
+      mDurationCallbacks.clear();
+    });
     mConnected = true;
   }
+}
+std::optional<std::string> MusicPlayer::getCurrentSong() noexcept {
+  std::lock_guard<std::recursive_mutex> lock{mMutex};
+  try {
+    return mPlaylist.at(mIndex);
+  } catch(...) {
+    return {};
+  }
+}
+void MusicPlayer::callWhenDurationIsAvailable(std::function<void(int64_t, int64_t)> &&callback) {
+  std::lock_guard<std::recursive_mutex> lock{mMutex};
+  auto duration = getCurrentMusicDuration();
+  if(duration != std::numeric_limits<decltype(duration)>::max()) {
+    callback(getCurrentMusicPosition(), getCurrentMusicDuration());
+    return;
+  }
+  mDurationCallbacks.emplace_front(std::move(callback));
 }
