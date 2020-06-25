@@ -6,6 +6,7 @@ function navigateBack(path) {
 }
 let currentPath = ".";
 let first = true;
+let reversePlaylist = false;
 function ls(path, record = true) {
     $.ajax({
         dataType: "json",
@@ -40,6 +41,8 @@ function ls(path, record = true) {
                         }
                     } else if(data[i].musicfile) {
                         let queue = data.filter((e) => e.musicfile).map((e) => e.name);
+                        if(reversePlaylist)
+                            queue.reverse()
                         let startIndex = queue.findIndex((element) => element === data[i]["name"]);
                         $.ajax({
                             url: "/api/apps/player/setQueue",
@@ -113,4 +116,13 @@ function resume() {
             notifyError(err.responseText);
         },
     });
+}
+
+function reverse() {
+    reversePlaylist = !reversePlaylist;
+    let songs = document.getElementById("songs");
+    let goUp = songs.firstElementChild;
+    songs.removeChild(goUp);
+    songs.append(...Array.from(songs.childNodes).reverse());
+    songs.prepend(goUp);
 }
