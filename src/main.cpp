@@ -84,7 +84,7 @@ int main() {
   // setup log
   std::regex levelFinder{R"([a-zA-Z]+)"};
   trantor::Logger::setOutputFunction(
-      [&levelFinder, conn, logWebsocketController](const char *str,
+      [levelFinder = std::move(levelFinder), conn, logWebsocketController](const char *str,
                                                    uint64_t len) {
         if (isValidAscii(reinterpret_cast<const signed char *>(str), len)) {
           bool shortened = false;

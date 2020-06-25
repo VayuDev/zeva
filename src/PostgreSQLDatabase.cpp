@@ -112,9 +112,10 @@ void PostgreSQLQueryResult::log() const {
   }
 }
 
-PostgreSQLDatabase::PostgreSQLDatabase(
-    const std::filesystem::path &pConfigFile) {
+PostgreSQLDatabase::PostgreSQLDatabase(std::filesystem::path pConfigFile) {
   std::ifstream instream{pConfigFile};
+  if(!instream)
+    throw std::runtime_error(std::string{"Unable to read "} + pConfigFile.string());
   Json::Value config;
   instream >> config;
   const auto dbconfig = config["db_clients"][0];

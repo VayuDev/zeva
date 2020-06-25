@@ -25,7 +25,7 @@ private:
 class PostgreSQLDatabase : public DatabaseWrapper {
 public:
   explicit PostgreSQLDatabase(
-      const std::filesystem::path &pConfigFile = getConfigFileLocation());
+      std::filesystem::path pConfigFile = getConfigFileLocation());
   PostgreSQLDatabase(std::string pDbName, std::string pUserName,
                      std::string pPassword, std::string pHost, uint16_t pPort);
   ~PostgreSQLDatabase() override;
