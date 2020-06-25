@@ -6,6 +6,7 @@
 #include <libpq-fe.h>
 #include <map>
 #include <memory>
+#include <mutex>
 
 class PostgreSQLQueryResult : public QueryResult {
 public:
@@ -43,6 +44,7 @@ private:
   pg_conn *mCConnection = nullptr;
   std::map<Oid, QueryValueType> mOidToType;
   std::map<QueryValueType, Oid> mTypeToOid;
+  mutable std::recursive_mutex mMutex;
 
   void checkForNewNotifications();
   void listenTo(const std::string &pChannel) override;

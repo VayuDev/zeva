@@ -8,6 +8,7 @@
 std::unique_ptr<QueryResult>
 PostgreSQLDatabase::query(std::string pQuery,
                           std::vector<QueryValue> pPlaceholders) {
+  std::unique_lock<std::recursive_mutex> lock(mMutex);
   assert(mCConnection);
   auto oids = genOidVector(pPlaceholders);
   std::vector<char *> values;
@@ -113,6 +114,7 @@ void PostgreSQLQueryResult::log() const {
 }
 
 PostgreSQLDatabase::PostgreSQLDatabase(std::filesystem::path pConfigFile) {
+  std::unique_lock<std::recursive_mutex> lock(mMutex);
   std::ifstream instream{pConfigFile};
   if(!instream)
     throw std::runtime_error(std::string{"Unable to read "} + pConfigFile.string());
@@ -136,12 +138,13 @@ PostgreSQLDatabase::PostgreSQLDatabase(std::string pDbName,
     : mConnectString("dbname = " + pDbName + " user = " + pUserName +
                      " password = " + pPassword + " hostaddr = " + pHost +
                      " port = " + std::to_string(pPort)) {
-
+  std::unique_lock<std::recursive_mutex> lock(mMutex);
   mCConnection = PQconnectdb(mConnectString.c_str());
   init();
 }
 
 void PostgreSQLDatabase::init() {
+  std::unique_lock<std::recursive_mutex> lock(mMutex);
   auto res = PQexec(mCConnection, "SELECT typname, oid FROM pg_type;");
   checkForNewNotifications();
   for (int r = 0; r < PQntuples(res); ++r) {
@@ -177,12 +180,14 @@ void PostgreSQLDatabase::init() {
 }
 
 PostgreSQLDatabase::~PostgreSQLDatabase() {
+  std::unique_lock<std::recursive_mutex> lock(mMutex);
   if (mCConnection) {
     PQfinish(mCConnection);
   }
 }
 
 std::string PostgreSQLDatabase::performCopyToStdout(const std::string &pQuery) {
+  std::unique_lock<std::recursive_mutex> lock(mMutex);
   auto res = PQexec(mCConnection, pQuery.c_str());
   checkForNewNotifications();
   char *buff;
@@ -214,12 +219,14 @@ std::string PostgreSQLDatabase::performCopyToStdout(const std::string &pQuery) {
 
 void PostgreSQLDatabase::awaitNotifications(int millis) {
   std::this_thread::sleep_for(std::chrono::milliseconds(millis));
+  std::unique_lock<std::recursive_mutex> lock(mMutex);
   PQconsumeInput(mCConnection);
   checkForNewNotifications();
 }
 
 std::vector<Oid>
 PostgreSQLDatabase::genOidVector(const std::vector<QueryValue> &pValues) const {
+  std::unique_lock<std::recursive_mutex> lock(mMutex);
   std::vector<Oid> ret(pValues.size());
   size_t i = 0;
   for (auto val : pValues) {
@@ -229,6 +236,7 @@ PostgreSQLDatabase::genOidVector(const std::vector<QueryValue> &pValues) const {
 }
 
 void PostgreSQLDatabase::checkForNewNotifications() {
+  std::unique_lock<std::recursive_mutex> lock(mMutex);
   pgNotify *notification;
   do {
     notification = PQnotifies(mCConnection);
@@ -242,6 +250,7 @@ void PostgreSQLDatabase::checkForNewNotifications() {
 }
 
 void PostgreSQLDatabase::listenTo(const std::string &pChannel) {
+  std::unique_lock<std::recursive_mutex> lock(mMutex);
   auto query = "LISTEN " + pChannel;
   auto listenResp = PQexec(mCConnection, query.c_str());
   checkForNewNotifications();
