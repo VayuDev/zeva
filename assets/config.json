@@ -21,5 +21,12 @@
     "user": "user",
     "port": 22,
     "passwd": "password"
+  },
+  "notifications": {
+    "gotify": {
+      "host": "gotify",
+      "port": 8080,
+      "token": "your_token"
+    }
   }
 }
