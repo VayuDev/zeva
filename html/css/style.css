@@ -124,7 +124,7 @@ input, button {
 }
 
 .notify {
-    position: absolute;
+    position: fixed;
     background-color: white;
     right: 10px;
     border-radius: 10px;
