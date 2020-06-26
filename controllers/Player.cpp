@@ -16,8 +16,9 @@ Api::Apps::Player::~Player() {
 void Api::Apps::Player::getStatus(
     const drogon::HttpRequestPtr &,
     std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+  std::shared_lock<std::shared_mutex> lock(mLastLsMutex);
   Json::Value resp;
-  resp["path"] = ".";
+  resp["path"] = mLastLs;
   callback(drogon::HttpResponse::newHttpJsonResponse(std::move(resp)));
 }
 void Api::Apps::Player::getLs(
@@ -37,6 +38,11 @@ void Api::Apps::Player::getLs(
       file["directory"] = str.isDirectory;
       file["musicfile"] = isMusicFile(str.name);
       resp.append(std::move(file));
+    }
+    //update last ls
+    {
+      std::lock_guard<std::shared_mutex> lock(mLastLsMutex);
+      mLastLs = pPath;
     }
     callback(drogon::HttpResponse::newHttpJsonResponse(std::move(resp)));
   } catch (std::exception &e) {

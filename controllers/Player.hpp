@@ -4,6 +4,7 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/HttpController.h>
 #include <drogon/drogon.h>
+#include <shared_mutex>
 
 namespace Api::Apps {
 
@@ -47,6 +48,8 @@ public:
 private:
   MusicPlayer mPlayer;
   trantor::TimerId mTimerId;
+  std::string mLastLs = ".";
+  std::shared_mutex mLastLsMutex;
 };
 
 } // namespace Api::Apps
