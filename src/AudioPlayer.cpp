@@ -81,6 +81,7 @@ void AudioPlayer::play(const std::string &pFile) {
   gst_element_set_state(pipeline, GST_STATE_PLAYING);
   running = true;
   asyncDone = false;
+  durationDone = false;
 }
 
 AudioPlayer::~AudioPlayer() {
@@ -116,8 +117,11 @@ void AudioPlayer::poll() {
       break;
     case GST_MESSAGE_ASYNC_DONE:
       asyncDone = true;
+      if (durationDone && mDurationCallback)
+        mDurationCallback->operator()(getPosition(), getDuration());
       break;
     case GST_MESSAGE_DURATION_CHANGED:
+      durationDone = true;
       if (asyncDone && mDurationCallback)
         mDurationCallback->operator()(getPosition(), getDuration());
       break;

@@ -104,7 +104,7 @@ function highlightPlayingSong() {
                 return;
             notifyError(err.responseText);
             // try again
-            setTimeout(() => highlightPlayingSong(), 100);
+            highlightTimeoutId = setTimeout(() => highlightPlayingSong(), 1000);
         },
     });
 }

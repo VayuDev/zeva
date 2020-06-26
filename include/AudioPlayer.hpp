@@ -25,7 +25,7 @@ public:
 private:
   void destruct();
 
-  bool running = false, asyncDone = false;
+  bool running = false, asyncDone = false, durationDone = false;
   GstBus *bus = nullptr;
   GstElement *pipeline = nullptr, *audio = nullptr;
   std::optional<DurationCallback> mDurationCallback;
