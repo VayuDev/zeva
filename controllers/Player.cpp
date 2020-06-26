@@ -45,7 +45,7 @@ void Api::Apps::Player::getLs(
 }
 
 void Api::Apps::Player::setQueue(
-    const drogon::HttpRequestPtr &req,
+    const drogon::HttpRequestPtr &,
     std::function<void(const drogon::HttpResponsePtr &)> &&callback,
     std::string &&pQueueJson, int64_t pStartindex) {
   try {
@@ -72,7 +72,7 @@ void Api::Apps::Player::setQueue(
   }
 }
 void Api::Apps::Player::resume(
-    const drogon::HttpRequestPtr &req,
+    const drogon::HttpRequestPtr &,
     std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
   try {
     mPlayer.resume();
@@ -82,7 +82,7 @@ void Api::Apps::Player::resume(
   }
 }
 void Api::Apps::Player::pause(
-    const drogon::HttpRequestPtr &req,
+    const drogon::HttpRequestPtr &,
     std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
   try {
     mPlayer.pause();
@@ -91,7 +91,7 @@ void Api::Apps::Player::pause(
     callback(genError(e.what()));
   }
 }
-void Api::Apps::Player::getDuration(const drogon::HttpRequestPtr &req,
+void Api::Apps::Player::getDuration(const drogon::HttpRequestPtr &,
                                     std::function<void(const drogon::HttpResponsePtr &)> &&callback,
                                     std::string &&pSongname) {
   auto currentlyPlayingSong = mPlayer.getCurrentSong();
@@ -110,4 +110,14 @@ void Api::Apps::Player::getDuration(const drogon::HttpRequestPtr &req,
     response["duration"] = duration;
     callback(drogon::HttpResponse::newHttpJsonResponse(std::move(response)));
   });
+}
+void Api::Apps::Player::next(const drogon::HttpRequestPtr &,
+                             std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+  mPlayer.playNextSong();
+  callback(genResponse("ok"));
+}
+void Api::Apps::Player::prev(const drogon::HttpRequestPtr &,
+                             std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+  mPlayer.playPrevSong();
+  callback(genResponse("ok"));
 }

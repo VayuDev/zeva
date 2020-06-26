@@ -16,6 +16,8 @@ public:
   METHOD_ADD(Player::resume, "resume", drogon::Post);
   METHOD_ADD(Player::pause, "pause", drogon::Post);
   METHOD_ADD(Player::getDuration, "duration?songname={}", drogon::Get);
+  METHOD_ADD(Player::next, "next", drogon::Post);
+  METHOD_ADD(Player::prev, "prev", drogon::Post);
   METHOD_LIST_END
 
   Player();
@@ -33,6 +35,10 @@ public:
   void resume(const drogon::HttpRequestPtr &req,
               std::function<void(const drogon::HttpResponsePtr &)> &&callback);
   void pause(const drogon::HttpRequestPtr &req,
+             std::function<void(const drogon::HttpResponsePtr &)> &&callback);
+  void next(const drogon::HttpRequestPtr &req,
+              std::function<void(const drogon::HttpResponsePtr &)> &&callback);
+  void prev(const drogon::HttpRequestPtr &req,
              std::function<void(const drogon::HttpResponsePtr &)> &&callback);
   void getDuration(const drogon::HttpRequestPtr &req,
              std::function<void(const drogon::HttpResponsePtr &)> &&callback,

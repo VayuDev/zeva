@@ -9,6 +9,7 @@ let first = true;
 let reversePlaylist = false;
 let queue = []
 let queueCurrentPlayingIndex = null;
+let highlightTimeoutId = null;
 function ls(path, record = true) {
     $.ajax({
         dataType: "json",
@@ -76,6 +77,8 @@ function ls(path, record = true) {
 }
 
 function highlightPlayingSong() {
+    if(highlightTimeoutId)
+        clearTimeout(highlightTimeoutId);
     let row = $("[songname='" + queue[queueCurrentPlayingIndex] + "']");
     console.log(row);
     $(".playing").removeClass("playing");
@@ -91,7 +94,7 @@ function highlightPlayingSong() {
             let duration = data["duration"];
             let position = data["position"];
             let remaining = (duration - position) / 1000.0 / 1000.0
-            setTimeout(async function() {
+            highlightTimeoutId = setTimeout(async function() {
                 queueCurrentPlayingIndex += 1;
                 highlightPlayingSong();
             }, remaining);
@@ -147,6 +150,34 @@ function resume() {
         url: "/api/apps/player/resume",
         success: function(data) {
             notify("Resumed!");
+        },
+        error: function(err) {
+            notifyError(err.responseText);
+        },
+    });
+}
+
+function next() {
+    $.ajax({
+        type: "POST",
+        url: "/api/apps/player/next",
+        success: function(data) {
+            queueCurrentPlayingIndex += 1;
+            highlightPlayingSong();
+        },
+        error: function(err) {
+            notifyError(err.responseText);
+        },
+    });
+}
+
+function prev() {
+    $.ajax({
+        type: "POST",
+        url: "/api/apps/player/prev",
+        success: function(data) {
+            queueCurrentPlayingIndex -= 1;
+            highlightPlayingSong();
         },
         error: function(err) {
             notifyError(err.responseText);
