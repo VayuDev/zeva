@@ -10,7 +10,7 @@ let reversePlaylist = false;
 let queue = []
 let queueCurrentPlayingIndex = null;
 let highlightTimeoutId = null;
-function ls(path, record = true) {
+function ls(path, callback, record = true) {
     $.ajax({
         dataType: "json",
         url: "/api/apps/player/ls?path=" + encodeURIComponent(path),
@@ -69,6 +69,9 @@ function ls(path, record = true) {
                 });
                 songs.append(row);
             }
+            if(callback) {
+                callback();
+            }
         },
         error: function(err) {
             notifyError(err.responseText);
@@ -110,24 +113,31 @@ function highlightPlayingSong() {
 }
 
 document.addEventListener("DOMContentLoaded", function() {
-    let path = getUrlParam("path");
-    if(path) {
-        ls(path)
-    } else {
-        $.ajax({
-            dataType: "json",
-            url: "/api/apps/player/status",
-            success: function(data) {
-                let path = data["path"];
-                ls(path);
-            },
-            error: function(err) {
-                notifyError(err.responseText);
-            },
-        });
-    }
+    let urlParamPath = getUrlParam("path");
+
+    $.ajax({
+        dataType: "json",
+        url: "/api/apps/player/status",
+        success: function(data) {
+            let lsDone = () => {
+                queue = data["queue"];
+                queueCurrentPlayingIndex = data["queueIndex"];
+                highlightPlayingSong();
+            };
+            if(urlParamPath) {
+                ls(urlParamPath, lsDone);
+            } else {
+                ls(data["path"], lsDone);
+            }
+
+        },
+        error: function(err) {
+            notifyError(err.responseText);
+        },
+    });
+
     window.onpopstate = function(event) {
-        ls(event.state["path"], false);
+        ls(event.state["path"], () => {}, false);
     }
 });
 

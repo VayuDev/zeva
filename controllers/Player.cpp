@@ -19,6 +19,14 @@ void Api::Apps::Player::getStatus(
   std::shared_lock<std::shared_mutex> lock(mLastLsMutex);
   Json::Value resp;
   resp["path"] = mLastLs;
+  {
+    Json::Value queue;
+    for(const auto& song: mPlayer.getPlaylist()) {
+      queue.append(song);
+    }
+    resp["queue"] = std::move(queue);
+  }
+  resp["queueIndex"] = mPlayer.getCurrentSongIndex();
   callback(drogon::HttpResponse::newHttpJsonResponse(std::move(resp)));
 }
 void Api::Apps::Player::getLs(
