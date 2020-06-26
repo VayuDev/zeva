@@ -10,6 +10,24 @@ let reversePlaylist = false;
 let queue = []
 let queueCurrentPlayingIndex = null;
 let highlightTimeoutId = null;
+
+var Timer = function(callback, delay) {
+    var timerId, start, remaining = delay;
+
+    this.pause = function() {
+        window.clearTimeout(timerId);
+        remaining -= Date.now() - start;
+    };
+
+    this.resume = function() {
+        start = Date.now();
+        window.clearTimeout(timerId);
+        timerId = window.setTimeout(callback, remaining);
+    };
+
+    this.resume();
+};
+
 function ls(path, callback, record = true) {
     $.ajax({
         dataType: "json",
@@ -81,7 +99,7 @@ function ls(path, callback, record = true) {
 
 function highlightPlayingSong() {
     if(highlightTimeoutId)
-        clearTimeout(highlightTimeoutId);
+        highlightTimeoutId.pause()
     let row = $("[songname='" + queue[queueCurrentPlayingIndex] + "']");
     console.log(row);
     $(".playing").removeClass("playing");
@@ -97,7 +115,8 @@ function highlightPlayingSong() {
             let duration = data["duration"];
             let position = data["position"];
             let remaining = (duration - position) / 1000.0 / 1000.0
-            highlightTimeoutId = setTimeout(async function() {
+            timeUntilNextSong = remaining;
+            highlightTimeoutId = new Timer(async function() {
                 queueCurrentPlayingIndex += 1;
                 highlightPlayingSong();
             }, remaining);
@@ -107,7 +126,7 @@ function highlightPlayingSong() {
                 return;
             notifyError(err.responseText);
             // try again
-            highlightTimeoutId = setTimeout(() => highlightPlayingSong(), 1000);
+            highlightTimeoutId = new Timer(() => highlightPlayingSong(), 1000);
         },
     });
 }
@@ -141,11 +160,13 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
+
 function pause() {
     $.ajax({
         type: "POST",
         url: "/api/apps/player/pause",
         success: function(data) {
+            highlightTimeoutId.pause();
             notify("Paused!");
         },
         error: function(err) {
@@ -159,6 +180,7 @@ function resume() {
         type: "POST",
         url: "/api/apps/player/resume",
         success: function(data) {
+            highlightTimeoutId.resume();
             notify("Resumed!");
         },
         error: function(err) {
