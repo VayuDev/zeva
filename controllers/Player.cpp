@@ -21,7 +21,7 @@ void Api::Apps::Player::getStatus(
   resp["path"] = mLastLs;
   {
     Json::Value queue;
-    for(const auto& song: mPlayer.getPlaylist()) {
+    for (const auto &song : mPlayer.getPlaylist()) {
       queue.append(song);
     }
     resp["queue"] = std::move(queue);
@@ -47,7 +47,7 @@ void Api::Apps::Player::getLs(
       file["musicfile"] = isMusicFile(str.name);
       resp.append(std::move(file));
     }
-    //update last ls
+    // update last ls
     {
       std::lock_guard<std::shared_mutex> lock(mLastLsMutex);
       mLastLs = pPath;
@@ -105,33 +105,37 @@ void Api::Apps::Player::pause(
     callback(genError(e.what()));
   }
 }
-void Api::Apps::Player::getDuration(const drogon::HttpRequestPtr &,
-                                    std::function<void(const drogon::HttpResponsePtr &)> &&callback,
-                                    std::string &&pSongname) {
+void Api::Apps::Player::getDuration(
+    const drogon::HttpRequestPtr &,
+    std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+    std::string &&pSongname) {
   auto currentlyPlayingSong = mPlayer.getCurrentSong();
-  if(!currentlyPlayingSong) {
+  if (!currentlyPlayingSong) {
     callback(genError("No song currently playing"));
     return;
   }
-  if(*currentlyPlayingSong != pSongname) {
+  if (*currentlyPlayingSong != pSongname) {
     callback(genError("This song isn't currently being played"));
     return;
   }
-  mPlayer.callWhenDurationIsAvailable([callback=std::move(callback)] (auto position, auto duration) mutable {
-
-    Json::Value response;
-    response["position"] = position;
-    response["duration"] = duration;
-    callback(drogon::HttpResponse::newHttpJsonResponse(std::move(response)));
-  });
+  mPlayer.callWhenDurationIsAvailable(
+      [callback = std::move(callback)](auto position, auto duration) mutable {
+        Json::Value response;
+        response["position"] = position;
+        response["duration"] = duration;
+        callback(
+            drogon::HttpResponse::newHttpJsonResponse(std::move(response)));
+      });
 }
-void Api::Apps::Player::next(const drogon::HttpRequestPtr &,
-                             std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+void Api::Apps::Player::next(
+    const drogon::HttpRequestPtr &,
+    std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
   mPlayer.playNextSong();
   callback(genResponse("ok"));
 }
-void Api::Apps::Player::prev(const drogon::HttpRequestPtr &,
-                             std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
+void Api::Apps::Player::prev(
+    const drogon::HttpRequestPtr &,
+    std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
   mPlayer.playPrevSong();
   callback(genResponse("ok"));
 }

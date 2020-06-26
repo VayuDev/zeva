@@ -116,8 +116,9 @@ void PostgreSQLQueryResult::log() const {
 PostgreSQLDatabase::PostgreSQLDatabase(std::filesystem::path pConfigFile) {
   std::unique_lock<std::recursive_mutex> lock(mMutex);
   std::ifstream instream{pConfigFile};
-  if(!instream)
-    throw std::runtime_error(std::string{"Unable to read "} + pConfigFile.string());
+  if (!instream)
+    throw std::runtime_error(std::string{"Unable to read "} +
+                             pConfigFile.string());
   Json::Value config;
   instream >> config;
   const auto dbconfig = config["db_clients"][0];

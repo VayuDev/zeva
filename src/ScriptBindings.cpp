@@ -23,7 +23,7 @@ ScriptBindings::ScriptBindings(const std::string &pModule,
 
 ScriptBindings::~ScriptBindings() {
   killChild();
-  if(mTimeoutId)
+  if (mTimeoutId)
     drogon::app().getLoop()->invalidateTimer(*mTimeoutId);
   *mTimeoutShouldRun = false;
 }
@@ -186,22 +186,23 @@ void ScriptBindings::execute(const std::string &pFunctionName,
                                           std::move(pCallback),
                                           std::move(pErrorCallback), id));
   *mTimeoutShouldRun = true;
-  mTimeoutId = drogon::app().getLoop()->runAfter(5, [id, mTimeoutShouldRun = this->mTimeoutShouldRun, this] {
-    if(!mTimeoutShouldRun)
-      return;
-    std::unique_lock<std::recursive_mutex> lock(mFdMutex);
-    if (!mToCallWhenDone.empty() &&
-        id == std::get<int64_t>(mToCallWhenDone.front())) {
-      LOG_WARN << "[Script] " << mModule << " received a timeout!";
-      auto [functionName, params, callback, errorCallback, id] =
-          mToCallWhenDone.front();
+  mTimeoutId = drogon::app().getLoop()->runAfter(
+      5, [id, mTimeoutShouldRun = this->mTimeoutShouldRun, this] {
+        if (!mTimeoutShouldRun)
+          return;
+        std::unique_lock<std::recursive_mutex> lock(mFdMutex);
+        if (!mToCallWhenDone.empty() &&
+            id == std::get<int64_t>(mToCallWhenDone.front())) {
+          LOG_WARN << "[Script] " << mModule << " received a timeout!";
+          auto [functionName, params, callback, errorCallback, id] =
+              mToCallWhenDone.front();
 
-      std::runtime_error e{"Script timeout!"};
-      errorCallback(e);
-      mToCallWhenDone.pop();
-      restartAndRequeue();
-    }
-  });
+          std::runtime_error e{"Script timeout!"};
+          errorCallback(e);
+          mToCallWhenDone.pop();
+          restartAndRequeue();
+        }
+      });
 }
 
 void ScriptBindings::checkForNewMessages() {

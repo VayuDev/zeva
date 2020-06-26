@@ -3,9 +3,9 @@
 #include "AudioPlayer.hpp"
 #include "SftpClient.hpp"
 #include "Util.hpp"
+#include <forward_list>
 #include <string>
 #include <vector>
-#include <forward_list>
 
 class MusicPlayer {
 public:
@@ -22,13 +22,12 @@ public:
   int64_t getCurrentMusicPosition();
   std::vector<SftpFile> ls(const std::string &pPath);
   std::optional<std::string> getCurrentSong() noexcept;
-  void callWhenDurationIsAvailable(std::function<void(int64_t, int64_t)>&&);
-  [[nodiscard]] inline const std::vector<std::string>& getPlaylist() const {
+  void callWhenDurationIsAvailable(std::function<void(int64_t, int64_t)> &&);
+  [[nodiscard]] inline const std::vector<std::string> &getPlaylist() const {
     return mPlaylist;
   }
-  [[nodiscard]] inline auto getCurrentSongIndex() const {
-    return mIndex;
-  }
+  [[nodiscard]] inline auto getCurrentSongIndex() const { return mIndex; }
+
 private:
   void initialize();
   std::optional<AudioPlayer> mAudio;

@@ -61,19 +61,19 @@ int main() {
   }
   input = atoi(inputFdStr);
   output = atoi(outputFdStr);
-/*
-  auto closePipes = [](int) {
-    if (close(input)) {
-      perror("close()");
-    }
-    if (close(output)) {
-      perror("close()");
-    }
-    exit(0);
-  };
+  /*
+    auto closePipes = [](int) {
+      if (close(input)) {
+        perror("close()");
+      }
+      if (close(output)) {
+        perror("close()");
+      }
+      exit(0);
+    };
 
-  signal(SIGTERM, closePipes);
-  signal(SIGINT, closePipes);*/
+    signal(SIGTERM, closePipes);
+    signal(SIGINT, closePipes);*/
 
   char cmd;
   auto code = safeRead(input, cmd);

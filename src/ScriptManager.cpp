@@ -81,7 +81,6 @@ void ScriptManager::onAudioEvent(const std::string &pType,
   }
 }
 
-
 void ScriptManager::executeScriptWithCallback(
     const std::string &pName, const std::string &pFunction,
     const std::vector<ScriptValue> &pParamSetter, ScriptCallback &&pCallback,
@@ -137,4 +136,3 @@ ScriptManager::ScriptManager()
   pthread_setname_np(mScriptReturnCallbackThread.native_handle(),
                      "ScriptManager");
 }
-

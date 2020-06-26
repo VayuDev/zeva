@@ -38,12 +38,13 @@ public:
   void pause(const drogon::HttpRequestPtr &req,
              std::function<void(const drogon::HttpResponsePtr &)> &&callback);
   void next(const drogon::HttpRequestPtr &req,
-              std::function<void(const drogon::HttpResponsePtr &)> &&callback);
+            std::function<void(const drogon::HttpResponsePtr &)> &&callback);
   void prev(const drogon::HttpRequestPtr &req,
-             std::function<void(const drogon::HttpResponsePtr &)> &&callback);
-  void getDuration(const drogon::HttpRequestPtr &req,
-             std::function<void(const drogon::HttpResponsePtr &)> &&callback,
-             std::string&& pSongname);
+            std::function<void(const drogon::HttpResponsePtr &)> &&callback);
+  void
+  getDuration(const drogon::HttpRequestPtr &req,
+              std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+              std::string &&pSongname);
 
 private:
   MusicPlayer mPlayer;

@@ -8,7 +8,7 @@
 #include <iostream>
 #include <zconf.h>
 
-constexpr const char* PARENT_SCRIPT = R"(
+constexpr const char *PARENT_SCRIPT = R"(
 class Script {
     construct new() {}
     onRunOnce(a) {}
@@ -42,17 +42,18 @@ static char *loadModule(WrenVM *pVM, const char *name) {
   path.append(".wren");
   self->log(LEVEL_INFO, "Loading module: " + path);
   auto data = readWholeFileCString(path.c_str(), false);
-  if(data)
+  if (data)
     return data;
 
   // try to load from another script
   auto db = self->getDbConnection();
-  auto ret = db->query("SELECT code FROM scripts WHERE name=$1", {QueryValue::makeString(name)});
-  if(!ret || ret->getRowCount() == 0) {
+  auto ret = db->query("SELECT code FROM scripts WHERE name=$1",
+                       {QueryValue::makeString(name)});
+  if (!ret || ret->getRowCount() == 0) {
     return nullptr;
   }
   auto code = ret->getValue(0, 0).stringValue;
-  char *codeCpy = (char*)malloc(strlen(PARENT_SCRIPT) + code.size() + 1);
+  char *codeCpy = (char *)malloc(strlen(PARENT_SCRIPT) + code.size() + 1);
   strcpy(codeCpy, PARENT_SCRIPT);
   strcpy(codeCpy + strlen(PARENT_SCRIPT), code.c_str());
   return codeCpy;

@@ -50,13 +50,13 @@ int main() {
     if (eventType == "INSERT") {
       auto id = std::stoll(payload.substr(percentIndex + 1));
       try {
-        auto resp = conn->query("SELECT level,msg FROM log WHERE id=$1", {QueryValue::makeInt(id)});
+        auto resp = conn->query("SELECT level,msg FROM log WHERE id=$1",
+                                {QueryValue::makeInt(id)});
         if (!resp)
           return;
-        logWebsocketController->newLogMessage(
-            resp->getValue(0, 0).intValue,
-            resp->getValue(0, 1).stringValue);
-      } catch(std::exception& e) {
+        logWebsocketController->newLogMessage(resp->getValue(0, 0).intValue,
+                                              resp->getValue(0, 1).stringValue);
+      } catch (std::exception &e) {
         std::cerr << "Error requesting log: " << e.what() << "\n";
       }
     } else {
@@ -73,7 +73,7 @@ int main() {
       try {
         conn->query("DELETE FROM log WHERE created < (CURRENT_TIMESTAMP - '7 "
                     "days' :: interval)");
-      } catch(std::exception& e) {
+      } catch (std::exception &e) {
         LOG_ERROR << "Error awaiting notification: " << e.what();
       }
 
@@ -84,8 +84,8 @@ int main() {
   // setup log
   std::regex levelFinder{R"([a-zA-Z]+)"};
   trantor::Logger::setOutputFunction(
-      [levelFinder = std::move(levelFinder), conn, logWebsocketController](const char *str,
-                                                   uint64_t len) {
+      [levelFinder = std::move(levelFinder), conn,
+       logWebsocketController](const char *str, uint64_t len) {
         if (isValidAscii(reinterpret_cast<const signed char *>(str), len)) {
           bool shortened = false;
           if (len > 500) {

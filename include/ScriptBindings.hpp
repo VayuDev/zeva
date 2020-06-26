@@ -46,7 +46,8 @@ private:
   void spawnChild();
   int64_t mIdCounter = 0;
   std::optional<unsigned long> mTimeoutId = 0;
-  std::shared_ptr<std::atomic<bool>> mTimeoutShouldRun = std::make_shared<std::atomic<bool>>(false);
+  std::shared_ptr<std::atomic<bool>> mTimeoutShouldRun =
+      std::make_shared<std::atomic<bool>>(false);
 
   void restartAndRequeue();
 
