@@ -14,7 +14,7 @@ public:
   void setPlaylist(std::vector<std::string> &&pPlaylist);
   void playPrevSong();
   void playNextSong();
-  void playSong(size_t pNum);
+  bool playSong(size_t pNum);
   void poll();
   void pause();
   void resume();

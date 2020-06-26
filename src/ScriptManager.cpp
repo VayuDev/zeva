@@ -63,6 +63,25 @@ void ScriptManager::onTableChanged(const std::string &pTable,
   }
 }
 
+void ScriptManager::onAudioEvent(const std::string &pType,
+                                 const std::optional<std::string> &pData,
+                                 std::optional<int64_t> pData2) {
+  std::shared_lock<std::shared_mutex> lock{mScriptsMutex};
+  for (auto &script : mScripts) {
+    try {
+      script.second.execute(
+          "onAudio",
+          {ScriptValue::makeString(pType),
+           pData ? ScriptValue::makeString(*pData) : ScriptValue::makeNull(),
+           pData2 ? ScriptValue::makeInt(*pData2) : ScriptValue::makeNull()},
+          IGNORE_SCRIPTCALLBACK, IGNORE_ERRORCALLBACK);
+    } catch (std::exception &e) {
+      LOG_ERROR << "Error executing script: " << e.what();
+    }
+  }
+}
+
+
 void ScriptManager::executeScriptWithCallback(
     const std::string &pName, const std::string &pFunction,
     const std::vector<ScriptValue> &pParamSetter, ScriptCallback &&pCallback,
@@ -118,3 +137,4 @@ ScriptManager::ScriptManager()
   pthread_setname_np(mScriptReturnCallbackThread.native_handle(),
                      "ScriptManager");
 }
+

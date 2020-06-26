@@ -8,6 +8,6 @@ class $ScriptModule$ is Script {
     onTableChanged(filename, event) {
     }
 
-    onAudio(event, song) {
+    onAudio(event, song, duration) {
     }
 }

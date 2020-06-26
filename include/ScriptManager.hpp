@@ -22,8 +22,11 @@ public:
                                  const std::vector<ScriptValue> &pParamSetter,
                                  ScriptCallback &&pCallback,
                                  ErrorCallback &&pErrorCallback);
+  // Should be called when a table changes. Returns (almost) immediately.
   void onTableChanged(const std::string &pTable, const std::string &pType);
 
+  // Should be called when an audio event happens (like skipping a song). Returns (almost) immediately.
+  void onAudioEvent(const std::string& pType, const std::optional<std::string>& pData = {}, std::optional<int64_t> pData2 = {});
 private:
   std::map<std::string, ScriptBindings> mScripts;
   std::shared_mutex mScriptsMutex;

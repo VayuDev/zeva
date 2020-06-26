@@ -2,9 +2,11 @@
 #include <fstream>
 #include <json/json.h>
 #include <trantor/utils/Logger.h>
+#include <ScriptManager.hpp>
 
 MusicPlayer::MusicPlayer(const std::string &pConfigPath)
     : mConfigFileLocation(pConfigPath) {}
+
 void MusicPlayer::setPlaylist(std::vector<std::string> &&pPlaylist) {
   std::lock_guard<std::recursive_mutex> lock{mMutex};
   initialize();
@@ -14,9 +16,11 @@ void MusicPlayer::setPlaylist(std::vector<std::string> &&pPlaylist) {
 void MusicPlayer::playNextSong() {
   std::lock_guard<std::recursive_mutex> lock{mMutex};
   initialize();
-  playSong(mIndex + 1);
+
+  if(playSong(mIndex + 1))
+    ScriptManager::the().onAudioEvent("NEXT", getCurrentSong());
 }
-void MusicPlayer::playSong(size_t pNum) {
+bool MusicPlayer::playSong(size_t pNum) {
   std::lock_guard<std::recursive_mutex> lock{mMutex};
   initialize();
   mIndex = pNum;
@@ -27,8 +31,15 @@ void MusicPlayer::playSong(size_t pNum) {
     temp << data;
     temp.close();
     mAudio->play("/dev/shm/zeva.mp3");
+    callWhenDurationIsAvailable([this] (auto, auto duration) {
+      ScriptManager::the().onAudioEvent("DURATION", getCurrentSong(), duration);
+    });
+    return true;
   } catch (std::exception &e) {
     LOG_INFO << "Unable to play requested song: " << e.what();
+    if(!mAudio->isPlaying())
+      ScriptManager::the().onAudioEvent("STOP");
+    return false;
   }
 }
 void MusicPlayer::poll() {
@@ -39,14 +50,18 @@ void MusicPlayer::poll() {
 void MusicPlayer::pause() {
   std::lock_guard<std::recursive_mutex> lock{mMutex};
   initialize();
-  if (mAudio->ready())
+  if (mAudio->ready()) {
     mAudio->pause();
+    ScriptManager::the().onAudioEvent("PAUSE", getCurrentSong());
+  }
 }
 void MusicPlayer::resume() {
   std::lock_guard<std::recursive_mutex> lock{mMutex};
   initialize();
-  if (mAudio->ready())
+  if (mAudio->ready()) {
     mAudio->resume();
+    ScriptManager::the().onAudioEvent("RESUME", getCurrentSong());
+  }
 }
 int64_t MusicPlayer::getCurrentMusicDuration() {
   std::lock_guard<std::recursive_mutex> lock{mMutex};
@@ -63,7 +78,8 @@ int64_t MusicPlayer::getCurrentMusicPosition() {
 void MusicPlayer::playPrevSong() {
   std::lock_guard<std::recursive_mutex> lock{mMutex};
   initialize();
-  playSong(mIndex - 1);
+  if(playSong(mIndex - 1))
+    ScriptManager::the().onAudioEvent("PREV", getCurrentSong());
 }
 
 std::vector<SftpFile> MusicPlayer::ls(const std::string &pPath) {
@@ -80,7 +96,10 @@ void MusicPlayer::initialize() {
     const auto nasConfig = config["nas"];
     mSftp.emplace(nasConfig["user"].asString(), nasConfig["passwd"].asString(),
                   nasConfig["host"].asString(), nasConfig["port"].asInt());
-    mAudio.emplace([this] { playNextSong(); }, [this] (int64_t position, int64_t duration) {
+    mAudio.emplace([this] {
+      ScriptManager::the().onAudioEvent("DONE", getCurrentSong());
+      playNextSong();
+    }, [this] (int64_t position, int64_t duration) {
       std::lock_guard<std::recursive_mutex> lock{mMutex};
       for(auto& callback: mDurationCallbacks) {
         callback(position, duration);

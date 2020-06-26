@@ -13,6 +13,7 @@ class Script {
     construct new() {}
     onRunOnce(a) {}
     onTableChanged(a, b) {}
+    onAudio(a, b, c) {}
     drawImage(width, height) {}
 }
 )";
@@ -96,7 +97,8 @@ void Script::create(const std::string &pModule, const std::string &pCode) {
     mFunctions[pFuncName] = wrenMakeCallHandle(mVM, sign.c_str());
   };
   append("onTableChanged", 2);
-  append("onRunOnce", 1);
+  append("onRunOnce", 1); // TODO rename
+  append("onAudio", 3);
   append("drawImage", 2);
   append("new", 0);
   append("gc", 0);
