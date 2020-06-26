@@ -154,7 +154,7 @@ std::string Script::popLastError() {
 
 ScriptBindingsReturn Script::execute(const std::string &pFunctionName,
                                      const Json::Value &pParamSetter) {
-  wrenEnsureSlots(mVM, 4);
+  wrenEnsureSlots(mVM, pParamSetter.size() + 1);
   wrenSetSlotHandle(mVM, 0, mInstance);
   size_t i = 0;
   for (const auto &val : pParamSetter) {
@@ -162,6 +162,7 @@ ScriptBindingsReturn Script::execute(const std::string &pFunctionName,
     case Json::stringValue:
       wrenSetSlotString(mVM, i + 1, val.asCString());
       break;
+    case Json::uintValue:
     case Json::intValue:
       wrenSetSlotDouble(mVM, i + 1, val.asInt64());
       break;
@@ -172,6 +173,7 @@ ScriptBindingsReturn Script::execute(const std::string &pFunctionName,
       wrenSetSlotNull(mVM, i + 1);
       break;
     default:
+      std::cerr << "Unknown value type: " << val.type() << "\n";
       assert(false);
     }
     ++i;
