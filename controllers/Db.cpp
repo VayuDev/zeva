@@ -48,12 +48,22 @@ void Api::Db::getTableCsv(
        tablename = pName](const drogon::orm::Result &result) {
         std::string selection = "";
 
+        bool firstColumnIsId;
+        std::string firstColumnName;
+        if(skipId && result.at(0)["column_name"] .as<std::string>() == "id") {
+          firstColumnName = result.at(1)["column_name"] .as<std::string>();
+          firstColumnIsId = true;
+        } else {
+          firstColumnName = result.at(0)["column_name"] .as<std::string>();
+          firstColumnIsId = false;
+        }
+
         size_t i = 0;
         selection.clear();
         for (const auto &row : result) {
           const std::string datatype = row["data_type"].as<std::string>();
           const std::string columnName = row["column_name"].as<std::string>();
-          if(i == 0 && skipId) {
+          if(i == 0 && skipId && firstColumnIsId) {
             i++;
             continue;
           }
@@ -69,14 +79,6 @@ void Api::Db::getTableCsv(
           }
           ++i;
         }
-
-        std::string firstColumnName;
-        if(skipId && result.at(0)["column_name"] .as<std::string>() == "id") {
-          firstColumnName = result.at(1)["column_name"] .as<std::string>();
-        } else {
-          firstColumnName = result.at(0)["column_name"] .as<std::string>();
-        }
-
 
         auto query = "COPY (SELECT " + selection + " FROM " + tablename +
             " ORDER BY " + firstColumnName +
