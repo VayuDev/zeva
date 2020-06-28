@@ -4,6 +4,7 @@
 #include <cassert>
 #include <fstream>
 #include <memory>
+#include <iostream>
 
 std::unique_ptr<QueryResult>
 PostgreSQLDatabase::query(std::string pQuery,
@@ -78,6 +79,7 @@ PostgreSQLDatabase::query(std::string pQuery,
           ret.doubleValue = std::stod(val);
           break;
         default:
+          std::cerr << "Unknown OID " << PQftype(result, c) << "\n";
           assert(false);
         }
         }
@@ -168,6 +170,13 @@ void PostgreSQLDatabase::init() {
     }
     if (name == "bool") {
       type = QueryValueType::BOOL;
+    }
+    if(name.find("float") == 0) {
+      type = QueryValueType::DOUBLE;
+    }
+    if(name == "numeric") {
+      type = QueryValueType::DOUBLE;
+      writeToReverseMap = false;
     }
     mOidToType[oid] = type;
     if (writeToReverseMap) {
