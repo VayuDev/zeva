@@ -44,7 +44,7 @@ void Api::Db::SystemMonitor::addRow(
       "$9, $10, $11, "
       "$12, $13, $14, $15, $16)",
       [callback](const drogon::orm::Result &res) mutable {
-
+        callback(genResponse("ok"));
       },
       genErrorHandler(callback), receivedJson["machine_id"].asInt64(),
       receivedJson["total_cpu_usage"].asDouble(),
