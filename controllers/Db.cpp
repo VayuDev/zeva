@@ -46,44 +46,48 @@ void Api::Db::getTableCsv(
       "table_name=$1 ORDER BY information_schema.columns.ordinal_position",
       [callback = std::move(callback), skipId, truncateTimestamps,
        tablename = pName](const drogon::orm::Result &result) {
-        std::string selection = "*";
-        std::string firstColumnName = "id";
-        if (truncateTimestamps) {
-          size_t i = 0;
-          selection.clear();
-          if (skipId) {
-            firstColumnName.clear();
+        std::string selection = "";
+
+        size_t i = 0;
+        selection.clear();
+        for (const auto &row : result) {
+          const std::string datatype = row["data_type"].as<std::string>();
+          const std::string columnName = row["column_name"].as<std::string>();
+          if(i == 0 && skipId) {
+            i++;
+            continue;
           }
-          for (const auto &row : result) {
-            const std::string datatype = row["data_type"].as<std::string>();
-            const std::string columnName = row["column_name"].as<std::string>();
-            if (firstColumnName.empty() && skipId) {
-              firstColumnName = columnName;
-            } else {
-              if (datatype == "timestamp without time zone" ||
-                  datatype == "timestamp with time zone") {
-                selection +=
-                    "date_trunc('second', " + columnName + ") AS " + columnName;
-              } else {
-                selection += columnName;
-              }
-              if (i < result.size() - 1) {
-                selection += ",";
-              }
-            }
-            ++i;
+          if (truncateTimestamps && (datatype == "timestamp without time zone" ||
+              datatype == "timestamp with time zone")) {
+            selection +=
+                "date_trunc('second', " + columnName + ") AS " + columnName;
+          } else {
+            selection += columnName;
           }
+          if (i < result.size() - 1) {
+            selection += ",";
+          }
+          ++i;
         }
+
+        std::string firstColumnName;
+        if(skipId && result.at(0)["column_name"] .as<std::string>() == "id") {
+          firstColumnName = result.at(1)["column_name"] .as<std::string>();
+        } else {
+          firstColumnName = result.at(0)["column_name"] .as<std::string>();
+        }
+
+
+        auto query = "COPY (SELECT " + selection + " FROM " + tablename +
+            " ORDER BY " + firstColumnName +
+            " ASC)\n"
+            " TO STDOUT WITH (DELIMITER ',', FORMAT CSV, HEADER);";
         try {
           PostgreSQLDatabase db;
-          auto csvStr = db.performCopyToStdout(
-              "COPY (SELECT " + selection + " FROM " + tablename +
-              " ORDER BY " + firstColumnName +
-              " ASC)\n"
-              " TO STDOUT WITH (DELIMITER ',', FORMAT CSV, HEADER);");
+          auto csvStr = db.performCopyToStdout(query);
           callback(genResponse(csvStr));
         } catch (std::exception &e) {
-
+          LOG_ERROR << "Failed copy query: " + query;
           callback(genError(e.what()));
         }
       },
