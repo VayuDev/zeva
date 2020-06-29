@@ -16,7 +16,7 @@ inline void IGNORE_ERRORCALLBACK(std::exception &) {}
 
 class ScriptBindings final {
 public:
-  ScriptBindings(const std::string &pModule, const std::string &pCode);
+  ScriptBindings(const std::string &pModule, const std::string &pCode, uint32_t pTimeout);
   ~ScriptBindings();
 
   // delete move and copy constructors
@@ -45,6 +45,7 @@ private:
   void killChild();
   void spawnChild();
   int64_t mIdCounter = 0;
+  uint32_t mTimeout;
   std::optional<unsigned long> mTimeoutId = 0;
   std::shared_ptr<std::atomic<bool>> mTimeoutShouldRun =
       std::make_shared<std::atomic<bool>>(false);

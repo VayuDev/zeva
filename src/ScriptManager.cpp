@@ -8,6 +8,7 @@
 
 void ScriptManager::addScript(const std::string &pName,
                               const std::string &pCode,
+                              uint32_t pTimeout,
                               bool pCheckIfCodeChanged) {
   std::lock_guard<std::shared_mutex> lock{mScriptsMutex};
   if (mScripts.count(pName) > 0) {
@@ -20,7 +21,7 @@ void ScriptManager::addScript(const std::string &pName,
   }
 
   mScripts.emplace(std::piecewise_construct, std::forward_as_tuple(pName),
-                   std::forward_as_tuple(pName, pCode));
+                   std::forward_as_tuple(pName, pCode, pTimeout));
 }
 
 void ScriptManager::deleteScript(const std::string &pName) {
@@ -35,12 +36,13 @@ void ScriptManager::onTableChanged(const std::string &pTable,
   std::shared_lock<std::shared_mutex> lock{mScriptsMutex};
   if (pTable == "scripts") {
     auto result = drogon::app().getDbClient()->execSqlSync(
-        "SELECT name,code FROM scripts");
+        "SELECT name,code,timeout FROM scripts");
 
     lock.unlock();
     for (const auto &row : result) {
       try {
         addScript(row["name"].as<std::string>(), row["code"].as<std::string>(),
+                    row["timeout"].as<uint32_t>(),
                   true);
       } catch (std::exception &e) {
         LOG_ERROR << "Error adding script " << e.what();

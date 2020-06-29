@@ -46,13 +46,14 @@ void Api::Scripts::updateScript(
     std::function<void(const drogon::HttpResponsePtr &)> &&callback,
     int64_t scriptid, std::string &&pCode) {
   drogon::app().getDbClient()->execSqlAsync(
-      "SELECT name FROM scripts WHERE id=$1",
+      "SELECT name,timeout FROM scripts WHERE id=$1",
       [callback = std::move(callback), pCode = std::move(pCode),
        scriptid](const drogon::orm::Result &r) mutable {
         auto name = r.at(0)["name"].as<std::string>();
+        auto timeout = r.at(0)["timeout"].as<uint32_t>();
         drogon::HttpResponsePtr response;
         try {
-          ScriptManager::the().addScript(name, pCode);
+          ScriptManager::the().addScript(name, pCode, timeout);
           response = drogon::HttpResponse::newHttpResponse();
         } catch (std::exception &e) {
           response = genError(e.what());
@@ -171,11 +172,12 @@ void Api::Scripts::createScript(
                getScriptClassNameFromScriptName(pName));
   std::string name = pName;
   drogon::app().getDbClient()->execSqlAsync(
-      "INSERT INTO scripts (name, code) VALUES ($1, $2) RETURNING id",
+      "INSERT INTO scripts (name, code) VALUES ($1, $2) RETURNING id,timeout",
       [callback = std::move(callback), name,
        code](const drogon::orm::Result &r) {
         try {
-          ScriptManager::the().addScript(name, code);
+          auto timeout = r.at(0)["timeout"].as<uint32_t>();
+          ScriptManager::the().addScript(name, code, timeout);
           Json::Value response;
           response["name"] = name;
           response["id"] = r.at(0)["id"].as<int64_t>();

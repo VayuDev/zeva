@@ -30,7 +30,7 @@ WHERE table_schema = 'public'
 void createDb(DatabaseWrapper &pDb) {
 
   pDb.query("CREATE TABLE IF NOT EXISTS scripts (id BIGSERIAL PRIMARY KEY, "
-            "name TEXT UNIQUE, code TEXT)");
+            "name TEXT UNIQUE, code TEXT, timeout INT NOT NULL DEFAULT 5000)");
   try {
     pDb.query(
         "CREATE TABLE protected (id BIGSERIAL PRIMARY KEY, name TEXT UNIQUE)");

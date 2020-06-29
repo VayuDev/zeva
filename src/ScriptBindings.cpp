@@ -15,8 +15,9 @@
 #include <unistd.h>
 
 ScriptBindings::ScriptBindings(const std::string &pModule,
-                               const std::string &pCode)
-    : mCode(pCode), mModule(pModule) {
+                               const std::string &pCode,
+                               uint32_t timeoutMs)
+    : mCode(pCode), mModule(pModule), mTimeout(timeoutMs) {
   signal(SIGPIPE, SIG_IGN);
   spawnChild();
 }
@@ -187,7 +188,7 @@ void ScriptBindings::execute(const std::string &pFunctionName,
                                           std::move(pErrorCallback), id));
   *mTimeoutShouldRun = true;
   mTimeoutId = drogon::app().getLoop()->runAfter(
-      5, [id, mTimeoutShouldRun = this->mTimeoutShouldRun, this] {
+      mTimeout / 1000.0, [id, mTimeoutShouldRun = this->mTimeoutShouldRun, this] {
         if (!mTimeoutShouldRun)
           return;
         std::unique_lock<std::recursive_mutex> lock(mFdMutex);
