@@ -33,7 +33,7 @@ void Api::Scripts::getScript(
         jsonRow["id"] = r.at(0)["id"].as<std::string>();
         jsonRow["name"] = r.at(0)["name"].as<std::string>();
         jsonRow["code"] = r.at(0)["code"].as<std::string>();
-
+        jsonRow["timeout"] = r.at(0)["timeout"].as<uint32_t>();
         auto resp =
             drogon::HttpResponse::newHttpJsonResponse(std::move(jsonRow));
         callback(resp);
@@ -188,4 +188,19 @@ void Api::Scripts::createScript(
         }
       },
       genErrorHandler(callback), pName, code);
+}
+void Api::Scripts::setTimeout(const drogon::HttpRequestPtr &,
+                              std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+                              int64_t scriptid,
+                              uint32_t timeout) {
+  if(timeout > 10 * 60 * 1000) {
+    callback(genError("Unable to set timeout higher that 10 minutes", drogon::k400BadRequest));
+    return;
+  }
+  drogon::app().getDbClient()->execSqlAsync(
+      "UPDATE scripts SET timeout=$1 WHERE id=$2",
+      [callback = std::move(callback)](const drogon::orm::Result &r) {
+        callback(genResponse("ok"));
+      },
+      genErrorHandler(callback), timeout, scriptid);
 }

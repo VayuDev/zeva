@@ -8,16 +8,10 @@
 
 void ScriptManager::addScript(const std::string &pName,
                               const std::string &pCode,
-                              uint32_t pTimeout,
-                              bool pCheckIfCodeChanged) {
+                              uint32_t pTimeout) {
   std::lock_guard<std::shared_mutex> lock{mScriptsMutex};
   if (mScripts.count(pName) > 0) {
-    if (pCheckIfCodeChanged && mScripts.at(pName).getCode() == pCode)
-      return;
     mScripts.erase(pName);
-  }
-  if (pCheckIfCodeChanged) {
-    LOG_INFO << "Script was changed by someone else!";
   }
 
   mScripts.emplace(std::piecewise_construct, std::forward_as_tuple(pName),
@@ -41,9 +35,20 @@ void ScriptManager::onTableChanged(const std::string &pTable,
     lock.unlock();
     for (const auto &row : result) {
       try {
-        addScript(row["name"].as<std::string>(), row["code"].as<std::string>(),
-                    row["timeout"].as<uint32_t>(),
-                  true);
+        auto name = row["name"].as<std::string>();
+        auto code = row["code"].as<std::string>();
+        auto timeout = row["timeout"].as<uint32_t>();
+        if(mScripts.count(name) == 0) {
+          addScript(name, code, timeout);
+        } else {
+          auto& script = mScripts.at(name);
+          if(script.getCode() != code) {
+            LOG_INFO << "Script '" << name << "' was changed by someone else!";
+            addScript(name, code, timeout);
+          } else if(script.getTimeout() != timeout) {
+            script.setTimeout({}, timeout);
+          }
+        }
       } catch (std::exception &e) {
         LOG_ERROR << "Error adding script " << e.what();
       }

@@ -32,9 +32,12 @@ public:
   // const std::vector<ScriptValue>&, size_t pDepth = 0);
   void checkForNewMessages();
   const std::string &getCode();
-
   int getInputFd(Badge<class ScriptManager> = {});
 
+  [[nodiscard]] inline uint32_t getTimeout() const {
+    return mTimeout;
+  }
+  void setTimeout(Badge<class ScriptManager>, uint32_t pTimeout);
 private:
   int mInputFd, mOutputFd;
   pid_t mPid;

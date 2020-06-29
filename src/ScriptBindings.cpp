@@ -286,3 +286,8 @@ void ScriptBindings::restartAndRequeue() {
     copy.pop();
   }
 }
+void ScriptBindings::setTimeout(Badge<struct ScriptManager>, uint32_t pTimeout) {
+  // this won't affect any current scripts, but who cares? :)
+  std::unique_lock<std::recursive_mutex> lock{mFdMutex};
+  mTimeout = pTimeout;
+}

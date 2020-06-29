@@ -43,6 +43,8 @@
             <button onclick="window.location = 'draw.html?scriptid=' + SCRIPTID">Draw (FS)</button>
             <button onclick="clearLog()">Clear log</button>
             <input type="text" placeholder="Parameter" id="parameter">
+            <span>Timeout:</span>
+            <input type="text" placeholder="Timeout" id="timeout" onchange="timeoutChange()">
         </div>
         <div id="editor"></div>
         <div id="output"></div>

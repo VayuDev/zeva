@@ -27,9 +27,26 @@ function clearLog() {
     $("#output").text("");
 }
 
+function timeoutChange() {
+    $.ajax({
+        type: "POST",
+        url: "/api/scripts/setTimeout",
+        data: {
+            "scriptid": SCRIPTID,
+            "timeout": $("#timeout").val()
+        },
+        error: function(err, textStatus, errorThrown) {
+            notifyError(err.responseText);
+        },
+        success: function(data, status, jqXHR) {
+            notify("Changed timeout");
+        }
+    })
+}
 $(function() {
     $.getJSON("/api/scripts/get", "scriptid=" + SCRIPTID, function(json) {
         $("#editor").text(json["code"])
+        $("#timeout").val(json["timeout"]);
         editor = ace.edit("editor");
         editor.session.setMode("ace/mode/lua");
         editor.commands.addCommand({

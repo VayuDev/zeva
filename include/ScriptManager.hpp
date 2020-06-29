@@ -14,8 +14,7 @@ public:
   }
   ScriptManager();
   ~ScriptManager();
-  void addScript(const std::string &pName, const std::string &pCode, uint32_t pTimeout,
-                 bool pCheckIfCodeChanged = false);
+  void addScript(const std::string &pName, const std::string &pCode, uint32_t pTimeout);
   void deleteScript(const std::string &pName);
   void executeScriptWithCallback(const std::string &pName,
                                  const std::string &pFunction,

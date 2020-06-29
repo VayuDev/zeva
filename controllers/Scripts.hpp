@@ -10,6 +10,7 @@ public:
   METHOD_ADD(Scripts::getAllScripts, "all", drogon::Get);
   METHOD_ADD(Scripts::getScript, "get?scriptid={}", drogon::Get);
   METHOD_ADD(Scripts::updateScript, "update?scriptid={}&code={}", drogon::Post);
+  METHOD_ADD(Scripts::setTimeout, "setTimeout?scriptid={}&timeout={}", drogon::Post);
   METHOD_ADD(Scripts::runScript, "run?scriptid={}&param={}", drogon::Post);
   METHOD_ADD(Scripts::drawScript, "draw?scriptid={}", drogon::Get);
   METHOD_ADD(Scripts::deleteScript, "delete?scriptid={}", drogon::Post);
@@ -43,5 +44,10 @@ public:
   createScript(const drogon::HttpRequestPtr &,
                std::function<void(const drogon::HttpResponsePtr &)> &&callback,
                std::string &&pName);
+  void
+  setTimeout(const drogon::HttpRequestPtr &,
+               std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+               int64_t scriptid,
+               uint32_t timeout);
 };
 } // namespace Api
