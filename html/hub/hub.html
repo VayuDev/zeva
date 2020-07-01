@@ -7,7 +7,6 @@
         <script src="../js/index.js"></script>
         <script src="js/hub.js"></script>
         <style>
-
             body {
                 background-image:url("/api/hub/randomWallpaper");
                 background-size: cover;
@@ -17,11 +16,30 @@
             }
             #searchbar {
                 width: min(90vw, max(50vw, 700px));
-                border: 5px solid red;
+                border: 5px solid rgb(70, 70, 70);
                 border-radius: 100px;
                 padding: 10px;
                 font-size: 30px;
                 text-align: center;
+            }
+            #logoContainerContainer {
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+
+            }
+            #logoContainer {
+                background-color: rgba(255, 255, 255, 0.5);
+                border-radius: 10px;
+                padding: 5px;
+            }
+            .logo {
+                width: 80px;
+                cursor: pointer;
+            }
+            .inactive {
+                filter: saturate(0);
             }
         </style>
     </head>
@@ -32,6 +50,14 @@
                 <div class="spaceCenterWide">
                     <input type="text" id="searchbar" autofocus onfocus="this.value = ''">
                 </div>
+                <div id="logoContainerContainer">
+                    <div id="logoContainer">
+                        <img src="logos/google.svg" class="logo inactive" engine="google" onclick="selectEngine(this)">
+                        <img src="logos/ddg.svg" class="logo inactive" engine="ddg" onclick="selectEngine(this)">
+                        <img src="logos/qwant.svg" class="logo inactive" engine="qwant" onclick="selectEngine(this)">
+                    </div>
+                </div>
+
             </div>
         </div>
     </body>
