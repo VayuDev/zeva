@@ -30,4 +30,5 @@ function selectEngine(engineElement) {
     $(engineElement).removeClass("inactive");
     active = engineElement.getAttribute("engine");
     localStorage.setItem("engine", active);
+    document.getElementById("searchbar").select();
 }
