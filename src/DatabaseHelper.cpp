@@ -141,6 +141,19 @@ CREATE TABLE IF NOT EXISTS system_monitor_entry (
   total_high INT,
   free_high INT
 ))");
+  // browser
+  pDb.query(R"(
+CREATE TABLE IF NOT EXISTS browser_name (
+  id BIGSERIAL PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE
+))");
+  pDb.query(R"(
+CREATE TABLE IF NOT EXISTS browser_visit (
+  id BIGSERIAL PRIMARY KEY,
+  browserid BIGINT NOT NULL REFERENCES system_monitor_device(id) ON DELETE CASCADE,
+  time TIMESTAMP WITH TIME ZONE NOT NULL,
+  url TEXT NOT NULL
+))");
   DatabaseHelper::attachNotifyTriggerToAllTables(pDb);
 }
 
