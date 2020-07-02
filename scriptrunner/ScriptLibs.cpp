@@ -143,9 +143,8 @@ static void databaseQuerySync(WrenVM *pVM) {
   if (wrenGetSlotType(pVM, 1) == WREN_TYPE_STRING) {
     auto *db = (DatabaseStorage *)wrenGetSlotForeign(pVM, 0);
     if (!db->inited) {
-      wrenSetSlotString(pVM, 1, "error");
-      wrenSetSlotString(pVM, 2, "Database didn't connect!");
-      wrenSetSlotNull(pVM, 3);
+      wrenSetSlotString(pVM, 1, "Database didn't connect!");
+      wrenAbortFiber(pVM, 1);
     } else {
       const char *text = wrenGetSlotString(pVM, 1);
       wrenEnsureSlots(pVM, 5);
@@ -194,15 +193,13 @@ static void databaseQuerySync(WrenVM *pVM) {
         }
 
       } catch (std::exception &e) {
-        wrenSetSlotString(pVM, 1, "error");
-        wrenSetSlotString(pVM, 2, e.what());
-        wrenSetSlotNull(pVM, 3);
+        wrenSetSlotString(pVM, 1, e.what());
+        wrenAbortFiber(pVM, 1);
       }
     }
   } else {
-    wrenSetSlotString(pVM, 1, "error");
-    wrenSetSlotString(pVM, 2, "Please pass a string");
-    wrenSetSlotNull(pVM, 3);
+    wrenSetSlotString(pVM, 1, "Please pass a string");
+    wrenAbortFiber(pVM, 1);
   }
   wrenSetSlotNewList(pVM, 0);
   wrenInsertInList(pVM, 0, 0, 1);
