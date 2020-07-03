@@ -29,8 +29,8 @@ void Api::Apps::Browser::addVisitedUrl(
               },
               onException, browserId, url);
         };
-        // we need to add the browser to obtain a new id for it
         if (res.empty()) {
+          // we need to add the browser to obtain a new id for it
           drogon::app().getDbClient()->execSqlAsync(
               "INSERT INTO browser_name (name) VALUES ($1) RETURNING id",
               [callback, insertRow, browserName](const drogon::orm::Result &res) {
@@ -38,9 +38,11 @@ void Api::Apps::Browser::addVisitedUrl(
                 insertRow(res.at(0)["id"].as<int64_t>());
               },
               onException, browserName);
+        } else {
+          // we already got the id, now insert it
+          insertRow(res.at(0)["id"].as<int64_t>());
         }
-        // we already got the id, now insert it
-        insertRow(res.at(0)["id"].as<int64_t>());
+
       },
       onException, browserName);
 }
