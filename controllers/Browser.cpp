@@ -33,7 +33,8 @@ void Api::Apps::Browser::addVisitedUrl(
         if (res.empty()) {
           drogon::app().getDbClient()->execSqlAsync(
               "INSERT INTO browser_name (name) VALUES ($1) RETURNING id",
-              [callback, insertRow](const drogon::orm::Result &res) {
+              [callback, insertRow, browserName](const drogon::orm::Result &res) {
+                LOG_INFO << "[Browser Integration] Added new name: " << browserName;
                 insertRow(res.at(0)["id"].as<int64_t>());
               },
               onException, browserName);
