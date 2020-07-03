@@ -27,6 +27,7 @@ void Api::Apps::Player::getStatus(
     resp["queue"] = std::move(queue);
   }
   resp["queueIndex"] = mPlayer.getCurrentSongIndex();
+  resp["paused"] = mPlayer.isPaused();
   callback(drogon::HttpResponse::newHttpJsonResponse(std::move(resp)));
 }
 void Api::Apps::Player::getLs(

@@ -22,10 +22,14 @@ public:
   void pause();
   void resume();
 
+  [[nodiscard]] inline bool isPaused() const {
+    return paused;
+  }
+
 private:
   void destruct();
 
-  bool running = false, asyncDone = false, durationDone = false;
+  bool running = false, asyncDone = false, durationDone = false, paused = false;
   GstBus *bus = nullptr;
   GstElement *pipeline = nullptr, *audio = nullptr;
   std::optional<DurationCallback> mDurationCallback;

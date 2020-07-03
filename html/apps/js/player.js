@@ -97,7 +97,7 @@ function ls(path, callback, record = true) {
     });
 }
 
-function highlightPlayingSong() {
+function highlightPlayingSong(pause = false) {
     if(highlightTimeoutId)
         highlightTimeoutId.pause()
     let row = $("[songname='" + queue[queueCurrentPlayingIndex] + "']");
@@ -120,6 +120,9 @@ function highlightPlayingSong() {
                 queueCurrentPlayingIndex += 1;
                 highlightPlayingSong();
             }, remaining);
+            if(pause) {
+                highlightTimeoutId.pause();
+            }
         },
         error: function(err) {
             if(queueCurrentPlayingIndex >= queue.length)
@@ -133,7 +136,6 @@ function highlightPlayingSong() {
 
 document.addEventListener("DOMContentLoaded", function() {
     let urlParamPath = getUrlParam("path");
-
     $.ajax({
         dataType: "json",
         url: "/api/apps/player/status",
@@ -141,7 +143,7 @@ document.addEventListener("DOMContentLoaded", function() {
             let lsDone = () => {
                 queue = data["queue"];
                 queueCurrentPlayingIndex = data["queueIndex"];
-                highlightPlayingSong();
+                highlightPlayingSong(data["paused"]);
             };
             if(urlParamPath) {
                 ls(urlParamPath, lsDone);

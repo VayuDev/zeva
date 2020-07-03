@@ -82,6 +82,7 @@ void AudioPlayer::play(const std::string &pFile) {
   running = true;
   asyncDone = false;
   durationDone = false;
+  paused = false;
 }
 
 AudioPlayer::~AudioPlayer() {
@@ -97,7 +98,7 @@ void AudioPlayer::poll() {
     if (!message)
       break;
 
-    g_print("Got %s message\n", GST_MESSAGE_TYPE_NAME(message));
+    //g_print("Got %s message\n", GST_MESSAGE_TYPE_NAME(message));
     switch (GST_MESSAGE_TYPE(message)) {
     case GST_MESSAGE_ERROR: {
       GError *err;
@@ -175,11 +176,13 @@ void AudioPlayer::destruct() {
 }
 void AudioPlayer::pause() {
   if (pipeline) {
+    paused = true;
     gst_element_set_state(pipeline, GST_STATE_PAUSED);
   }
 }
 void AudioPlayer::resume() {
   if (pipeline) {
+    paused = false;
     gst_element_set_state(pipeline, GST_STATE_PLAYING);
   }
 }
