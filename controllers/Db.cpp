@@ -50,11 +50,11 @@ void Api::Db::getTableCsv(
 
         bool firstColumnIsId;
         std::string firstColumnName;
-        if(skipId && result.at(0)["column_name"] .as<std::string>() == "id") {
-          firstColumnName = result.at(1)["column_name"] .as<std::string>();
+        if (skipId && result.at(0)["column_name"].as<std::string>() == "id") {
+          firstColumnName = result.at(1)["column_name"].as<std::string>();
           firstColumnIsId = true;
         } else {
-          firstColumnName = result.at(0)["column_name"] .as<std::string>();
+          firstColumnName = result.at(0)["column_name"].as<std::string>();
           firstColumnIsId = false;
         }
 
@@ -63,12 +63,13 @@ void Api::Db::getTableCsv(
         for (const auto &row : result) {
           const std::string datatype = row["data_type"].as<std::string>();
           const std::string columnName = row["column_name"].as<std::string>();
-          if(i == 0 && skipId && firstColumnIsId) {
+          if (i == 0 && skipId && firstColumnIsId) {
             i++;
             continue;
           }
-          if (truncateTimestamps && (datatype == "timestamp without time zone" ||
-              datatype == "timestamp with time zone")) {
+          if (truncateTimestamps &&
+              (datatype == "timestamp without time zone" ||
+               datatype == "timestamp with time zone")) {
             selection +=
                 "date_trunc('second', " + columnName + ") AS " + columnName;
           } else {
@@ -81,9 +82,9 @@ void Api::Db::getTableCsv(
         }
 
         auto query = "COPY (SELECT " + selection + " FROM " + tablename +
-            " ORDER BY " + firstColumnName +
-            " ASC)\n"
-            " TO STDOUT WITH (DELIMITER ',', FORMAT CSV, HEADER);";
+                     " ORDER BY " + firstColumnName +
+                     " ASC)\n"
+                     " TO STDOUT WITH (DELIMITER ',', FORMAT CSV, HEADER);";
         try {
           PostgreSQLDatabase db;
           auto csvStr = db.performCopyToStdout(query);

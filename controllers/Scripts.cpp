@@ -189,12 +189,13 @@ void Api::Scripts::createScript(
       },
       genErrorHandler(callback), pName, code);
 }
-void Api::Scripts::setTimeout(const drogon::HttpRequestPtr &,
-                              std::function<void(const drogon::HttpResponsePtr &)> &&callback,
-                              int64_t scriptid,
-                              uint32_t timeout) {
-  if(timeout > 10 * 60 * 1000) {
-    callback(genError("Unable to set timeout higher that 10 minutes", drogon::k400BadRequest));
+void Api::Scripts::setTimeout(
+    const drogon::HttpRequestPtr &,
+    std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+    int64_t scriptid, uint32_t timeout) {
+  if (timeout > 10 * 60 * 1000) {
+    callback(genError("Unable to set timeout higher that 10 minutes",
+                      drogon::k400BadRequest));
     return;
   }
   drogon::app().getDbClient()->execSqlAsync(

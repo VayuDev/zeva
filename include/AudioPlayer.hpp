@@ -22,9 +22,7 @@ public:
   void pause();
   void resume();
 
-  [[nodiscard]] inline bool isPaused() const {
-    return paused;
-  }
+  [[nodiscard]] inline bool isPaused() const { return paused; }
 
 private:
   void destruct();

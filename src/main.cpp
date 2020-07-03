@@ -164,7 +164,8 @@ int main() {
       auto code = res->getValue(i, 1).stringValue;
       auto timeout = res->getValue(i, 2).intValue;
       try {
-        ScriptManager::the().addScript(name, code, static_cast<uint32_t>(timeout));
+        ScriptManager::the().addScript(name, code,
+                                       static_cast<uint32_t>(timeout));
       } catch (std::exception &e) {
         LOG_ERROR << "Failed to load script '" << name
                   << "' with exception: " << e.what();

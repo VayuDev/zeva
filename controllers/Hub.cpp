@@ -7,10 +7,10 @@ void Api::Hub::getRandomWallpaper(
     const drogon::HttpRequestPtr &req,
     std::function<void(const drogon::HttpResponsePtr &)> &&callback) {
   // check how old the client image is
-  const auto& ifModifiedSinceHeader = req->getHeader("if-modified-since");
-  if(!ifModifiedSinceHeader.empty()) {
+  const auto &ifModifiedSinceHeader = req->getHeader("if-modified-since");
+  if (!ifModifiedSinceHeader.empty()) {
     auto imageFrom = drogon::utils::getHttpDate(ifModifiedSinceHeader);
-    if(imageFrom >= trantor::Date::now().after(-180)) {
+    if (imageFrom >= trantor::Date::now().after(-180)) {
       // cached response
       auto resp = drogon::HttpResponse::newHttpResponse();
       resp->setStatusCode(drogon::k304NotModified);
@@ -34,8 +34,9 @@ void Api::Hub::getRandomWallpaper(
 
   auto file = filenames.at(rand() % filenames.size());
   auto resp = drogon::HttpResponse::newFileResponse(file);
-  //resp->addHeader("expires",drogon::utils::getHttpFullDate(trantor::Date::now().after(180000)));
-  resp->addHeader("last-modified",drogon::utils::getHttpFullDate(trantor::Date::now()));
+  // resp->addHeader("expires",drogon::utils::getHttpFullDate(trantor::Date::now().after(180000)));
+  resp->addHeader("last-modified",
+                  drogon::utils::getHttpFullDate(trantor::Date::now()));
   resp->addHeader("cache-control", "public, max-age=604800, immutable");
   callback(resp);
 }

@@ -3,8 +3,8 @@
 #include <Util.hpp>
 #include <cassert>
 #include <fstream>
-#include <memory>
 #include <iostream>
+#include <memory>
 
 std::unique_ptr<QueryResult>
 PostgreSQLDatabase::query(std::string pQuery,
@@ -171,10 +171,10 @@ void PostgreSQLDatabase::init() {
     if (name == "bool") {
       type = QueryValueType::BOOL;
     }
-    if(name.find("float") == 0) {
+    if (name.find("float") == 0) {
       type = QueryValueType::DOUBLE;
     }
-    if(name == "numeric") {
+    if (name == "numeric") {
       type = QueryValueType::DOUBLE;
       writeToReverseMap = false;
     }

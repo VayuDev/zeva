@@ -16,7 +16,8 @@ inline void IGNORE_ERRORCALLBACK(std::exception &) {}
 
 class ScriptBindings final {
 public:
-  ScriptBindings(const std::string &pModule, const std::string &pCode, uint32_t pTimeout);
+  ScriptBindings(const std::string &pModule, const std::string &pCode,
+                 uint32_t pTimeout);
   ~ScriptBindings();
 
   // delete move and copy constructors
@@ -34,10 +35,9 @@ public:
   const std::string &getCode();
   int getInputFd(Badge<class ScriptManager> = {});
 
-  [[nodiscard]] inline uint32_t getTimeout() const {
-    return mTimeout;
-  }
+  [[nodiscard]] inline uint32_t getTimeout() const { return mTimeout; }
   void setTimeout(Badge<class ScriptManager>, uint32_t pTimeout);
+
 private:
   int mInputFd, mOutputFd;
   pid_t mPid;

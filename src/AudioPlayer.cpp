@@ -98,7 +98,7 @@ void AudioPlayer::poll() {
     if (!message)
       break;
 
-    //g_print("Got %s message\n", GST_MESSAGE_TYPE_NAME(message));
+    // g_print("Got %s message\n", GST_MESSAGE_TYPE_NAME(message));
     switch (GST_MESSAGE_TYPE(message)) {
     case GST_MESSAGE_ERROR: {
       GError *err;

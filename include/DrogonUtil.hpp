@@ -25,7 +25,9 @@ genDefErrorHandler(std::function<void(const drogon::HttpResponsePtr &)> call) {
   };
 }
 
-inline drogon::HttpResponsePtr genError(const std::string &pMsg, drogon::HttpStatusCode pStatusCode = drogon::k500InternalServerError) {
+inline drogon::HttpResponsePtr
+genError(const std::string &pMsg,
+         drogon::HttpStatusCode pStatusCode = drogon::k500InternalServerError) {
   LOG_ERROR << "Generating error: " << pMsg;
   auto errResp = drogon::HttpResponse::newHttpResponse();
   errResp->setStatusCode(pStatusCode);

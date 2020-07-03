@@ -474,33 +474,34 @@ static void httpClientSend(WrenVM *pVM) {
   }
 }
 
-static void stringsJoin(WrenVM* pVM) {
-  if(wrenGetSlotType(pVM, 1) != WREN_TYPE_LIST || wrenGetSlotType(pVM, 2) != WREN_TYPE_STRING) {
+static void stringsJoin(WrenVM *pVM) {
+  if (wrenGetSlotType(pVM, 1) != WREN_TYPE_LIST ||
+      wrenGetSlotType(pVM, 2) != WREN_TYPE_STRING) {
     wrenSetSlotString(pVM, 0, "Please pass an array of strings and a string");
     wrenAbortFiber(pVM, 0);
     return;
   }
   int seperatorLength;
-  const char* seperator = wrenGetSlotBytes(pVM, 2, &seperatorLength);
+  const char *seperator = wrenGetSlotBytes(pVM, 2, &seperatorLength);
 
   const auto elementCount = wrenGetListCount(pVM, 1);
   size_t totalLength = 0;
-  for(int i = 0; i < elementCount; ++i) {
+  for (int i = 0; i < elementCount; ++i) {
     wrenGetListElement(pVM, 1, i, 2);
     int length;
     wrenGetSlotBytes(pVM, 2, &length);
     totalLength += length;
   }
   size_t allocedBytes = totalLength + seperatorLength * (elementCount - 1);
-  char* returnString = (char*)malloc(allocedBytes);
+  char *returnString = (char *)malloc(allocedBytes);
   size_t written = 0;
-  for(int i = 0; i < elementCount; ++i) {
+  for (int i = 0; i < elementCount; ++i) {
     wrenGetListElement(pVM, 1, i, 2);
     int length;
     auto bytes = wrenGetSlotBytes(pVM, 2, &length);
     memcpy(returnString + written, bytes, length);
     written += length;
-    if(i != elementCount - 1) {
+    if (i != elementCount - 1) {
       memcpy(returnString + written, seperator, seperatorLength);
       written += seperatorLength;
     }

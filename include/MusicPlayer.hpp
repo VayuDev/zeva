@@ -28,11 +28,12 @@ public:
   }
   [[nodiscard]] inline auto getCurrentSongIndex() const { return mIndex; }
   [[nodiscard]] inline bool isPaused() const {
-    if(mAudio && !mAudio->isPaused()) {
+    if (mAudio && !mAudio->isPaused()) {
       return false;
     }
     return true;
   }
+
 private:
   void initialize();
   std::optional<AudioPlayer> mAudio;

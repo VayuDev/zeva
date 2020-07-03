@@ -150,7 +150,7 @@ CREATE TABLE IF NOT EXISTS browser_name (
   pDb.query(R"(
 CREATE TABLE IF NOT EXISTS browser_visit (
   id BIGSERIAL PRIMARY KEY,
-  browserid BIGINT NOT NULL REFERENCES system_monitor_device(id) ON DELETE CASCADE,
+  browserid BIGINT NOT NULL REFERENCES browser_name(id) ON DELETE CASCADE,
   time TIMESTAMP WITH TIME ZONE NOT NULL,
   url TEXT NOT NULL
 ))");

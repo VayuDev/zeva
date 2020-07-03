@@ -7,8 +7,7 @@
 #include <utility>
 
 void ScriptManager::addScript(const std::string &pName,
-                              const std::string &pCode,
-                              uint32_t pTimeout) {
+                              const std::string &pCode, uint32_t pTimeout) {
   std::lock_guard<std::shared_mutex> lock{mScriptsMutex};
   if (mScripts.count(pName) > 0) {
     mScripts.erase(pName);
@@ -38,14 +37,14 @@ void ScriptManager::onTableChanged(const std::string &pTable,
         auto name = row["name"].as<std::string>();
         auto code = row["code"].as<std::string>();
         auto timeout = row["timeout"].as<uint32_t>();
-        if(mScripts.count(name) == 0) {
+        if (mScripts.count(name) == 0) {
           addScript(name, code, timeout);
         } else {
-          auto& script = mScripts.at(name);
-          if(script.getCode() != code) {
+          auto &script = mScripts.at(name);
+          if (script.getCode() != code) {
             LOG_INFO << "Script '" << name << "' was changed by someone else!";
             addScript(name, code, timeout);
-          } else if(script.getTimeout() != timeout) {
+          } else if (script.getTimeout() != timeout) {
             script.setTimeout({}, timeout);
           }
         }
