@@ -10,7 +10,7 @@ on a server like a Raspberry Pi and access it through a browser.
 * Scripting system using the *awesome* scripting language 
 [wren](https://github.com/wren-lang/wren):
   * Write scripts directly in the browser.
-  * **React to events from all parts of ZeVA with scripts**
+  * React to events from **all parts** of ZeVA with scripts.
   * Each script runs in a separate process which allows timeouts & crashes.
 * Write data from your IoT sensors directly to the database.
   * Display graphs from database tables.
@@ -18,7 +18,7 @@ on a server like a Raspberry Pi and access it through a browser.
 * Very basic music player & SFTP client.
 * Browser extension for tracking site usage.
 * A small utility for tracking system usage statistics.
-* A central hub for all your other servers/platforms (WIP)
+* A central hub for all your other servers/platforms (WIP).
 
 ## Use-Case
 
@@ -47,7 +47,7 @@ but I can totally understand that it probably isn't. If you've got any
 questions or feature requests, feel free to open an issue or reach me via 
 vayudev@protonmail.com (I try to look in there from time to time).
 
-## ZeVA wouldn't be possible without theses other *awesome* projects
+## ZeVA wouldn't have been possible without theses other *awesome* projects
 A huge thank you to:
 * The web framework [drogon](https://github.com/an-tao/drogon) 
 * The scripting language [wren](https://github.com/wren-lang/wren)
