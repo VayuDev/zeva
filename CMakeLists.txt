@@ -60,4 +60,4 @@ add_executable(ZeVa2_0 ${SOURCES} ${WREN_SOURCES})
 
 target_link_libraries(ZeVa2_0 pthread zstd drogon nlohmann_json::nlohmann_json pq stdc++fs ${GSTREAMER_LIBRARIES} ${SSH2_LIBRARIES})
 
-add_subdirectory(scriptrunner)
+add_subdirectory(${PROJECT_SOURCE_DIR}/scriptrunner)
