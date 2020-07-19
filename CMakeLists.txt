@@ -10,10 +10,6 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
-set(JSON_BuildTests OFF CACHE INTERNAL "")
-add_subdirectory(json)
-include_directories(${PROJECT_SOURCE_DIR}/json/include)
-
 add_subdirectory("drogon")
 include_directories("${PROJECT_SOURCE_DIR}/drogon/lib/inc")
 
@@ -58,6 +54,6 @@ include_directories(${SSH2_INCLUDE_DIRS})
 
 add_executable(ZeVa2_0 ${SOURCES} ${WREN_SOURCES})
 
-target_link_libraries(ZeVa2_0 pthread zstd drogon nlohmann_json::nlohmann_json pq stdc++fs ${GSTREAMER_LIBRARIES} ${SSH2_LIBRARIES})
+target_link_libraries(ZeVa2_0 pthread zstd drogon m stdc++ pq stdc++fs ${GSTREAMER_LIBRARIES} ${SSH2_LIBRARIES})
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/scriptrunner)
