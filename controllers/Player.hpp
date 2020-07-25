@@ -19,6 +19,7 @@ public:
   METHOD_ADD(Player::getDuration, "duration?songname={}", drogon::Get);
   METHOD_ADD(Player::next, "next", drogon::Post);
   METHOD_ADD(Player::prev, "prev", drogon::Post);
+  METHOD_ADD(Player::deleteItem, "deleteItem?item={}", drogon::Delete);
   METHOD_LIST_END
 
   Player();
@@ -45,6 +46,10 @@ public:
   getDuration(const drogon::HttpRequestPtr &req,
               std::function<void(const drogon::HttpResponsePtr &)> &&callback,
               std::string &&pSongname);
+  void
+  deleteItem(const drogon::HttpRequestPtr &req,
+              std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+              std::string &&pItemname);
 
 private:
   MusicPlayer mPlayer;

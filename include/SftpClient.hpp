@@ -17,7 +17,7 @@ public:
   ~SftpClient();
   std::vector<SftpFile> ls(const std::string &pPath);
   std::string download(const std::string &pPath);
-
+  void deleteItem(const std::string &pPath);
 private:
   int sock;
   LIBSSH2_SFTP *sftp_session;

@@ -129,3 +129,7 @@ void MusicPlayer::callWhenDurationIsAvailable(
   }
   mDurationCallbacks.emplace_front(std::move(callback));
 }
+void MusicPlayer::deleteItem(const std::string &path) {
+  std::lock_guard<std::recursive_mutex> lock{mMutex};
+  mSftp->deleteItem(path);
+}

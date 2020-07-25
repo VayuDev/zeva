@@ -19,6 +19,7 @@ public:
   void poll();
   void pause();
   void resume();
+  void deleteItem(const std::string& path);
   int64_t getCurrentMusicDuration();
   int64_t getCurrentMusicPosition();
   std::vector<SftpFile> ls(const std::string &pPath);

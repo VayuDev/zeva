@@ -53,7 +53,8 @@ function ls(path, callback, record = true) {
                 let row = $("<div></div>").addClass("song");
                 row.append($("<img>").addClass("icon").attr("src", data[i].directory ? "/icons/directory.svg" : "/icons/file.svg"));
                 row.attr("songname", data[i].name);
-                row.append($("<span></span>").text(data[i].name.replace(/^.*[\\\/]/, '')));
+                let textContainer = $("<span></span>").text(data[i].name.replace(/^.*[\\\/]/, ''));
+                row.append($("<span></span>").append(textContainer).addClass("songText"));
                 row.click(() => {
                     if(data[i].directory) {
                         if(data[i].name.endsWith("..")) {
@@ -85,6 +86,23 @@ function ls(path, callback, record = true) {
                         console.log(queue);
                     }
                 });
+                row.append($("<img>").attr("src", "/graphics/delete.svg").addClass("deleteButton").click((ev) => {
+                    // delete button click
+                    $.ajax({
+                        url: "/api/apps/player/deleteItem",
+                        type: "DELETE",
+                        data: {
+                            item: data[i].name
+                        },
+                        success: function(data) {
+                            window.location = window.location + ""
+                        },
+                        error: function(err) {
+                            notifyError(err.responseText);
+                        }
+                    })
+                    ev.stopPropagation();
+                }));
                 songs.append(row);
             }
             if(callback) {

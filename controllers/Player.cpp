@@ -140,3 +140,13 @@ void Api::Apps::Player::prev(
   mPlayer.playPrevSong();
   callback(genResponse("ok"));
 }
+void Api::Apps::Player::deleteItem(const drogon::HttpRequestPtr &,
+                                   std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+                                   std::string &&pSongname) {
+  try {
+    mPlayer.deleteItem(pSongname);
+    callback(genResponse("ok"));
+  } catch(std::exception& e) {
+    callback(genError(e.what()));
+  }
+}

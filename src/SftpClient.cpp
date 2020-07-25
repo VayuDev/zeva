@@ -190,3 +190,10 @@ std::string SftpClient::download(const std::string &pPath) {
 
   return ret;
 }
+void SftpClient::deleteItem(const std::string &pPath) {
+  if(libssh2_sftp_unlink(sftp_session, pPath.c_str()) < 0) {
+    if(libssh2_sftp_rmdir(sftp_session, pPath.c_str()) < 0) {
+      throw std::runtime_error{"Unable to delete " + pPath};
+    }
+  }
+}
