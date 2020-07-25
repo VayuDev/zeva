@@ -1,15 +1,14 @@
 #pragma once
-#include "ScriptValue.hpp"
 #include <filesystem>
 #include <json/json.h>
 #include <optional>
-#include <string.h>
+#include <cstring>
+#include <functional>
+#include "ScriptValue.hpp"
 
 Json::Value scriptValueToJson(const ScriptValue &pVal);
-Json::Value wrenValueToJsonValue(struct WrenVM *pVM, int pSlot);
 
 std::string readWholeFile(const std::filesystem::path &pPath);
-ScriptValue wrenValueToScriptValue(struct WrenVM *pVM, int pSlot);
 
 bool isValidAscii(const signed char *c, size_t len);
 

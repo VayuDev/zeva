@@ -33,10 +33,6 @@ set(CMAKE_C_FLAGS_RELEASE "-O3 -march=native -mtune=native -fno-strict-aliasing"
 file(GLOB_RECURSE SOURCES
         "${PROJECT_SOURCE_DIR}/src/*.cpp"
         "${PROJECT_SOURCE_DIR}/controllers/*.cpp")
-file(GLOB_RECURSE WREN_SOURCES 
-  "${PROJECT_SOURCE_DIR}/wren/src/vm/*.c"
-  "${PROJECT_SOURCE_DIR}/wren/src/optional/*.c")
-
 add_definitions(-D_LINUX_)
 
 find_package(PkgConfig REQUIRED)
@@ -52,7 +48,7 @@ include_directories(${GSTREAMER_INCLUDE_DIRS})
 pkg_check_modules(SSH2 REQUIRED libssh2)
 include_directories(${SSH2_INCLUDE_DIRS})
 
-add_executable(ZeVa2_0 ${SOURCES} ${WREN_SOURCES})
+add_executable(ZeVa2_0 ${SOURCES})
 
 target_link_libraries(ZeVa2_0 pthread zstd drogon m stdc++ pq stdc++fs ${GSTREAMER_LIBRARIES} ${SSH2_LIBRARIES})
 

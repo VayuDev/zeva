@@ -6,6 +6,7 @@
 #include <forward_list>
 #include <string>
 #include <vector>
+#include <mutex>
 
 class MusicPlayer {
 public:

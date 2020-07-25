@@ -7,6 +7,7 @@
 #include <cstring>
 #include <iostream>
 #include <zconf.h>
+#include "WrenUtil.hpp"
 
 constexpr const char *PARENT_SCRIPT = R"(
 class Script {

@@ -34,7 +34,7 @@ include_directories(${JSONCPP_INCLUDE_DIRS})
 
 add_executable(ZeVaScript ${SOURCES} ${WREN_SOURCES})
 
-target_link_libraries(ZeVaScript pthread pq stdc++fs Jsoncpp_lib ssl crypto)
+target_link_libraries(ZeVaScript pthread pq m stdc++ stdc++fs Jsoncpp_lib ssl crypto)
 
 add_custom_command(TARGET ZeVaScript
         POST_BUILD

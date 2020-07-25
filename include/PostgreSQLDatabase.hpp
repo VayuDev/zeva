@@ -37,8 +37,6 @@ public:
   void awaitNotifications(int millis) override;
 
 private:
-  friend WrenForeignClassMethods bindForeignClass(WrenVM *, const char *,
-                                                  const char *);
   void init();
   std::string mConnectString;
   pg_conn *mCConnection = nullptr;
