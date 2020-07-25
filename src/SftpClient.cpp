@@ -196,4 +196,5 @@ void SftpClient::deleteItem(const std::string &pPath) {
       throw std::runtime_error{"Unable to delete " + pPath};
     }
   }
+  LOG_INFO << "[SftpClient] Deleted " << pPath;
 }
