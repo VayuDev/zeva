@@ -1,4 +1,6 @@
 # ZeVA - Central Administration and Automation
+<img src="https://raw.githubusercontent.com/VayuDev/zeva/master/assets/zeva.svg" width=60>
+
 From the German **Ze**ntrale **V**erwaltung und **A**utomatisierung.
 
 ## Overview
@@ -57,3 +59,7 @@ A huge thank you to:
 [csv-to-html-table](https://github.com/derekeder/csv-to-html-table.git)
 
 and all their contributors.
+
+Here is a screenshot of my debug scripts list & a script:
+<img src="https://raw.githubusercontent.com/VayuDev/zeva/master/assets/screenshots/zeva_script_list.png" width=800>
+<img src="https://raw.githubusercontent.com/VayuDev/zeva/master/assets/screenshots/zeva_example_script.png" width=800>
